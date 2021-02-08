@@ -9,7 +9,10 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'usuario'], function () use ($router) {
         $router->post('register', 'UsuarioController@register');       //Registro del usuario  
         $router->post('login', 'UsuarioController@login');       //Login del usuario
-        $router->get('usuarios/{token}', 'UsuarioController@obtenerUsuarios');       //Obtener usuarios    
+        $router->get('usuarios/{token}', [                       //Obtener usuarios 
+            'middleware' => 'auth',
+            'uses' => 'UsuarioController@obtenerUsuarios']
+        );          
         
     });
 });
