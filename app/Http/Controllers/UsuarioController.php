@@ -23,7 +23,7 @@ class UsuarioController extends Controller
             'password' => 'required|max:50',
         ]);
 
-        // try {
+        try {
            
             $user = new User;
             $user->nombre = $request->input('nombre');
@@ -37,12 +37,11 @@ class UsuarioController extends Controller
             $user->save();
 
             //return successful response
-            return response()->json(['user' => "", 'message' => 'CREATED'], 201);
+            return $this->crearRespuesta(1,"Usuario registrado con éxito",201);
 
-        // } catch (\Exception $e) {
-        //     //return error message
-        //     return response()->json(['message' => 'User Registration Failed!'.$e], 409);
-        // }
+        } catch (\Throwable $th) {
+            return $this->crearRespuesta(2,"Ha ocurrido un error: ".$th->getMessage(),301);
+        }
 
     }
     public function login(Request $res)
@@ -57,12 +56,36 @@ class UsuarioController extends Controller
         );
         
         if (! $token = Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Las credenciales no son validas, intente de nuevo'], 401);
         }
-        //response()->json([$this->respondWithToken($token), 'users' =>  User::all()], 201);
-        
-        return response()->json(['credenciales'=>$this->respondWithToken($token), 
-        'user' =>  User::select('nombre')->where('usuario', $res["usuario"])->first()], 201);
+        $usuario = DB::table("seg_cat_usuario")
+        ->select("id","nombre","usuario")
+        ->where("usuario",$res["usuario"])
+        ->get();
+        $sistemas = DB::table("liga_usuario_sistema as lus")
+        ->join("gen_cat_sistemas as gce","gce.id","=","lus.cat_sistemas_id")
+        ->select("gce.id","gce.sistema")
+        ->where("lus.cat_usuario_id",$usuario[0]->id)
+        ->where("lus.activo",1)
+        ->get();
+        $sistemas_info = [];
+        foreach($sistemas as $sistema){
+            array_push($sistemas_info,[
+                "id" => $sistema->id,
+                "sistema" => $sistema->sistema
+            ]);
+        }
+        $respuesta = [
+            "token_acesso" => $this->respondWithToken($token),
+            "info_usuario" => [
+                "id" => $usuario[0]->id,
+                "nombre" => $usuario[0]->nombre,
+                "url_foto" => $this->getEnv("APP_URL")."/api_serteza/resources/img/foto_perfil_".$usuario[0]->id.".png",
+                "usuario" => $res["usuario"],
+                "sistemas" => $sistemas_info
+            ]
+        ];
+        return $this->crearRespuesta(1,$respuesta,200);
     }
 
 }

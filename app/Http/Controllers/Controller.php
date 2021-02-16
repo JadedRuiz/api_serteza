@@ -10,15 +10,27 @@ class Controller extends BaseController
 {
     protected function respondWithToken($token)
     {
-        return response()->json([
+        return [
             'token' => $token,
             'token_type' => 'bearer',
             'expires_in' => Auth::factory()->getTTL() * 60
-        ], 200);
+        ];
     }
 
     public function getHoraFechaActual(){
         $mytime = Carbon::now();
         return $mytime;
+    }
+
+    public function crearRespuesta($tipo,$obj,$http_response){
+        if($tipo == 1){ //Success
+            return response()->json(['ok' => true, 'data' => $obj], $http_response);
+        }
+        if($tipo == 2) {    //Failed
+            return response()->json(['ok' => false, 'data' => $obj], $http_response);
+        }
+    }
+    public function getEnv($nombre){
+        return env($nombre,"");
     }
 }
