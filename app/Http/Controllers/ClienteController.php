@@ -22,6 +22,7 @@ class ClienteController extends Controller
         ->join("gen_cat_cliente as gcc","gcc.id","=","luc.cliente_id")
         ->select("gcc.id","gcc.cliente")
         ->where("luc.usuario_empresa_id",1)
+        ->where("luc.activo",1)
         ->get();
         if(count($cliente)>0){
             return $this->crearRespuesta(1,$cliente,200);

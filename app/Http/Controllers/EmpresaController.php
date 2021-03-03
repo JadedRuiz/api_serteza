@@ -22,6 +22,7 @@ class EmpresaController extends Controller
         ->join("gen_cat_empresas as gce","gce.id","=","lue.cat_empresas_id")
         ->select("gce.id","gce.empresa")
         ->where("lue.usuario_sistemas_id",$sistema_id)
+        ->where("lue.activo",1)
         ->get();
         if(count($empresas)>0){
             return $this->crearRespuesta(1,$empresas,200);
