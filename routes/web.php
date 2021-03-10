@@ -28,4 +28,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
             'uses' => 'ClienteController@obtenerClientes']
         ); 
     });
+
+    $router->group(['prefix' => 'candidato'], function () use ($router) {
+        $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
+        $router->post('altaCandidato','CandidatoController@altaCandidato');
+    });
 });

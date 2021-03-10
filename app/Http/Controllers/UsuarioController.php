@@ -37,7 +37,7 @@ class UsuarioController extends Controller
             $user->save();
 
             //return successful response
-            return $this->crearRespuesta(1,"Usuario registrado con éxito",201);
+            return $this->crearRespuesta(1,"Usuario registrado con éxito",200);
 
         } catch (\Throwable $th) {
             return $this->crearRespuesta(2,"Ha ocurrido un error: ".$th->getMessage(),301);

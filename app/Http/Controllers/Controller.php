@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Laravel\Lumen\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class Controller extends BaseController
 {
@@ -32,5 +33,9 @@ class Controller extends BaseController
     }
     public function getEnv($nombre){
         return env($nombre,"");
+    }
+    public function getSigId($nombre_tabla){
+        $utlimo_id = DB::table($nombre_tabla)->latest("id")->first();
+        return intval($utlimo_id->id)+1;
     }
 }

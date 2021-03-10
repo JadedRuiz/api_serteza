@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
-class Direccion extends Model {
+    
+class Candidato extends Model {
 
     /**
      * The attributes that are mass assignable.
@@ -13,20 +13,25 @@ class Direccion extends Model {
      */
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'gen_cat_direcciones';
+    protected $table = 'rh_cat_candidatos';
     protected $fillable = [
-        'id', 
-        'calle', 
-        'numero_interior', 
-        'numero_exterior', 
-        'cruzamiento_uno', 
-        'cruzamiento_dos', 
-        'codigo_postal',
-        'colonia',
-        'localidad', 
-        'municipio', 
-        'estado', 
-        'descripcion', 
+        'id',
+        'cat_status_id',
+        'cat_clientes_id',
+        'cat_fotografia_id',
+        'cat_direccion_id',
+        'apellido_paterno',
+        'apellid_materno',
+        'nombre',
+        'rfc',
+        'curp',
+        'numero_seguro',
+        'fecha_nacimiento',
+        'correo',
+        'telefono',
+        'telefono_dos',
+        'telefono_tres',
+        'descripcion',
         'fecha_creacion', 
         'fecha_modificacion', 
         'cat_usuario_c_id', 
