@@ -36,5 +36,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerCandidatoPorId/{id}',"CandidatoController@obtenerCandidatoPorId");
         $router->get('obtenerCandidatosPorIdCliente/{id}',"CandidatoController@obtenerCandidatosPorIdCliente");
         $router->get("eliminarCandidato/{id}","CandidatoController@eliminarCandidato");
+        $router->post("actualizarCandidato","CandidatoController@actualizarCandidato");
     });
 });
