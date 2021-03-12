@@ -36,6 +36,10 @@ class Controller extends BaseController
     }
     public function getSigId($nombre_tabla){
         $utlimo_id = DB::table($nombre_tabla)->latest("id")->first();
-        return intval($utlimo_id->id)+1;
+        if($utlimo_id){
+            return intval($utlimo_id->id)+1;
+        }else{
+            return 1;
+        }
     }
 }

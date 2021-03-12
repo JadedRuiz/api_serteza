@@ -32,5 +32,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
         $router->post('altaCandidato','CandidatoController@altaCandidato');
+        $router->get('obtenerCandidatos',"CandidatoController@obtenerCandidatos");
+        $router->get('obtenerCandidatoPorId/{id}',"CandidatoController@obtenerCandidatoPorId");
+        $router->get('obtenerCandidatosPorIdCliente/{id}',"CandidatoController@obtenerCandidatosPorIdCliente");
+        $router->get("eliminarCandidato/{id}","CandidatoController@eliminarCandidato");
     });
 });

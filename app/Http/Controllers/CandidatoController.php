@@ -19,9 +19,9 @@ class CandidatoController extends Controller
         //
     }
     public function obtenerDatosDashBoard(){
-        $usuario_totales = count(Candidato::all());
-        $usuarios_contratatos = count(Candidato::where("cat_status_id",1)->get());
-        $usuarios_por_contratar = count(Candidato::where("cat_status_id",2)->get());
+        $usuario_totales = count(Candidato::where("activo",1)->get());
+        $usuarios_contratatos = count(Candidato::where("cat_status_id",1)->where("activo",1)->get());
+        $usuarios_por_contratar = count(Candidato::where("cat_status_id",6)->where("activo",1)->get());
         $numero_solicitudes = 0; //Aun no se como sacarlo
         $respuesta = [
             "num_solicitudes" => $numero_solicitudes,
@@ -31,7 +31,45 @@ class CandidatoController extends Controller
         ];
         return $this->crearRespuesta(1,$respuesta,200);
     }
-
+    public function obtenerCandidatos(){
+        return Candidato::all();
+    }
+    public function obtenerCandidatosPorIdCliente($id){
+        $validador = Candidato::where("cat_clientes_id",$id)
+        ->where("activo",1)
+        ->orderBy("nombre","ASC")
+        ->get();
+        if(count($validador)>0){
+            return $this->crearRespuesta(1,$validador,200);
+        }else{
+            return $this->crearRespuesta(2,"Ha ocurrido un error",301);
+        }
+    }
+    public function obtenerCandidatoPorId($id){
+        $respuesta = DB::table("rh_cat_candidatos as rcc")
+        ->select("rcc.id", "rcc.cat_fotografia_id", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension","gce.estatus")
+        ->join("gen_cat_direcciones as gcd","gcd.id","=","rcc.cat_direccion_id")
+        ->join("gen_cat_estatus as gce","gce.id","=","rcc.cat_status_id")
+        ->where("rcc.id",$id)
+        ->where("rcc.activo",1)
+        ->get();
+        if(count($respuesta)>0){
+            $fotografia = DB::table("gen_cat_fotografias")
+            ->where("id",$respuesta[0]->cat_fotografia_id)
+            ->get();
+            if(count($fotografia)>0){
+                $respuesta[0]->fotografia = $fotografia[0]->fotografia;
+                $respuesta[0]->extension = $fotografia[0]->extension;
+            }else{
+                $respuesta[0]->fotografia = "";
+                $respuesta[0]->extension = "";
+            }
+            return $this->crearRespuesta(1,$respuesta,200);
+        }else{
+            return $this->crearRespuesta(2,"El usuario no ha sido encontrado",200);
+        }
+        
+    }
     public function altaCandidato(Request $request){
         //validate incoming request 
         $this->validate($request, [
@@ -40,9 +78,17 @@ class CandidatoController extends Controller
             'apellido_materno' => 'required|max:150',
         ]);
         try{
+        //insertar fotografia
+        if($request["fotografia"]["docB64"] != ""){
+            $id_fotografia = $this->getSigId("gen_cat_fotografias");
+            DB::insert('insert into gen_cat_fotografias
+            (id,nombre, fotografia) values (?, ?, ?)',
+            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"]]);
+        }
         //Insertar dirección
+            $id_direccion = $this->getSigId("gen_cat_direcciones");
             $direccion = new Direccion;
-            $direccion->id = $this->getSigId("gen_cat_direcciones");
+            $direccion->id = $id_direccion;
             $direccion->calle = $request["direccion"]["calle"];
             $direccion->numero_interior = $request["direccion"]["numero_interior"];
             $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
@@ -54,15 +100,17 @@ class CandidatoController extends Controller
             $direccion->municipio = $request["direccion"]["municipio"];
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->fecha_creacion = $this->getHoraFechaActual();
+            $direccion->cat_usuario_c_id = 1;
+            $direccion->activo = 1;
             $direccion->save();
-            $id_direccion = $this->getSigId("gen_cat_direcciones");
         //Insertar candidato
         
             $canditado = new Candidato;
             $canditado->id = $this->getSigId("rh_cat_candidatos");
             $canditado->cat_status_id = 6;  //En reclutamiento
             $canditado->cat_clientes_id = $request["id_cliente"];
-            $canditado->cat_fotografia_id = null;
+            $canditado->cat_fotografia_id = $id_fotografia;
             $canditado->cat_direccion_id = $id_direccion;
             $canditado->nombre = $request["nombre"];
             $canditado->apellido_paterno = $request["apellido_paterno"];
@@ -80,12 +128,13 @@ class CandidatoController extends Controller
             $canditado->cat_usuario_c_id = 1;
             $canditado->activo = 1;
             $canditado->save();
-            return $this->crearRespuesta(1,"Everything ok",200);
+            return $this->crearRespuesta(1,"El candidato registrado correctamente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function pruebaOtro(){
-        return $this->crearRespuesta(1,"Everything ok",200);
+    public function eliminarCandidato($id){
+        $data = DB::update('update rh_cat_candidatos set activo = 0 where id = ?',[$id]);
+        return $this->crearRespuesta(1,"Candidato Eliminado",200);
     }
 }
