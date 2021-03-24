@@ -16,10 +16,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
 
     $router->group(['prefix' => 'empresa'], function () use ($router) {
-        $router->get('obtenerEmpresas/{sistema_id}/{token}',[    //Obtener empresas por id_usuario_sistema
-            'middleware' => 'auth',
-            'uses' => 'EmpresaController@obtenerEmpresa']
-        ); 
+        $router->get('obtenerEmpresas/{sistema_id}','EmpresaController@obtenerEmpresa');
+        $router->get('obtenerEmpresaPorId/{id}','EmpresaController@obtenerEmpresaPorId'); 
+        $router->post('altaEmpresa','EmpresaController@altaEmpresa');
+        $router->get("bajaEmpresa/{id}","EmpresaController@bajaEmpresa");
+        $router->post("actualizarEmpresa","EmpresaController@actualizarEmpresa");
     });
 
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
@@ -28,7 +29,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
             'uses' => 'ClienteController@obtenerClientes']
         ); 
     });
-
+    
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
         $router->post('altaCandidato','CandidatoController@altaCandidato');

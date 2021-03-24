@@ -36,10 +36,14 @@ class CandidatoController extends Controller
     }
     public function obtenerCandidatosPorIdCliente($id){
         $validador = Candidato::where("cat_clientes_id",$id)
+        ->select("nombre","apellido_paterno","apellido_materno","id")
         ->where("activo",1)
-        ->orderBy("nombre","ASC")
+        ->orderBy("apellido_paterno","ASC")
         ->get();
         if(count($validador)>0){
+            foreach($validador as $canditado){
+                $canditado->nombre = $canditado->apellido_paterno." ".$canditado->apellido_materno." ".$canditado->nombre;
+            }
             return $this->crearRespuesta(1,$validador,200);
         }else{
             return $this->crearRespuesta(2,"Ha ocurrido un error",301);
@@ -79,12 +83,10 @@ class CandidatoController extends Controller
         ]);
         try{
         //insertar fotografia
-        if($request["fotografia"]["docB64"] != ""){
-            $id_fotografia = $this->getSigId("gen_cat_fotografias");
-            DB::insert('insert into gen_cat_fotografias
-            (id,nombre, fotografia) values (?, ?, ?)',
-            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"]]);
-        }
+        $id_fotografia = $this->getSigId("gen_cat_fotografias");
+        DB::insert('insert into gen_cat_fotografias
+        (id,nombre, fotografia, extension) values (?, ?, ?, ?)',
+        [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"]]);
         //Insertar dirección
             $id_direccion = $this->getSigId("gen_cat_direcciones");
             $direccion = new Direccion;
@@ -109,12 +111,12 @@ class CandidatoController extends Controller
             $canditado = new Candidato;
             $canditado->id = $this->getSigId("rh_cat_candidatos");
             $canditado->cat_status_id = 6;  //En reclutamiento
-            $canditado->cat_clientes_id = $request["id_cliente"];
+            $canditado->cat_clientes_id = $request["cat_clientes_id"];
             $canditado->cat_fotografia_id = $id_fotografia;
             $canditado->cat_direccion_id = $id_direccion;
-            $canditado->nombre = $request["nombre"];
-            $canditado->apellido_paterno = $request["apellido_paterno"];
-            $canditado->apellido_materno = $request["apellido_materno"];
+            $canditado->nombre = strtoupper($request["nombre"]);
+            $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
+            $canditado->apellido_materno = strtoupper($request["apellido_materno"]);
             $canditado->rfc = $request["rfc"];
             $canditado->curp = $request["curp"];
             $canditado->numero_seguro = $request["numero_social"];

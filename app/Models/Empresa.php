@@ -11,14 +11,17 @@ class Empresa extends Model {
      *
      * @var array
      */
+    const UPDATED_AT = null;
+    const CREATED_AT = null;
     protected $table = 'gen_cat_empresas';
     protected $fillable = [
         'id', 
         'direccion_id', 
+        'fotografia_id',
         'estatus_id', 
         'empresa', 
         'rfc', 
-        'curp', 
+        'descripcion', 
         'razon_social', 
         'fecha_creacion', 
         'fecha_modificacion', 
