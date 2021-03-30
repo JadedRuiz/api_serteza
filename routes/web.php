@@ -24,10 +24,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
 
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
-        $router->get('obtenerClientes/{usuario_empresa_id}/{token}',[    //Obtener clientes por usuario_empresa_id
-            'middleware' => 'auth',
-            'uses' => 'ClienteController@obtenerClientes']
-        ); 
+        $router->get('obtenerClientes/{usuario_sistema_id}','ClienteController@obtenerClientes'); 
+        $router->get('obtenerClientesPorId/{id}','ClienteController@obtenerClientesPorId');
+        $router->post("altaCliente","ClienteController@altaCliente");
+        $router->post("actualizarCliente","ClienteController@actualizarCliente");
+        $router->get("eliminarCliente/{id}","ClienteController@eliminarCliente");
     });
     
     $router->group(['prefix' => 'candidato'], function () use ($router) {

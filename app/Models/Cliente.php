@@ -11,11 +11,14 @@ class Cliente extends Model {
      *
      * @var array
      */
+    const UPDATED_AT = null;
+    const CREATED_AT = null;
     protected $table = 'gen_cat_cliente';
     protected $fillable = [
         'id', 
         'cliente', 
-        'contacto', 
+        'contacto',
+        'descripcion', 
         'direccion_id', 
         'fecha_creacion', 
         'fecha_modificacion', 

@@ -47,8 +47,11 @@ class EmpresaController extends Controller
                 $empresa->fotografia = $fotografia[0]->fotografia;
                 $empresa->extension = $fotografia[0]->extension;
             }else{
-                $empresa->fotografia = "";
-                $empresa->extension = "";
+                $fotografia = DB::table("gen_cat_fotografias")
+                ->where("nombre","empresa_default")
+                ->get();
+                $empresa->fotografia = $fotografia[0]->fotografia;
+                $empresa->extension = $fotografia[0]->extension;
             }
             return $this->crearRespuesta(1,$empresa,200);
         }else{
