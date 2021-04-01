@@ -40,4 +40,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("eliminarCandidato/{id}","CandidatoController@eliminarCandidato");
         $router->post("actualizarCandidato","CandidatoController@actualizarCandidato");
     });
+    $router->group(['prefix' => 'departamento'], function () use ($router) {
+        $router->get('obtenerDepartamentos/{cat_empresa_id}',"DepartamentoController@obtenerDepartamentos");
+        $router->get('obtenerDepartamentoPorId/{id}',"DepartamentoController@obtenerDepartamentoPorId");
+        $router->post('altaDepartamento',"DepartamentoController@altaDepartamento");
+        $router->post('actualizarDepartamento',"DepartamentoController@actualizarDepartamento");
+        $router->get('bajaDepartamento/{id}',"DepartamentoController@bajaDepartamento");
+    });
+    $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
+    });
 });
