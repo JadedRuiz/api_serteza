@@ -13,7 +13,8 @@ class Direccion extends Model {
      */
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'gen_cat_direcciones';
+    protected $table = 'cat_direccion';
+    protected $primaryKey = "id_direccion";
     protected $fillable = [
         'id', 
         'calle', 

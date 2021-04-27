@@ -46,7 +46,7 @@ class CandidatoController extends Controller
             }
             return $this->crearRespuesta(1,$validador,200);
         }else{
-            return $this->crearRespuesta(2,"Ha ocurrido un error",301);
+            return $this->crearRespuesta(2,"No se han encontrado candidatos",200);
         }
     }
     public function obtenerCandidatoPorId($id){

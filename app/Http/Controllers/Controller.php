@@ -35,11 +35,21 @@ class Controller extends BaseController
         return env($nombre,"");
     }
     public function getSigId($nombre_tabla){
-        $utlimo_id = DB::table($nombre_tabla)->latest("id")->first();
-        if($utlimo_id){
-            return intval($utlimo_id->id)+1;
-        }else{
-            return 1;
+        $bol = true;
+        $utlimo = DB::table($nombre_tabla)
+        ->get();
+        if(count($utlimo) > 0){
+                $utlimo = $utlimo->last();
+                $id = "";
+                foreach($utlimo as $parametro){
+                        if($bol){
+                                $id = $parametro;
+                                $bol = false;
+                        }
+                }
+                return $id+1;
+        }elseif(count($utlimo) == 0){
+                return 1;
         }
     }
 }
