@@ -19,18 +19,50 @@ class EmpresaController extends Controller
         //
     }
 
-    public function obtenerEmpresa($sistema_id){
-        $empresas = DB::table("liga_usuario_empresa as lue")
-        ->join("gen_cat_empresas as gce","gce.id","=","lue.cat_empresas_id")
-        ->select("gce.id","gce.empresa")
-        ->where("lue.usuario_sistemas_id",$sistema_id)
-        ->where("lue.activo",1)
-        ->where("gce.activo",1)
-        ->get();
-        if(count($empresas)>0){
-            return $this->crearRespuesta(1,$empresas,200);
+    public function obtenerEmpresas(Request $request){
+        $take = $res["taken"];
+        $pagina = $res["pagina"];
+        $status = $res["status"];
+        $palabra = $res["palabra"];
+        $otro = "";
+        if($status == "2"){
+            $otro = "!=";
+            $status = 2;
+        }
+        if($status == "1"){
+            $status = 1;
+            $otro = "=";
+        }
+        if($status == "0"){
+            $status = 0;
+            $otro = "=";
+        }
+        if($palabra == ""){
+            $otro_dos = "!=";
+            $palabra = "";
         }else{
-            return $this->crearRespuesta(2,"No se han encontrado empresas configuradas en su usuario",200);
+            $otro_dos = "like";
+            $palabra = "%".$palabra."%";
+        }
+        $incia = intval($pagina) * intval($take);
+        $registros = DB::table('cat_empresa')
+        ->where("id_status",$otro,$status)
+        ->where("empresa",$otro_dos,$palabra)
+        ->skip($incia)
+        ->take($take)
+        ->get();
+        $contar = DB::table('cat_empresa')
+        ->where("id_status",$otro,$status)
+        ->where("empresa",$otro_dos,$palabra)
+        ->get();
+        if(count($registros)>0){
+            $respuesta = [
+                "total" => count($contar),
+                "registros" => $registros
+            ];
+            return $this->crearRespuesta(1,$respuesta,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay usuario que mostrar",200);
         }
     }
     public function obtenerEmpresaPorId($id){
