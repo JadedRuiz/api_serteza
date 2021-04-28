@@ -78,6 +78,18 @@ class ClienteController extends Controller
             return $this->crearRespuesta(2,"No se ha encontrado el cliente",301);
         }
     }
+    public function obtenerClientePorIdUsuario($id_usuario)
+    {
+        $clientes_configuradas = DB::table('liga_usuario_cliente as lue')
+        ->join("cat_cliente","cat_cliente.id_cliente","lue.id_cliente")
+        ->where("id_usuario",$id_usuario)
+        ->get();
+        if(count($clientes_configuradas)>0){
+            return $this->crearRespuesta(1,$clientes_configuradas,200);
+        }else{
+            return $this->crearRespuesta(2,"No se tienen configurado clientes para este usuario",200);
+        }
+    }
     function altaCliente(Request $request){
         $this->validate($request, [
             'cliente' => 'required|string|max:150',
@@ -165,5 +177,24 @@ class ClienteController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
         
+    }
+    public function asignarClienteAUsuario(Request $request){
+        try{
+            $id_clientes = $request["id_cliente"];
+            $id_usuario = $request["id_usuario"];
+            foreach($id_clientes as $id_cliente){
+                $validar = DB::table('liga_usuario_cliente')
+                ->where("id_cliente",$id_cliente)
+                ->where("id_usuario",$id_usuario)
+                ->get();
+                if(count($validar) == 0){
+                    $id_liga = $this->getSigId("liga_usuario_cliente");
+                    DB::insert('insert into liga_usuario_cliente (id_usuario_cliente, id_usuario, id_cliente, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_usuario,$id_cliente,$this->getHoraFechaActual(),$request["usuario_creacion"],1]);
+                }
+            }
+            return $this->crearRespuesta(1,"Se han agreado las empresas al usuario",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
     }
 }

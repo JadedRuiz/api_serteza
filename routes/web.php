@@ -17,11 +17,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
 
     $router->group(['prefix' => 'empresa'], function () use ($router) {
-        $router->get('obtenerEmpresas/{sistema_id}','EmpresaController@obtenerEmpresa');         //Obtener empresas
+        $router->post('obtenerEmpresas','EmpresaController@obtenerEmpresas');         //Obtener empresas
         $router->get('obtenerEmpresaPorId/{id}','EmpresaController@obtenerEmpresaPorId');        //Obtener empresas por Id
         $router->post('altaEmpresa','EmpresaController@altaEmpresa');
         $router->get("bajaEmpresa/{id}","EmpresaController@bajaEmpresa");
         $router->post("actualizarEmpresa","EmpresaController@actualizarEmpresa");
+        $router->get("obtenerEmpresaPorIdUsuario/{id_usuario}","EmpresaController@obtenerEmpresaPorIdUsuario");
+        $router->post("asignarEmpresaAUsuario","EmpresaController@asignarEmpresaAUsuario");
     });
 
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
@@ -30,6 +32,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("altaCliente","ClienteController@altaCliente");
         $router->post("actualizarCliente","ClienteController@actualizarCliente");
         $router->get("eliminarCliente/{id}","ClienteController@eliminarCliente");
+        $router->get("obtenerClientePorIdUsuario/{id_usuario}","ClienteController@obtenerClientePorIdUsuario");
+        $router->post("asignarClienteAUsuario","ClienteController@asignarClienteAUsuario");
     });
     
     $router->group(['prefix' => 'candidato'], function () use ($router) {

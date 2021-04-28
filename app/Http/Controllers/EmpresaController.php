@@ -19,7 +19,7 @@ class EmpresaController extends Controller
         //
     }
 
-    public function obtenerEmpresas(Request $request){
+    public function obtenerEmpresas(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
         $status = $res["status"];
@@ -62,51 +62,61 @@ class EmpresaController extends Controller
             ];
             return $this->crearRespuesta(1,$respuesta,200);
         }else{
-            return $this->crearRespuesta(2,"No hay usuario que mostrar",200);
+            return $this->crearRespuesta(2,"No hay empresas que mostrar",200);
         }
     }
     public function obtenerEmpresaPorId($id){
-        $empresa = DB::table("gen_cat_empresas as gce")
-        ->select("gce.id","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id as id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.fotografia_id")
-        ->join("gen_cat_direcciones as gcd","gcd.id","=","gce.direccion_id")
-        ->where("gce.id",$id)
-        ->first();
-        if($empresa){
-            $fotografia = DB::table("gen_cat_fotografias")
-            ->where("id",$empresa->fotografia_id)
+        $empresa = DB::table("cat_empresa as gce")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo")
+        ->join("cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
+        ->where("gce.id_empresa",$id)
+        ->get();
+        if(count($empresa)>0){
+            $fotografia = DB::table("cat_fotografia")
+            ->where("id_fotografia",$empresa[0]->id_fotografia)
             ->get();
             if(count($fotografia)>0){
-                $empresa->fotografia = $fotografia[0]->fotografia;
-                $empresa->extension = $fotografia[0]->extension;
+                $empresa[0]->fotografia = $fotografia[0]->fotografia;
+                $empresa[0]->extension = $fotografia[0]->extension;
             }else{
-                $fotografia = DB::table("gen_cat_fotografias")
-                ->where("nombre","empresa_default")
-                ->get();
-                $empresa->fotografia = $fotografia[0]->fotografia;
-                $empresa->extension = $fotografia[0]->extension;
+                $empresa[0]->fotografia = "";
+                $empresa[0]->extension = "";
             }
             return $this->crearRespuesta(1,$empresa,200);
         }else{
             return $this->crearRespuesta(2,"No se ha encontrado la empresa",301);
         }
     }
+    public function obtenerEmpresaPorIdUsuario($id_usuario)
+    {
+        $empresas_configuradas = DB::table('liga_usuario_empresa as lue')
+        ->join("cat_empresa","cat_empresa.id_empresa","lue.id_empresa")
+        ->where("id_usuario",$id_usuario)
+        ->get();
+        if(count($empresas_configuradas)>0){
+            return $this->crearRespuesta(1,$empresas_configuradas,200);
+        }else{
+            return $this->crearRespuesta(2,"No se tienen configurado empresas para este usuario",200);
+        }
+    }
     public function altaEmpresa(Request $request){
         //validate incoming request 
         $this->validate($request, [
-            'empresa' => 'required|string|max:300|unique:gen_cat_empresas',
+            'empresa' => 'required|string|max:300|unique:cat_empresa',
             'razon_social' => 'required|max:300',
-            'rfc' => 'required|max:150|unique:gen_cat_empresas',
+            'rfc' => 'required|max:150|unique:cat_empresa',
         ]);
         try{
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("gen_cat_fotografias");
-            DB::insert('insert into gen_cat_fotografias
-            (id,nombre, fotografia, extension) values (?, ?, ?, ?)',
-            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"]]);
+            $id_fotografia = $this->getSigId("cat_fotografia");
+            $fecha = $this->getHoraFechaActual();;
+            DB::insert('insert into cat_fotografia
+            (id_fotografia, nombre, fotografia, extension, fecha_creacion, usuario_creacion) values (?, ?, ?, ?, ?, ?)',
+            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"]]);
             //Insertar dirección
-            $id_direccion = $this->getSigId("gen_cat_direcciones");
+            $id_direccion = $this->getSigId("cat_direccion");
             $direccion = new Direccion;
-            $direccion->id = $id_direccion;
+            $direccion->id_direccion = $id_direccion;
             $direccion->calle = $request["direccion"]["calle"];
             $direccion->numero_interior = $request["direccion"]["numero_interior"];
             $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
@@ -118,28 +128,25 @@ class EmpresaController extends Controller
             $direccion->municipio = $request["direccion"]["municipio"];
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
-            $direccion->fecha_creacion = $this->getHoraFechaActual();
-            $direccion->cat_usuario_c_id = 1;
-            $direccion->activo = 1;
+            $direccion->fecha_creacion = $fecha;
+            $direccion->usuario_creacion = $request["usuario"];
+            $direccion->activo = $request["activo"];
             $direccion->save();
             //Insertar Empresa
-            $id_empresa = $this->getSigId("gen_cat_empresas");
+            $id_empresa = $this->getSigId("cat_empresa");
             $empresa = new Empresa();
-            $empresa->id = $id_empresa;
-            $empresa->estatus_id = 1;
-            $empresa->direccion_id = $id_direccion;
-            $empresa->fotografia_id = $id_fotografia;
+            $empresa->id_empresa = $id_empresa;
+            $empresa->id_status = $request["id_statu"];
+            $empresa->id_direccion = $id_direccion;
+            $empresa->id_fotografia = $id_fotografia;
             $empresa->empresa = $request["empresa"];
             $empresa->razon_social = $request["razon_social"];
             $empresa->rfc = $request["rfc"];
             $empresa->descripcion = $request["descripcion"];
-            $empresa->fecha_creacion = $this->getHoraFechaActual();
-            $empresa->cat_usuario_c_id = $request["usuario_sistema_id"];
-            $empresa->activo = 1;
+            $empresa->fecha_creacion = $fecha;
+            $empresa->usuario_creacion = $request["usuario_creacion"];
+            $empresa->activo = $request["activo"];
             $empresa->save();
-            //Insertar union usuario-empresa
-            $id_liga = $this->getSigId("liga_usuario_empresa");
-            DB::insert('insert into liga_usuario_empresa (id, usuario_sistemas_id, cat_empresas_id, fecha_creacion, cat_usuario_c_id, activo) values (?,?,?,?,?,?)', [$id_liga,$request["cat_usuario_id"],$id_empresa,$this->getHoraFechaActual(),$request["usuario_sistema_id"],1]);
             return $this->crearRespuesta(1,"El candidato ha sido registrado correctamente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
@@ -152,11 +159,14 @@ class EmpresaController extends Controller
     public function actualizarEmpresa(Request $request){
         try{
             //Actualizar empresa
-            $empresa = Empresa::find($request["id"]);
+            $fecha = $this->getHoraFechaActual();
+            $empresa = Empresa::find($request["id_empresa"]);
             $empresa->empresa = $request["empresa"];
             $empresa->razon_social = $request["razon_social"];
             $empresa->rfc = $request["rfc"];
             $empresa->descripcion = $request["descripcion"];
+            $empresa->fecha_modificacion = $fecha;
+            $empresa->usuario_modificacion = $request["usuario_creacion"];
             $empresa->save();
             //Actualizar direccion
             $direccion = Direccion::find($request["direccion"]["id_direccion"]);
@@ -171,12 +181,31 @@ class EmpresaController extends Controller
             $direccion->municipio = $request["direccion"]["municipio"];
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
-            $direccion->fecha_modificacion = $this->getHoraFechaActual();
-            $direccion->cat_usuario_m_id = 1;
+            $direccion->fecha_modificacion = $fecha;
+            $direccion->usuario_modificacion = $request["usuario_creacion"];
             $direccion->save();
             //Actualizar foto
-            DB::update('update gen_cat_fotografias set fotografia = ?, extension = ? where id = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
+            DB::update('update cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function asignarEmpresaAUsuario(Request $request){
+        try{
+            $id_empresas = $request["id_empresa"];
+            $id_usuario = $request["id_usuario"];
+            foreach($id_empresas as $id_empresa){
+                $validar = DB::table('liga_usuario_empresa')
+                ->where("id_empresa",$id_empresa)
+                ->where("id_usuario",$id_usuario)
+                ->get();
+                if(count($validar) == 0){
+                    $id_liga = $this->getSigId("liga_usuario_empresa");
+                    DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_usuario,$id_empresa,$this->getHoraFechaActual(),$request["usuario_creacion"],1]);
+                }
+            }
+            return $this->crearRespuesta(1,"Se han agreado las empresas al usuario",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }

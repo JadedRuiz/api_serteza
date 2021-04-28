@@ -14,12 +14,12 @@ class Empresa extends Model {
     const UPDATED_AT = null;
     const CREATED_AT = null;
     protected $primaryKey = "id_empresa";
-    protected $table = 'cat_empresa ';
+    protected $table = 'cat_empresa';
     protected $fillable = [
         'id', 
         'id_direccion', 
         'id_fotografia',
-        'id_estatus', 
+        'id_status', 
         'empresa', 
         'rfc', 
         'descripcion', 
