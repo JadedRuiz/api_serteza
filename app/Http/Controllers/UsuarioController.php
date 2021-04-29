@@ -190,7 +190,7 @@ class UsuarioController extends Controller
             return response()->json(['message' => 'Las credenciales no son validas, intente de nuevo'], 401);
         }
         $usuario = DB::table("cat_usuario")
-        ->select("id_usuario","nombre","usuario")
+        ->select("id_usuario","nombre","usuario","activo")
         ->where("usuario",$res["usuario"])
         ->get();
         if(intVal($usuario[0]->activo) == 0){

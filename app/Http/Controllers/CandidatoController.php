@@ -31,8 +31,66 @@ class CandidatoController extends Controller
         ];
         return $this->crearRespuesta(1,$respuesta,200);
     }
-    public function obtenerCandidatos(){
-        return Candidato::all();
+    public function obtenerCandidatos(Request $res){
+        $take = $res["taken"];
+        $pagina = $res["pagina"];
+        $status = $res["status"];
+        $palabra = $res["palabra"];
+        $id_cliente = $res["id_cliente"];
+        $otro = "";
+        if($status == "2"){
+            $otro = "!=";
+            $status = 2;
+        }
+        if($status == "1"){
+            $status = 1;
+            $otro = "=";
+        }
+        if($status == "0"){
+            $status = 0;
+            $otro = "=";
+        }
+        if($palabra == ""){
+            $otro_dos = "!=";
+            $palabra = "";
+        }else{
+            $otro_dos = "like";
+            $palabra = "%".$palabra."%";
+        }
+        $incia = intval($pagina) * intval($take);
+        $registros = DB::table('cat_candidato as cc')
+        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo")
+        ->join("cat_statu as cs","cs.id_statu","=","cc.id_status")
+        ->where("cc.id_cliente",$id_cliente)
+        ->where("cc.activo",1)
+        ->where("cc.id_status",$otro,$status)
+        ->where(function ($query) use ($otro_dos,$palabra){
+            $query->where("cc.nombre",$otro_dos,$palabra)
+                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
+                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
+        })
+        ->skip($incia)
+        ->take($take)
+        ->get();
+        $contar = DB::table('cat_candidato as cc')
+        ->where("cc.id_cliente",$id_cliente)
+        ->where("cc.activo",1)
+        ->where("cc.id_status",$otro,$status)
+        ->where(function ($query) use ($otro_dos,$palabra){
+            $query->where("cc.nombre",$otro_dos,$palabra)
+                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
+                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
+        })
+        ->get();
+        if(count($registros)>0){
+            $respuesta = [
+                "total" => count($contar),
+                "registros" => $registros
+            ];
+            return $this->crearRespuesta(1,$respuesta,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay empresas que mostrar",200);
+        }
     }
     public function obtenerCandidatosPorIdCliente($id){
         $validador = Candidato::where("cat_clientes_id",$id)
@@ -82,15 +140,17 @@ class CandidatoController extends Controller
             'apellido_materno' => 'required|max:150',
         ]);
         try{
+        $fecha = $this->getHoraFechaActual();
+        $usuario_creacion = $request["usuario_creacion"];
         //insertar fotografia
-        $id_fotografia = $this->getSigId("gen_cat_fotografias");
-        DB::insert('insert into gen_cat_fotografias
-        (id,nombre, fotografia, extension) values (?, ?, ?, ?)',
-        [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"]]);
+        $id_fotografia = $this->getSigId("cat_fotografia");
+        DB::insert('insert into cat_fotografia
+        (id_fotografia,nombre, fotografia, extension, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?, ?)',
+        [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$usuario_creacion,1]);
         //Insertar dirección
-            $id_direccion = $this->getSigId("gen_cat_direcciones");
+            $id_direccion = $this->getSigId("cat_direccion");
             $direccion = new Direccion;
-            $direccion->id = $id_direccion;
+            $direccion->id_direccion = $id_direccion;
             $direccion->calle = $request["direccion"]["calle"];
             $direccion->numero_interior = $request["direccion"]["numero_interior"];
             $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
@@ -102,18 +162,18 @@ class CandidatoController extends Controller
             $direccion->municipio = $request["direccion"]["municipio"];
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
-            $direccion->fecha_creacion = $this->getHoraFechaActual();
-            $direccion->cat_usuario_c_id = 1;
+            $direccion->fecha_creacion = $fecha;
+            $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = 1;
             $direccion->save();
         //Insertar candidato
         
             $canditado = new Candidato;
-            $canditado->id = $this->getSigId("rh_cat_candidatos");
-            $canditado->cat_status_id = 6;  //En reclutamiento
-            $canditado->cat_clientes_id = $request["cat_clientes_id"];
-            $canditado->cat_fotografia_id = $id_fotografia;
-            $canditado->cat_direccion_id = $id_direccion;
+            $canditado->id_candidato = $this->getSigId("cat_candidato");
+            $canditado->id_status = 6;  //En reclutamiento
+            $canditado->id_cliente = $request["id_cliente"];
+            $canditado->id_fotografia = $id_fotografia;
+            $canditado->id_direccion = $id_direccion;
             $canditado->nombre = strtoupper($request["nombre"]);
             $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
             $canditado->apellido_materno = strtoupper($request["apellido_materno"]);
@@ -126,8 +186,8 @@ class CandidatoController extends Controller
             $canditado->telefono_dos =$request["telefono_dos"];
             $canditado->telefono_tres =$request["telefono_tres"];
             $canditado->descripcion = $request["descripcion"];
-            $canditado->fecha_creacion = $this->getHoraFechaActual();
-            $canditado->cat_usuario_c_id = 1;
+            $canditado->fecha_creacion = $fecha;
+            $canditado->usuario_creacion = $usuario_creacion;
             $canditado->activo = 1;
             $canditado->save();
             return $this->crearRespuesta(1,"El candidato ha sido registrado correctamente",200);

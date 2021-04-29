@@ -83,6 +83,7 @@ class ClienteController extends Controller
         $clientes_configuradas = DB::table('liga_usuario_cliente as lue')
         ->join("cat_cliente","cat_cliente.id_cliente","lue.id_cliente")
         ->where("id_usuario",$id_usuario)
+        ->where("lue.activo",1)
         ->get();
         if(count($clientes_configuradas)>0){
             return $this->crearRespuesta(1,$clientes_configuradas,200);
@@ -190,9 +191,26 @@ class ClienteController extends Controller
                 if(count($validar) == 0){
                     $id_liga = $this->getSigId("liga_usuario_cliente");
                     DB::insert('insert into liga_usuario_cliente (id_usuario_cliente, id_usuario, id_cliente, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_usuario,$id_cliente,$this->getHoraFechaActual(),$request["usuario_creacion"],1]);
+                }else{
+                    if($validar[0]->activo == 0){
+                        DB::update('update liga_usuario_cliente set activo = 1 where id_usuario_cliente = ?', [$validar[0]->id_usuario_cliente]);
+                    }
                 }
             }
             return $this->crearRespuesta(1,"Se han agreado las empresas al usuario",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function elimiminarLiga(Request $res)
+    {
+        $id_cliente = $res["id_cliente"];
+        $id_usuario = $res["id_usuario"];
+        $usuario_modificacion = $res["usuario_creacion"];
+        $fecha = $this->getHoraFechaActual();
+        try{
+            DB::update('update liga_usuario_cliente set activo = 0, fecha_modificacion = ?, usuario_modificacion = ? where id_cliente = ? and id_usuario = ?', [$fecha,$usuario_modificacion,$id_cliente,$id_usuario]);
+            return $this->crearRespuesta(1,"Se ha eliminado el cliente al usuario",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }

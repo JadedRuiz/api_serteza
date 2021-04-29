@@ -24,6 +24,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("actualizarEmpresa","EmpresaController@actualizarEmpresa");
         $router->get("obtenerEmpresaPorIdUsuario/{id_usuario}","EmpresaController@obtenerEmpresaPorIdUsuario");
         $router->post("asignarEmpresaAUsuario","EmpresaController@asignarEmpresaAUsuario");
+        $router->post("elimiminarLiga","EmpresaController@elimiminarLiga");
     });
 
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
@@ -34,12 +35,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("eliminarCliente/{id}","ClienteController@eliminarCliente");
         $router->get("obtenerClientePorIdUsuario/{id_usuario}","ClienteController@obtenerClientePorIdUsuario");
         $router->post("asignarClienteAUsuario","ClienteController@asignarClienteAUsuario");
+        $router->post("elimiminarLiga","ClienteController@elimiminarLiga");
     });
     
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
         $router->post('altaCandidato','CandidatoController@altaCandidato');
-        $router->get('obtenerCandidatos',"CandidatoController@obtenerCandidatos");
+        $router->post('obtenerCandidatos',"CandidatoController@obtenerCandidatos");
         $router->get('obtenerCandidatoPorId/{id}',"CandidatoController@obtenerCandidatoPorId");
         $router->get('obtenerCandidatosPorIdCliente/{id}',"CandidatoController@obtenerCandidatosPorIdCliente");
         $router->get("eliminarCandidato/{id}","CandidatoController@eliminarCandidato");

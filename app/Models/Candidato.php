@@ -13,13 +13,13 @@ class Candidato extends Model {
      */
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'rh_cat_candidatos';
+    protected $table = 'cat_candidato';
+    protected $primaryKey = "id_candidato";
     protected $fillable = [
-        'id',
-        'cat_status_id',
-        'cat_clientes_id',
-        'cat_fotografia_id',
-        'cat_direccion_id',
+        'id_status',
+        'id_cliente',
+        'id_fotografia',
+        'id_direccion',
         'apellido_paterno',
         'apellid_materno',
         'nombre',
@@ -27,6 +27,7 @@ class Candidato extends Model {
         'curp',
         'numero_seguro',
         'fecha_nacimiento',
+        'edad',
         'correo',
         'telefono',
         'telefono_dos',
