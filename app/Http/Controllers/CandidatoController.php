@@ -38,13 +38,12 @@ class CandidatoController extends Controller
         $palabra = $res["palabra"];
         $id_cliente = $res["id_cliente"];
         $otro = "";
-        if($status == "2"){
+        if($status == "-1"){
             $otro = "!=";
-            $status = 2;
-        }
-        if($status == "1"){
-            $status = 1;
+            $status = -1;
+        }else{
             $otro = "=";
+            $status = intval($status);
         }
         if($status == "0"){
             $status = 0;
@@ -108,16 +107,16 @@ class CandidatoController extends Controller
         }
     }
     public function obtenerCandidatoPorId($id){
-        $respuesta = DB::table("rh_cat_candidatos as rcc")
-        ->select("rcc.id", "rcc.cat_fotografia_id", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id as id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension","gce.estatus")
-        ->join("gen_cat_direcciones as gcd","gcd.id","=","rcc.cat_direccion_id")
-        ->join("gen_cat_estatus as gce","gce.id","=","rcc.cat_status_id")
-        ->where("rcc.id",$id)
+        $respuesta = DB::table("cat_candidato as rcc")
+        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension","gce.status")
+        ->join("cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
+        ->join("cat_statu as gce","gce.id_statu","=","rcc.id_status")
+        ->where("rcc.id_candidato",$id)
         ->where("rcc.activo",1)
         ->get();
         if(count($respuesta)>0){
-            $fotografia = DB::table("gen_cat_fotografias")
-            ->where("id",$respuesta[0]->cat_fotografia_id)
+            $fotografia = DB::table("cat_fotografia")
+            ->where("id_fotografia",$respuesta[0]->id_fotografia)
             ->get();
             if(count($fotografia)>0){
                 $respuesta[0]->fotografia = $fotografia[0]->fotografia;
@@ -170,7 +169,7 @@ class CandidatoController extends Controller
         
             $canditado = new Candidato;
             $canditado->id_candidato = $this->getSigId("cat_candidato");
-            $canditado->id_status = 6;  //En reclutamiento
+            $canditado->id_status = $request["id_statu"];  //En reclutamiento
             $canditado->id_cliente = $request["id_cliente"];
             $canditado->id_fotografia = $id_fotografia;
             $canditado->id_direccion = $id_direccion;
@@ -183,6 +182,7 @@ class CandidatoController extends Controller
             $canditado->fecha_nacimiento = $request["fecha_nacimiento"];
             $canditado->correo = $request["correo"];
             $canditado->telefono =$request["telefono"];
+            $canditado->edad = $request["edad"];
             $canditado->telefono_dos =$request["telefono_dos"];
             $canditado->telefono_tres =$request["telefono_tres"];
             $canditado->descripcion = $request["descripcion"];
@@ -196,45 +196,54 @@ class CandidatoController extends Controller
         }
     }
     public function eliminarCandidato($id){
-        $data = DB::update('update rh_cat_candidatos set activo = 0 where id = ?',[$id]);
+        $data = DB::update('update cat_candidato set activo = 0 where id_candidato = ?',[$id]);
         return $this->crearRespuesta(1,"Candidato Eliminado",200);
     }
     public function actualizarCandidato(Request $request){
-        //Actualizar candidato
-        $canditado = Candidato::find($request["id"]);
-        $canditado->nombre = $request["nombre"];
-        $canditado->apellido_paterno = $request["apellido_paterno"];
-        $canditado->apellido_materno = $request["apellido_materno"];
-        $canditado->rfc = $request["rfc"];
-        $canditado->curp = $request["curp"];
-        $canditado->numero_seguro = $request["numero_social"];
-        $canditado->fecha_nacimiento = $request["fecha_nacimiento"];
-        $canditado->correo = $request["correo"];
-        $canditado->telefono =$request["telefono"];
-        $canditado->telefono_dos =$request["telefono_dos"];
-        $canditado->telefono_tres =$request["telefono_tres"];
-        $canditado->descripcion = $request["descripcion"];
-        $canditado->fecha_modificacion = $this->getHoraFechaActual();
-        $canditado->cat_usuario_m_id = 1;
-        $canditado->save();
-        //Actualizar direccion
-        $direccion = Direccion::find($request["direccion"]["id_direccion"]);
-        $direccion->calle = $request["direccion"]["calle"];
-        $direccion->numero_interior = $request["direccion"]["numero_interior"];
-        $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
-        $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
-        $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
-        $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-        $direccion->colonia = $request["direccion"]["colonia"];
-        $direccion->localidad = $request["direccion"]["localidad"];
-        $direccion->municipio = $request["direccion"]["municipio"];
-        $direccion->estado = $request["direccion"]["estado"];
-        $direccion->descripcion = $request["direccion"]["descripcion"];
-        $direccion->fecha_modificacion = $this->getHoraFechaActual();
-        $direccion->cat_usuario_m_id = 1;
-        $direccion->save();
-        //Actualizar foto
-        DB::update('update gen_cat_fotografias set fotografia = ?, extension = ? where id = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
-        return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
+        try{
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            //Actualizar candidato
+            $canditado = Candidato::find($request["id_candidato"]);
+            $canditado->id_status = $request["id_statu"];  //En reclutamiento
+            $canditado->nombre = strtoupper($request["nombre"]);
+            $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
+            $canditado->apellido_materno = strtoupper($request["apellido_materno"]);
+            $canditado->rfc = $request["rfc"];
+            $canditado->curp = $request["curp"];
+            $canditado->numero_seguro = $request["numero_social"];
+            $canditado->fecha_nacimiento = $request["fecha_nacimiento"];
+            $canditado->correo = $request["correo"];
+            $canditado->telefono =$request["telefono"];
+            $canditado->edad = $request["edad"];
+            $canditado->telefono_dos =$request["telefono_dos"];
+            $canditado->telefono_tres =$request["telefono_tres"];
+            $canditado->descripcion = $request["descripcion"];
+            $canditado->fecha_modificacion = $fecha;
+            $canditado->usuario_modificacion = $usuario_creacion;
+            $canditado->activo = 1;
+            $canditado->save();
+            //Actualizar direccion
+            $direccion = Direccion::find($request["direccion"]["id_direccion"]);
+            $direccion->calle = $request["direccion"]["calle"];
+            $direccion->numero_interior = $request["direccion"]["numero_interior"];
+            $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
+            $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
+            $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
+            $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
+            $direccion->colonia = $request["direccion"]["colonia"];
+            $direccion->localidad = $request["direccion"]["localidad"];
+            $direccion->municipio = $request["direccion"]["municipio"];
+            $direccion->estado = $request["direccion"]["estado"];
+            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->fecha_modificacion = $fecha;
+            $direccion->usuario_modificacion = $usuario_creacion;
+            $direccion->save();
+            //Actualizar foto
+            DB::update('update cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
+            return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
     }
 }
