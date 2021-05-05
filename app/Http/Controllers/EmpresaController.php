@@ -228,4 +228,29 @@ class EmpresaController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+    public function ligarClienteAEmpresa(Request $request)
+    {
+        try{
+            $id_empresa = $request["id_empresa"];
+            $id_clientes = $request["id_cliente"];
+            $usuario_creacion = $request["usuario_creacion"];
+            foreach($id_clientes as $id_cliente){
+                $validar = DB::table('liga_empresa_cliente')
+                ->where("id_empresa",$id_empresa)
+                ->where("id_cliente",$id_cliente)
+                ->get();
+                if(count($validar) == 0){
+                    $id_liga = $this->getSigId("liga_empresa_cliente");
+                    DB::insert('insert into liga_empresa_cliente (id_empresa_cliente, id_cliente, id_empresa, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_cliente,$id_empresa,$this->getHoraFechaActual(),$usuario_creacion,1]);
+                }else{
+                    if($validar[0]->activo == 0){
+                        DB::update('update liga_empresa_cliente set activo = 1 where id_empresa_cliente = ?', [$validar[0]->id_empresa_cliente]);
+                    }
+                }
+            }
+            return $this->crearRespuesta(1,"Se han agreado el cliente a la empresa",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
 }

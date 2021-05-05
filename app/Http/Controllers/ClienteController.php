@@ -78,6 +78,18 @@ class ClienteController extends Controller
             return $this->crearRespuesta(2,"No se ha encontrado el cliente",301);
         }
     }
+    public function obtenerClientesPorIdEmpresa($id_empresa)
+    {
+        $clientes = DB::table('liga_empresa_cliente as lec')
+        ->join("cat_cliente as cc","cc.id_cliente","=","lec.id_cliente")
+        ->where("id_empresa",$id_empresa)
+        ->get();
+        if(count($clientes)>0){
+            return $this->crearRespuesta(1,$clientes,200);
+        }else{
+            return $this->crearRespuesta(2,"No se tienen configurado clientes para esta empresa",200);
+        }
+    }
     public function obtenerClientePorIdUsuario($id_usuario)
     {
         $clientes_configuradas = DB::table('liga_usuario_cliente as lue')
