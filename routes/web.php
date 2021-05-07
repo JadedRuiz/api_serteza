@@ -52,14 +52,14 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->group(['prefix' => 'puesto'], function () use ($router) {  
         $router->get("getPuestosPorIdEmpresa/{id_empresa}","PuestoController@getPuestosPorIdEmpresa");
+        $router->get('eliminarPuesto/{id_puesto}',"PuestoController@eliminarPuesto");
     });
 
     $router->group(['prefix' => 'departamento'], function () use ($router) {
-        $router->get('obtenerDepartamentos/{cat_empresa_id}',"DepartamentoController@obtenerDepartamentos");
-        $router->get('obtenerDepartamentoPorId/{id}',"DepartamentoController@obtenerDepartamentoPorId");
+        $router->post('obtenerDepartamentos',"DepartamentoController@obtenerDepartamentos");
+        $router->get('obtenerDepartamentoPorId/{id_departamento}',"DepartamentoController@obtenerDepartamentoPorIdDepartamento");
         $router->post('altaDepartamento',"DepartamentoController@altaDepartamento");
         $router->post('actualizarDepartamento',"DepartamentoController@actualizarDepartamento");
-        $router->get('bajaDepartamento/{id}',"DepartamentoController@bajaDepartamento");
     });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
