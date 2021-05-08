@@ -41,15 +41,21 @@ class UsuarioController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
+        $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
+        ->join("cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
+        ->where("id_sistema",5)
+        ->first();
         $registros = DB::table('cat_usuario')
         ->where("activo",$otro,$status)
         ->where("usuario",$otro_dos,$palabra)
+        ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
         ->skip($incia)
         ->take($take)
         ->get();
         $contar = DB::table('cat_usuario')
         ->where("activo",$otro,$status)
         ->where("usuario",$otro_dos,$palabra)
+        ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
         ->get();
         if(count($registros)>0){
             $respuesta = [
@@ -86,6 +92,7 @@ class UsuarioController extends Controller
     public function obtenerSistemas(){
         return DB::table('cat_sistemas')
         ->where("activo",1)
+        ->where("id_sistema","!=",5)
         ->get();
     }
     public function altaUsuario(Request $request)
