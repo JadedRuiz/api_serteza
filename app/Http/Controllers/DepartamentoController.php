@@ -19,6 +19,7 @@ class DepartamentoController extends Controller
         $pagina = $res["pagina"];
         $status = $res["status"];
         $palabra = $res["palabra"];
+        $id_empresa = $res["id_empresa"];
         $otro = "";
         if($status == "2"){
             $otro = "!=";
@@ -40,15 +41,19 @@ class DepartamentoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_departamento')
-        ->where("activo",$otro,$status)
-        ->where("departamento",$otro_dos,$palabra)
+        $registros = DB::table('cat_departamento cd')
+        ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+        ->where("led.activo",$otro,$status)
+        ->where("cd.departamento",$otro_dos,$palabra)
+        ->where("led.id_empresa",$id_empresa)
         ->skip($incia)
         ->take($take)
         ->get();
         $contar = DB::table('cat_departamento')
-        ->where("activo",$otro,$status)
-        ->where("departamento",$otro_dos,$palabra)
+        ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+        ->where("led.activo",$otro,$status)
+        ->where("cd.departamento",$otro_dos,$palabra)
+        ->where("led.id_empresa",$id_empresa)
         ->get();
         if(count($registros)>0){
             $respuesta = [
