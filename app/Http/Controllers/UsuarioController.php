@@ -74,6 +74,7 @@ class UsuarioController extends Controller
         ->where("id_usuario",$id_usuario)
         ->get();
         if(count($validar)>0){
+            $validar[0]->password = $this->decode_json($validar[0]->password);
             $sistemas = DB::table('liga_usuario_sistema as lus')
             ->select("cs.sistema","cs.id_sistema")
             ->join("cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
@@ -107,22 +108,22 @@ class UsuarioController extends Controller
         try {
             
             $user = new Usuario;
-            $user->nombre = $request->input('nombre');
+            $activo = $request->input('activo');
+            $id_usuario = $this->getSigId("cat_usuario");
+            $user->id_usuario = $id_usuario; 
+            $user->nombre = strtoupper($request->input('nombre'));
             $user->usuario = $request->input('usuario');
             $plainPassword = $request->input('password');
-            $user->password = app('hash')->make($plainPassword);
+            $user->password = $this->encode_json($plainPassword);
             $user->fecha_creacion = $this->getHoraFechaActual();
             $user->usuario_creacion = $request->input('usuario_creacion');
-            $user->activo = $request->input('activo');
+            $user->activo = $activo;
             $id_usuario = $this->getSigId("cat_usuario","id_usuario");
             $user->save();
 
             $sistemas = $request->input("sistemas");
             foreach($sistemas as $sistema){
-                $validar = $this->ligarUsuarioSistema($sistema,$id_usuario,$request->input("usuario_creacion"));    
-                if(!$validar["ok"]){
-                    return $this->crearRespuesta(2,$validar["message"],301);
-                }
+                $validar = $this->ligarUsuarioSistema($sistema,$id_usuario,$request->input("usuario_creacion"),$activo);    
             }
             //return successful response
             return $this->crearRespuesta(1,"Usuario registrado con éxito",200);
@@ -142,6 +143,7 @@ class UsuarioController extends Controller
             $user = Usuario::find($id_usuario);
             $user->nombre = $request->input('nombre');
             $user->usuario = $request->input('usuario');
+            $user->password = $this->encode_json($request->input("password"));
             $user->fecha_modificacion = $fecha;
             $user->usuario_modificacion = $request->input('usuario_creacion');
             $user->activo = $activo;
@@ -168,12 +170,13 @@ class UsuarioController extends Controller
     {
         $fecha = $this->getHoraFechaActual();
         try{
+            $id_liga = $this->getSigId("liga_usuario_sistema");
             $validar = DB::table('liga_usuario_sistema')
             ->where("id_sistema",$id_sistema)
             ->where("id_usuario",$id_usuario)
             ->get();
             if(count($validar)==0){
-                DB::insert('insert into liga_usuario_sistema (id_usuario, id_sistema, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_usuario, $id_sistema, $fecha, $usuario, $activo]);
+                DB::insert('insert into liga_usuario_sistema (id_usuario_sistema, id_usuario, id_sistema, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_usuario, $id_sistema, $fecha, $usuario, $activo]);
                 return ["ok" => true];
             }else{
                 return ["ok" => false,"message" => $validar[0]->id_usuario_sistema];
@@ -188,18 +191,11 @@ class UsuarioController extends Controller
             "usuario" => "string|required|max:50",
             "password" => "string|required|max:50"
         ]);
-        $credentials = array(
-            'usuario' => $res["usuario"], 
-            'password' => $res["password"]
-        );
-        
-        if (! $token = Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Las credenciales no son validas, intente de nuevo'], 401);
+        $validar = $this->validarSesion($res["usuario"],$res["password"]);
+        if (!$validar["ok"]) {
+            return response()->json(['message' => $validar["message"]], 401);
         }
-        $usuario = DB::table("cat_usuario")
-        ->select("id_usuario","nombre","usuario","activo")
-        ->where("usuario",$res["usuario"])
-        ->get();
+        $usuario = $validar["usuario"];
         if(intVal($usuario[0]->activo) == 0){
             return $this->crearRespuesta(2,"El usuario se encuentra desactivado",200);
         }
@@ -217,7 +213,6 @@ class UsuarioController extends Controller
             ]);
         }
         $respuesta = [
-            "token_acesso" => $this->respondWithToken($token),
             "info_usuario" => [
                 "id" => $usuario[0]->id_usuario,
                 "nombre" => $usuario[0]->nombre,
@@ -227,6 +222,22 @@ class UsuarioController extends Controller
             ]
         ];
         return $this->crearRespuesta(1,$respuesta,200);
+    }
+    public function validarSesion($usuario,$password)
+    {
+        $validar = DB::table('cat_usuario')
+        ->where("usuario",$usuario)
+        ->get();
+        if(count($validar)>0){
+            $password_decode = $this->decode_json($validar[0]->password);
+            if($password_decode == $password){
+                return ["ok"=> true,"usuario"=>$validar];
+            }else{
+                return ["ok"=> false,"message"=> "La contraseña ingresada no coincide con el usuario"];
+            }
+        }else{
+            return ["ok"=> false,"message" => "El usuario ".$usuario." no existe o fue mal ingresado, intente de nuevo"];
+        }
     }
 
 }
