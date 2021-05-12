@@ -67,6 +67,27 @@ class UsuarioController extends Controller
             return $this->crearRespuesta(2,"No hay usuario que mostrar",200);
         }
     }
+    public function obtenerUsuariosDeEntidad($id_entidad,$tipo_entidad)
+    {
+        $usuarios = "";
+        if($tipo_entidad == 1){         //Es una entidad de tipo empresa
+            $usuarios = DB::table('cat_usuario as cu')
+            ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
+            ->where("lue.id_empresa",$id_empresa)
+            ->get();
+        }
+        if($tipo_entidad == 2){
+            $usuarios = DB::table('cat_usuario as cu')
+            ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
+            ->where("luc.id_cliente",$id_empresa)
+            ->get();
+        }
+        if(count($usuarios)>0){
+            return $this->crearRespuesta(1,$usuarios,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay usuarios que mostrar",200);
+        }
+    }
     public function obtenerUsuarioPorId($id_usuario)
     {
         $validar = DB::table('cat_usuario')
