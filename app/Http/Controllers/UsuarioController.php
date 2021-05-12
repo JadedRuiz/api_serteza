@@ -70,6 +70,7 @@ class UsuarioController extends Controller
     public function obtenerUsuariosDeEntidad(Request $res)
     {
         $usuarios = "";
+        $contar = 0;
         $take = $res["taken"];
         $pagina = $res["pagina"];
         $status = $res["status"];
@@ -111,6 +112,13 @@ class UsuarioController extends Controller
             ->skip($incia)
             ->take($take)
             ->get();
+            $contar = DB::table('cat_usuario as cu')
+            ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
+            ->where("cu.activo",$otro,$status)
+            ->where("cu.usuario",$otro_dos,$palabra)
+            ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
+            ->where("lue.id_empresa",$id_entidad)
+            ->count();
         }
         if($tipo_entidad == 2){
             $usuarios = DB::table('cat_usuario as cu')
@@ -119,7 +127,16 @@ class UsuarioController extends Controller
             ->where("cu.usuario",$otro_dos,$palabra)
             ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("luc.id_cliente",$id_entidad)
+            ->skip($incia)
+            ->take($take)
             ->get();
+            $usuarios = DB::table('cat_usuario as cu')
+            ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
+            ->where("cu.activo",$otro,$status)
+            ->where("cu.usuario",$otro_dos,$palabra)
+            ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
+            ->where("luc.id_cliente",$id_entidad)
+            ->count();
         }
         if(count($usuarios)>0){
             $respuesta = [
