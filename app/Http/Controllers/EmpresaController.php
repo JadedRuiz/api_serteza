@@ -206,7 +206,7 @@ class EmpresaController extends Controller
                     DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_usuario,$id_empresa,$this->getHoraFechaActual(),$request["usuario_creacion"],1]);
                 }else{
                     if($validar[0]->activo == 0){
-                        DB::update('update liga_usuario_cliente set activo = 1 where id_usuario_empresa = ?', [$validar[0]->id_usuario_empresa]);
+                        DB::update('update liga_usuario_empresa set activo = 1 where id_usuario_empresa = ?', [$validar[0]->id_usuario_empresa]);
                     }
                 }
             }
