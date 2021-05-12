@@ -70,15 +70,21 @@ class UsuarioController extends Controller
     public function obtenerUsuariosDeEntidad($id_entidad,$tipo_entidad)
     {
         $usuarios = "";
+        $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
+        ->join("cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
+        ->where("id_sistema",5)
+        ->first();
         if($tipo_entidad == 1){         //Es una entidad de tipo empresa
             $usuarios = DB::table('cat_usuario as cu')
             ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
+            ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("lue.id_empresa",$id_entidad)
             ->get();
         }
         if($tipo_entidad == 2){
             $usuarios = DB::table('cat_usuario as cu')
             ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
+            ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("luc.id_cliente",$id_entidad)
             ->get();
         }
