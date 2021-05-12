@@ -118,6 +118,7 @@ class UsuarioController extends Controller
             ->where("cu.usuario",$otro_dos,$palabra)
             ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("lue.id_empresa",$id_entidad)
+            ->get()
             ->count();
         }
         if($tipo_entidad == 2){
@@ -130,12 +131,13 @@ class UsuarioController extends Controller
             ->skip($incia)
             ->take($take)
             ->get();
-            $usuarios = DB::table('cat_usuario as cu')
+            $contar = DB::table('cat_usuario as cu')
             ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
             ->where("cu.activo",$otro,$status)
             ->where("cu.usuario",$otro_dos,$palabra)
             ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("luc.id_cliente",$id_entidad)
+            ->get()
             ->count();
         }
         if(count($usuarios)>0){
