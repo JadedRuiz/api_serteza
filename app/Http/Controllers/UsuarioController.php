@@ -67,9 +67,35 @@ class UsuarioController extends Controller
             return $this->crearRespuesta(2,"No hay usuario que mostrar",200);
         }
     }
-    public function obtenerUsuariosDeEntidad($id_entidad,$tipo_entidad)
+    public function obtenerUsuariosDeEntidad(Request $res)
     {
         $usuarios = "";
+        $take = $res["taken"];
+        $pagina = $res["pagina"];
+        $status = $res["status"];
+        $palabra = $res["palabra"];
+        $id_entidad = $res["id_entidad"];
+        $tipo_entidad == $res["tipo_entidad"];
+        $otro = "";
+        if($status == "2"){
+            $otro = "!=";
+            $status = 2;
+        }
+        if($status == "1"){
+            $status = 1;
+            $otro = "=";
+        }
+        if($status == "0"){
+            $status = 0;
+            $otro = "=";
+        }
+        if($palabra == ""){
+            $otro_dos = "!=";
+            $palabra = "";
+        }else{
+            $otro_dos = "like";
+            $palabra = "%".$palabra."%";
+        }
         $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
         ->join("cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
         ->where("id_sistema",5)
@@ -77,18 +103,28 @@ class UsuarioController extends Controller
         if($tipo_entidad == 1){         //Es una entidad de tipo empresa
             $usuarios = DB::table('cat_usuario as cu')
             ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
-            ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
+            ->where("cu.activo",$otro,$status)
+            ->where("cu.usuario",$otro_dos,$palabra)
+            ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("lue.id_empresa",$id_entidad)
+            ->skip($incia)
+            ->take($take)
             ->get();
         }
         if($tipo_entidad == 2){
             $usuarios = DB::table('cat_usuario as cu')
             ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
-            ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
+            ->where("cu.activo",$otro,$status)
+            ->where("cu.usuario",$otro_dos,$palabra)
+            ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
             ->where("luc.id_cliente",$id_entidad)
             ->get();
         }
         if(count($usuarios)>0){
+            $respuesta = [
+                "total" => count($contar),
+                "registros" => $usuarios
+            ];
             return $this->crearRespuesta(1,$usuarios,200);
         }else{
             return $this->crearRespuesta(2,"No hay usuarios que mostrar",200);
