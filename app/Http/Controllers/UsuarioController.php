@@ -145,7 +145,7 @@ class UsuarioController extends Controller
                 "total" => $contar,
                 "registros" => $usuarios
             ];
-            return $this->crearRespuesta(1,$usuarios,200);
+            return $this->crearRespuesta(1,$respuesta,200);
         }else{
             return $this->crearRespuesta(2,"No hay usuarios que mostrar",200);
         }
