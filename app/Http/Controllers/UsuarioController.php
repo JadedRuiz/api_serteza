@@ -73,13 +73,13 @@ class UsuarioController extends Controller
         if($tipo_entidad == 1){         //Es una entidad de tipo empresa
             $usuarios = DB::table('cat_usuario as cu')
             ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
-            ->where("lue.id_empresa",$id_empresa)
+            ->where("lue.id_empresa",$id_entidad)
             ->get();
         }
         if($tipo_entidad == 2){
             $usuarios = DB::table('cat_usuario as cu')
             ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
-            ->where("luc.id_cliente",$id_empresa)
+            ->where("luc.id_cliente",$id_entidad)
             ->get();
         }
         if(count($usuarios)>0){
