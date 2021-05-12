@@ -96,6 +96,7 @@ class UsuarioController extends Controller
             $otro_dos = "like";
             $palabra = "%".$palabra."%";
         }
+        $incia = intval($pagina) * intval($take);
         $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
         ->join("cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
         ->where("id_sistema",5)
