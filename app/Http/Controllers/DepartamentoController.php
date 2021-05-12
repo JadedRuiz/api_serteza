@@ -88,6 +88,8 @@ class DepartamentoController extends Controller
     }
     public function altaDepartamento(Request $request){
         try{
+            $fecha = $this->getHoraFechaActual();
+            $id_empresa = $request["id_empresa"];
             //Alta departamento
             $id_departamento = $this->getSigId("cat_departamento");
             $departamento = new Departamento;
@@ -95,7 +97,7 @@ class DepartamentoController extends Controller
             $departamento->departamento = $request["departamento"];
             $departamento->disponibilidad = $request["disponibilidad"];
             $departamento->descripcion = $request["descripcion"];
-            $departamento->fecha_creacion = $this->getHoraFechaActual();
+            $departamento->fecha_creacion = $fecha;
             $departamento->usuario_creacion = $request["usuario_creacion"];
             $departamento->activo = $request["activo"];
             $departamento->save();
@@ -109,11 +111,14 @@ class DepartamentoController extends Controller
                 $puesto_clase->puesto = $puesto["puesto"];
                 $puesto_clase->disponibilidad = $puesto["disponibilidad"];
                 $puesto_clase->descripcion = $puesto["descripcion"];
-                $puesto_clase->fecha_creacion = $this->getHoraFechaActual();
+                $puesto_clase->fecha_creacion = $fecha;
                 $puesto_clase->usuario_creacion = $request["usuario_creacion"];
                 $puesto_clase->activo = 1;
                 $puesto_clase->save();
             }
+            //Ligar departamento con empresa
+            $id_empresa_departamento = $this->getSigId("liga_empresa_departamento");
+            DB::insert('insert into liga_empresa_departamento (id_empresa_departamento, id_empresa, id_departamento, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_empresa_departamento, $id_empresa, $id_departamento, $fecha, $request["usuario_creacion"], 1]);
             return $this->crearRespuesta(1,"Departamento registrado",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
