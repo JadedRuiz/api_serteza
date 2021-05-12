@@ -41,7 +41,7 @@ class DepartamentoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_departamento cd')
+        $registros = DB::table('cat_departamento as cd')
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
@@ -49,7 +49,7 @@ class DepartamentoController extends Controller
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_departamento')
+        $contar = DB::table('cat_departamento as cd')
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
