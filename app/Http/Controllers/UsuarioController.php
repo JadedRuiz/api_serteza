@@ -75,7 +75,7 @@ class UsuarioController extends Controller
         $status = $res["status"];
         $palabra = $res["palabra"];
         $id_entidad = $res["id_entidad"];
-        $tipo_entidad == $res["tipo_entidad"];
+        $tipo_entidad = $res["tipo_entidad"];
         $otro = "";
         if($status == "2"){
             $otro = "!=";
