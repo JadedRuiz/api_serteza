@@ -142,7 +142,7 @@ class UsuarioController extends Controller
         }
         if(count($usuarios)>0){
             $respuesta = [
-                "total" => count($contar),
+                "total" => $contar,
                 "registros" => $usuarios
             ];
             return $this->crearRespuesta(1,$usuarios,200);
