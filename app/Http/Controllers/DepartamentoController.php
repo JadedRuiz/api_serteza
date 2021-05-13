@@ -41,6 +41,7 @@ class DepartamentoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
+        return DB::table('liga_empresa_departamento')->get();
         $registros = DB::table('cat_departamento as cd')
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
