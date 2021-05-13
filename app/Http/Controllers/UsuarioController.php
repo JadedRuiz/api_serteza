@@ -214,7 +214,7 @@ class UsuarioController extends Controller
             $user->fecha_creacion = $this->getHoraFechaActual();
             $user->usuario_creacion = $request->input('usuario_creacion');
             $user->activo = $activo;
-            $id_usuario = $this->getSigId("cat_usuario","id_usuario");
+            $id_usuario = $this->getSigId("cat_usuario");
             $user->save();
 
             $sistemas = $request->input("sistemas");
@@ -227,7 +227,47 @@ class UsuarioController extends Controller
         } catch (\Throwable $th) {
             return $this->crearRespuesta(2,"Ha ocurrido un error: ".$th->getMessage(),301);
         }
+    }
+    public function altaUsuarioAdmin(Request $request)
+    {
+        //validate incoming request 
+        $this->validate($request, [
+            'nombre' => 'required|string|max:100',
+            'usuario' => 'required|unique:cat_usuario|max:50',
+            'password' => 'required|max:50',
+        ]);
 
+        try {
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion =  $request->input('usuario_creacion');
+            $id_empresa = $request->input('id_empresa');
+            $user = new Usuario;
+            $activo = $request->input('activo');
+            $id_usuario = $this->getSigId("cat_usuario");
+            $user->id_usuario = $id_usuario; 
+            $user->nombre = strtoupper($request->input('nombre'));
+            $user->usuario = $request->input('usuario');
+            $plainPassword = $request->input('password');
+            $user->password = $this->encode_json($plainPassword);
+            $user->fecha_creacion = $fecha;
+            $user->usuario_creacion = $usuario_creacion;
+            $user->activo = $activo;
+            $id_usuario = $this->getSigId("cat_usuario");
+            $user->save();
+
+            $sistemas = $request->input("sistemas");
+            foreach($sistemas as $sistema){
+                $validar = $this->ligarUsuarioSistema($sistema,$id_usuario,$request->input("usuario_creacion"),$activo);    
+            }
+            //Dar de alta a usuario de empresa
+            $id_usuario_empresa = $this->getSigId("liga_usuario_empresa");
+            DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_usuario_empresa, $id_usuario, $id_empresa, $fecha, $usuario, 1]);
+            
+            return $this->crearRespuesta(1,"Usuario registrado con éxito",200);
+
+        } catch (\Throwable $th) {
+            return $this->crearRespuesta(2,"Ha ocurrido un error: ".$th->getMessage(),301);
+        }
     }
     public function modificarUsuario(Request $request)
     {
