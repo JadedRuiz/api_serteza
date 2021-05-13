@@ -12,6 +12,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('login', 'UsuarioController@login');                                       //Login del usuario
         $router->post('usuarios', 'UsuarioController@obtenerUsuarios');                           //Obtener todos los usuarios
         $router->get('obtenerSistemas', 'UsuarioController@obtenerSistemas');
+        $router->get('obtenerSistemasAdmin/{id_usuario}', 'UsuarioController@obtenerSistemasAdmin');
         $router->get('obtenerUsuarioPorId/{id_usuario}', 'UsuarioController@obtenerUsuarioPorId');
         $router->post('obtenerUsuariosDeEntidad', 'UsuarioController@obtenerUsuariosDeEntidad');
         $router->post('modificarUsuario', 'UsuarioController@modificarUsuario');   

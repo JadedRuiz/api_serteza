@@ -179,6 +179,18 @@ class UsuarioController extends Controller
         ->where("id_sistema","!=",5)
         ->get();
     }
+    public function obtenerSistemasAdmin($id_usuario)
+    {
+        $sistemas = DB::table('liga_usuario_sistema as lus')
+        ->join("cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
+        ->where("id_usuario",$id_usuario)
+        ->get();
+        if(count($sistemas)>0){
+            return $this->crearRespuesta(1,$sistema,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay sistemas que mostrar",200);
+        }
+    }
     public function altaUsuario(Request $request)
     {
         //validate incoming request 
