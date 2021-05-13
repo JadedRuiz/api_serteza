@@ -186,7 +186,7 @@ class UsuarioController extends Controller
         ->where("id_usuario",$id_usuario)
         ->get();
         if(count($sistemas)>0){
-            return $this->crearRespuesta(1,$sistema,200);
+            return $this->crearRespuesta(1,$sistemas,200);
         }else{
             return $this->crearRespuesta(2,"No hay sistemas que mostrar",200);
         }
