@@ -184,6 +184,7 @@ class UsuarioController extends Controller
         $sistemas = DB::table('liga_usuario_sistema as lus')
         ->join("cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
         ->where("id_usuario",$id_usuario)
+        ->where("lus.activo",1)
         ->get();
         if(count($sistemas)>0){
             return $this->crearRespuesta(1,$sistemas,200);
