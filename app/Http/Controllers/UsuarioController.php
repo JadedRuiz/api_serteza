@@ -202,11 +202,18 @@ class UsuarioController extends Controller
         ]);
 
         try {
-            
+            //Insertar fotografia
+            $id_fotografia = $this->getSigId("cat_fotografia");
+            $fecha = $this->getHoraFechaActual();;
+            DB::insert('insert into cat_fotografia
+            (id_fotografia, nombre, fotografia, extension, fecha_creacion, usuario_creacion) values (?, ?, ?, ?, ?, ?)',
+            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"]]);
+            //Nuevo usuario
             $user = new Usuario;
             $activo = $request->input('activo');
             $id_usuario = $this->getSigId("cat_usuario");
             $user->id_usuario = $id_usuario; 
+            $user->id_fotografia = $id_fotografia;
             $user->nombre = strtoupper($request->input('nombre'));
             $user->usuario = $request->input('usuario');
             $plainPassword = $request->input('password');
