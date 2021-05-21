@@ -18,7 +18,7 @@ class Usuario extends Model implements AuthenticatableContract, AuthorizableCont
     protected $table = 'cat_usuario';
     protected $primaryKey = "id_usuario";
     protected $fillable = [
-        'nombre', 'password', 'usuario','fecha_creacion','fecha_modificacion','usuario_creacion','usuario_modificacion','activo'
+        'id_fotografia','nombre', 'password', 'usuario','fecha_creacion','fecha_modificacion','usuario_creacion','usuario_modificacion','activo'
     ];
 
     /**
