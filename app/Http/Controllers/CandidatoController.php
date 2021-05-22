@@ -88,7 +88,7 @@ class CandidatoController extends Controller
             ];
             return $this->crearRespuesta(1,$respuesta,200);
         }else{
-            return $this->crearRespuesta(2,"No hay empresas que mostrar",200);
+            return $this->crearRespuesta(2,"No hay candidatos que mostrar",200);
         }
     }
     public function obtenerCandidatosPorIdCliente($id){

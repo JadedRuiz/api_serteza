@@ -253,4 +253,18 @@ class EmpresaController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+
+    public function obtenerEmpresasPorIdCliente($id_cliente)     
+    {
+        $empresas = DB::table('liga_empresa_cliente as lec')
+        ->select("lec.id_empresa_cliente","ce.empresa")
+        ->join("cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
+        ->where("lec.id_cliente",$id_cliente)
+        ->get();
+        if(count($empresas)>0){
+            return $this->crearRespuesta(1,$empresas,200);
+        }else{
+            return $this->crearRespuesta(2,"No se tiene congifurados empresas a este cliente",200);
+        }
+    }
 }
