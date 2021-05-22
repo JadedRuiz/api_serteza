@@ -29,6 +29,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("asignarEmpresaAUsuario","EmpresaController@asignarEmpresaAUsuario");
         $router->post("elimiminarLiga","EmpresaController@elimiminarLiga");
         $router->post("ligarClienteAEmpresa","EmpresaController@ligarClienteAEmpresa");
+        $router->get("obtenerEmpresasPorIdCliente/{id_cliente}","EmpresaController@obtenerEmpresasPorIdCliente");
     });
 
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
@@ -56,6 +57,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'puesto'], function () use ($router) {  
         $router->get("getPuestosPorIdEmpresa/{id_empresa}","PuestoController@getPuestosPorIdEmpresa");
         $router->get('eliminarPuesto/{id_puesto}',"PuestoController@eliminarPuesto");
+        $router->get("obtenerPuestosPorIdDepartamento/{id_departamento}","PuestoController@obtenerPuestosPorIdDepartamento");
     });
 
     $router->group(['prefix' => 'departamento'], function () use ($router) {

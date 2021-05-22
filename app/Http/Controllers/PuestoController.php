@@ -24,7 +24,16 @@ class PuestoController extends Controller
         if(count($puestos)>0){
             return $this->crearRespuesta(1,$puestos,200);
         }else{
-            return $this->crearRespuesta(2,"No hay empresas que mostrar",200);
+            return $this->crearRespuesta(2,"No hay puestos que mostrar",200);
+        }
+    }
+    public function obtenerPuestosPorIdDepartamento($id_departamento)
+    {
+        $puestos = Puesto::where("id_departamento",$id_departamento)->get();
+        if(count($puestos)>0){
+            return $this->crearRespuesta(1,$puestos,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay puestos que mostrar",200);
         }
     }
     public function eliminarPuesto($id_puesto){
