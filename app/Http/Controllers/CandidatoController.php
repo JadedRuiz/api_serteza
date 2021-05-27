@@ -58,7 +58,7 @@ class CandidatoController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $registros = DB::table('cat_candidato as cc')
-        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo")
+        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo","cc.id_fotografia as fotografia","cc.id_fotografia as extension")
         ->join("cat_statu as cs","cs.id_statu","=","cc.id_status")
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
@@ -71,6 +71,18 @@ class CandidatoController extends Controller
         ->skip($incia)
         ->take($take)
         ->get();
+        foreach($registros as $registro){
+            $fotografia = DB::table('cat_fotografia')
+            ->where("id_fotografia",$registro->fotografia)
+            ->get();
+            if(count($fotografia)>0){
+                $registro->fotografia = $fotografia[0]->fotografia;
+                $registro->extension = $fotografia[0]->extension;
+            }else{
+                $registro->fotografia = "";
+            }
+            
+        }
         $contar = DB::table('cat_candidato as cc')
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
