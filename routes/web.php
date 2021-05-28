@@ -66,6 +66,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('altaDepartamento',"DepartamentoController@altaDepartamento");
         $router->post('actualizarDepartamento',"DepartamentoController@actualizarDepartamento");
     });
+    $router->group(['prefix' => "contratacion"], function () use ($router){
+        $router->post('altaMovContratacion','ContratoController@altaMovContrato');
+    });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
 });
