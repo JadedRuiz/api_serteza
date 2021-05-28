@@ -71,17 +71,19 @@ class CandidatoController extends Controller
         ->skip($incia)
         ->take($take)
         ->get();
-        foreach($registros as $registro){
-            $fotografia = DB::table('cat_fotografia')
-            ->where("id_fotografia",$registro->fotografia)
-            ->get();
-            if(count($fotografia)>0){
-                $registro->fotografia = $fotografia[0]->fotografia;
-                $registro->extension = $fotografia[0]->extension;
-            }else{
-                $registro->fotografia = "";
+        if(isset($res["tipo"]) && $res["tipo"] == 1){
+            foreach($registros as $registro){
+                $fotografia = DB::table('cat_fotografia')
+                ->where("id_fotografia",$registro->fotografia)
+                ->get();
+                if(count($fotografia)>0){
+                    $registro->fotografia = $fotografia[0]->fotografia;
+                    $registro->extension = $fotografia[0]->extension;
+                }else{
+                    $registro->fotografia = "";
+                }
+                
             }
-            
         }
         $contar = DB::table('cat_candidato as cc')
         ->where("cc.id_cliente",$id_cliente)
