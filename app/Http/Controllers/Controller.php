@@ -47,7 +47,7 @@ class Controller extends BaseController
                                 $bol = false;
                         }
                 }
-                return $id+1;
+                return (intval($id)+1);
         }elseif(count($utlimo) == 0){
                 return 1;
         }
@@ -85,6 +85,15 @@ class Controller extends BaseController
         $letras = $this->convert1toInvers($longitud_1er) . $this->convert1toInvers($longitud_2do);
         $letra_rand = $this->convertAto1($rand);
         return $letra_rand.$cabecera.$cabecera_cola.$letras.$cola_cola;
+    }
+    public function cambiarDeEstatus($id_candidato,$id_status)
+    {
+        try{
+            DB::update('update cat_candidato set id_status = ? where id_candidato = ?', [$id_status,$id_candidato]);
+            return ["ok" => true];
+        }catch(Throwable $e){
+            return ["ok"=> false, "message"=>$e->getMessage()];
+        }
     }
     public function convertAto1($num){
         if(is_numeric($num)){
