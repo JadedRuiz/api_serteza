@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Cliente;
 use App\Models\Direccion;
 
@@ -68,11 +69,13 @@ class ClienteController extends Controller
     }
     function obtenerClientesPorId($id){
         $cliente = DB::table("cat_cliente as gcc")
-        ->select("gcc.id_cliente","gcc.cliente","gcc.contacto","gcc.descripcion","gcc.activo","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion")
+        ->select("gcc.id_cliente","gcc.cliente","gcc.contacto","gcc.descripcion","gcc.activo","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","cf.nombre as fotografia","cf.id_fotografia")
         ->join("cat_direccion as gcd","gcd.id_direccion","=","gcc.id_direccion")
+        ->join("cat_fotografia as cf","cf.id_fotografia","=","gcc.id_fotografia")
         ->where("gcc.id_cliente",$id)
         ->get();
-        if(count($cliente)>0){
+        if(count($cliente)>0){            
+            $cliente[0]->fotografia = Storage::disk('cliente')->url($cliente[0]->fotografia);
             return $this->crearRespuesta(1,$cliente,200);
         }else{
             return $this->crearRespuesta(2,"No se ha encontrado el cliente",301);
@@ -105,10 +108,23 @@ class ClienteController extends Controller
     }
     function altaCliente(Request $request){
         $this->validate($request, [
-            'cliente' => 'required|string|max:150',
+            'cliente' => 'required|string|max:150|unique:cat_cliente',
             'contacto' => 'required|max:150'
         ]);
         try{
+            $id_fotografia = $this->getSigId("cat_fotografia");
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            //Insertar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"cliente_default.png",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('cliente')->put($nombre_image, $file);
+            }
             //Insertar dirección
             $id_direccion = $this->getSigId("cat_direccion");
             $direccion = new Direccion;
@@ -124,8 +140,8 @@ class ClienteController extends Controller
             $direccion->municipio = $request["direccion"]["municipio"];
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
-            $direccion->fecha_creacion = $this->getHoraFechaActual();
-            $direccion->usuario_creacion = $request["usuario_creacion"];;
+            $direccion->fecha_creacion = $fecha;
+            $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = 1;
             $direccion->save();
             //Insertar Cliente
@@ -136,13 +152,10 @@ class ClienteController extends Controller
             $cliente->contacto = $request["contacto"];
             $cliente->id_direccion = $id_direccion;
             $cliente->descripcion = $request["descripcion"];
-            $cliente->fecha_creacion = $this->getHoraFechaActual();
-            $cliente->usuario_creacion = $request["usuario_creacion"];
+            $cliente->fecha_creacion = $fecha;
+            $cliente->usuario_creacion = $usuario_creacion;
             $cliente->activo = $request["activo"];
             $cliente->save();
-            //Asignar cliente al usuario
-            // $id_liga = $this->getSigId("liga_usuario_cliente");
-            // DB::insert('insert into liga_usuario_cliente (id, usuario_sistemas_id, cliente_id, fecha_creacion, cat_usuario_c_id, activo) values (?,?,?,?,?,?)', [$id_liga,$request["cat_usuario_sistema"],$id_cliente,$this->getHoraFechaActual(),$request["cat_usuario_id"],1]);
             return $this->crearRespuesta(1,"Se ha guardado exitosamente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
@@ -150,6 +163,25 @@ class ClienteController extends Controller
     }
     function actualizarCliente(Request $request){
         try{
+            $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('cliente')->has($nombre_image)){
+                    Storage::disk('cliente')->delete($nombre_image);
+                    DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('cliente')->put($nombre_image, $file);
+                }else{
+                    DB::update('update cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('cliente')->put($nombre_image, $file);
+                }
+            }
             //Actualizar direccion
             $direccion = Direccion::find($request["direccion"]["id_direccion"]);
             $direccion->calle = $request["direccion"]["calle"];
@@ -163,16 +195,16 @@ class ClienteController extends Controller
             $direccion->municipio = $request["direccion"]["municipio"];
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
-            $direccion->fecha_modificacion = $this->getHoraFechaActual();
-            $direccion->usuario_modificacion = $request["usuario"];
+            $direccion->fecha_modificacion = $fecha;
+            $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();
             //Actualizar Cliente
             $cliente = Cliente::find($request["id_cliente"]);
             $cliente->cliente = $request["cliente"];
             $cliente->contacto = $request["contacto"];
             $cliente->descripcion = $request["descripcion"];
-            $cliente->fecha_modificacion = $this->getHoraFechaActual();
-            $cliente->usuario_modificacion = $request["usuario"];
+            $cliente->fecha_modificacion = $fecha;
+            $cliente->usuario_modificacion = $usuario_modificacion;
             $cliente->activo = $request["activo"];
             $cliente->save();
             return $this->crearRespuesta(1,"Cliente Actualizado",200);

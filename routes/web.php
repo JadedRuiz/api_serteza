@@ -67,6 +67,16 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('altaDepartamento',"DepartamentoController@altaDepartamento");
         $router->post('actualizarDepartamento',"DepartamentoController@actualizarDepartamento");
     });
+    $router->group(['prefix' => "contratacion"], function () use ($router){
+        $router->post('altaMovContratacion','ContratoController@altaMovContrato');
+        $router->post('obtenerMoviemientosContratacion','ContratoController@obtenerMoviemientosContratacion');
+        $router->get('obtenerMoviemientosContratacionPorId/{id_contratacion}','ContratoController@obtenerMoviemientosContratacionPorId');
+        $router->post('eliminarDetalleContratacion','ContratoController@eliminarDetalle');
+    });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
+    });
+    $router->group(['prefix' => 'reporte'], function () use ($router) {
+        $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
+        $router->get('reporteContrato/{id_contratacion}','ReporteController@reporteContrato');
     });
 });

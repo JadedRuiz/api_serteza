@@ -507,11 +507,6 @@ class UsuarioController extends Controller
             }
         }
         return ["ok"=> true,"message"=> "xml`s insertador", "datos" => $data];
-        try {
-           
-        } catch (\Throwable $th) {
-            return ["ok"=> false,"message" => $th];
-        }
     }
 
 }
