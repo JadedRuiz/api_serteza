@@ -381,5 +381,132 @@ class UsuarioController extends Controller
             return ["ok"=> false,"message" => "El usuario ".$usuario." no existe o fue mal ingresado, intente de nuevo"];
         }
     }
+    public function xmlUpload(Request $request){
+        $json = json_encode($request->input());
+        $ojso = json_decode($json, true);
+        $data = $ojso["data"];
+        $usuario = $request["usuario"];
+        $id_empresa = $request["empresa"];
+        $id_bovedaxml = 0;
+        $id_provcliente = 0;
+        $es_cliente = 0;
+        $es_proveedor = 0;
+        $tipo_documento = '';
+        $mi_razon = '';
+        $mi_rfc = '';
+        foreach($data as $miData){
+            $existe = DB::table('con_bovedaxml')
+            ->select("id_bovedaxml")
+            ->where("uuid", $miData['uuid'])
+            ->count();
+            if($existe == 0){
+                DB::table('con_bovedaxml')->insert(
+                    ['uuid' => $miData['uuid'], 
+                    'fechatimbrado'=> $miData['fechaTimbrado'],
+                    'xml'=> $miData["xml"],
+                    'fecha_creacion'=>  $this->getHoraFechaActual(),
+                    'usuario_creacion'=> $usuario
+                    ]
+                );
+                $id_bovedaxml = DB::getPdo()->lastInsertId();
+                $existeRfc = DB::table('con_provcliente')
+                            ->select("id_provcliente")
+                            ->where("rfc", $miData['rfcEmisor'])
+                            ->count();
+                if($existeRfc == 0){
+                    if($id_empresa == $id_provcliente){
+                        // es cliente - ingreso insertar datos RECEPTOR
+                        $es_cliente = 1;
+                        $es_proveedor = 0;
+                        $tipo_documento = 'I';
+                        $mi_razon = $miData['razonReceptor'];
+                        $mi_rfc = $miData['rfcReceptor'];
+                    }else{
+                        // es proveedor - Egreso insertar datos Emisor
+                        $es_proveedor = 1;
+                        $es_cliente = 0;
+                        $tipo_documento = 'E';
+                        $mi_razon = $miData['razonEmisor'];
+                        $mi_rfc = $miData['rfcEmisor'];
+                    }
+                    DB::table('cat_direccion')->insert(
+                        ['calle' => "",
+                        'numero_interior'=> "",
+                        'numero_exterior'=> "",
+                        'cruzamiento_uno'=>  "",
+                        'cruzamiento_dos'=>  "",
+                        'codigo_postal'=>  0,
+                        'colonia'=>  "",
+                        'localidad'=>  "",
+                        'municipio'=>  "",
+                        'estado'=>  "",
+                        'descripcion'=>  "",
+                        'fecha_creacion'=> $this->getHoraFechaActual(),
+                        'fecha_modificacion'=> $this->getHoraFechaActual(),
+                        'usuario_creacion'=> $usuario,
+                        'usuario_modificacion'=> $usuario,
+                        'activo'=> true
+                        ]
+                    );
+                    $id_direccion = DB::getPdo()->lastInsertId();
+                    DB::table('con_provcliente')->insert(
+                        ['id_empresa' => $id_empresa, 
+                        'id_direccion'=> $id_direccion,
+                        'id_status'=> 1,
+                        'rfc'=>  $mi_rfc,
+                        'razonsocial'=> $mi_razon,
+                        'nombrecomercial'=> $mi_razon,
+                        'contacto'=> "",
+                        'telefono'=> "",
+                        'telefono_dos'=> "",
+                        'telefono_tres'=> "",
+                        'correo'=> "",
+                        'cuentacontable'=> "",
+                        'esproveedor'=> $es_proveedor,
+                        'escliente'=> $es_cliente,
+                        'fecha_creacion'=> $this->getHoraFechaActual(),
+                        'fecha_modificacion'=> $this->getHoraFechaActual(),
+                        'usuario_creacion'=> $usuario,
+                        'usuario_modificacion'=> $usuario
+                        ]
+                    );
+                    $id_provcliente = DB::getPdo()->lastInsertId();
+                }else{
+                    $id_provcliente = DB::table('con_provcliente')
+                    ->select('id_provcliente')
+                    ->where('rfc', $miData['rfcEmisor'])
+                    ->first();
+                    $id_provcliente = $id_provcliente->id_provcliente;
+                }
+                $id_iva = DB::table('con_cativas')
+                ->select('id_cativas')
+                ->where('id_empresa', $id_empresa)
+                ->where('clave_sat', $miData['clave_sat'])
+                ->first();
+                $id_iva = $id_iva->id_cativas;
+                DB::table('con_movfacturas')->insert(
+                    ['id_empresa' => $id_empresa, 
+                    'id_bovedaxml'=> $id_bovedaxml,
+                    'id_provcliente'=> $id_provcliente,
+                    'id_status'=>  1,
+                    'folio'=> $miData['folio'],
+                    'fecha'=> $miData['fecha'],
+                    'metodopago'=> $miData['metodopago'],
+                    'formapago'=> $miData['formapago'],
+                    'moneda'=> $miData['moneda'],
+                    'subtotal'=> $miData['subtotal'],
+                    'total'=> $miData['total'],
+                    'iva'=> $miData['iva'],
+                    'retencion_iva'=> 1,
+                    'retencion_isr'=> 1,
+                    'id_cativas'=> $id_iva,
+                    'cuentacontable'=> "",
+                    'tipo_documento'=> $tipo_documento,
+                    ]
+                );
+            }
+        }
+        return ["ok"=> true,"message"=> "xml`s insertador", "datos" => $data];
+    }
 
 }

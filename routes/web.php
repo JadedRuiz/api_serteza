@@ -16,7 +16,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerUsuarioPorId/{id_usuario}', 'UsuarioController@obtenerUsuarioPorId');
         $router->post('obtenerUsuariosDeEntidad', 'UsuarioController@obtenerUsuariosDeEntidad');
         $router->post('modificarUsuario', 'UsuarioController@modificarUsuario');   
-        $router->post('altaUsuarioAdmin', 'UsuarioController@altaUsuarioAdmin');       
+        $router->post('altaUsuarioAdmin', 'UsuarioController@altaUsuarioAdmin');  
+        $router->post('upload-xml', 'UsuarioController@xmlUpload');     
     });
 
     $router->group(['prefix' => 'empresa'], function () use ($router) {
