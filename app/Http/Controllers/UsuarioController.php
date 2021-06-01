@@ -259,7 +259,6 @@ class UsuarioController extends Controller
             $user->fecha_creacion = $fecha;
             $user->usuario_creacion = $usuario_creacion;
             $user->activo = $activo;
-            $id_usuario = $this->getSigId("cat_usuario");
             $user->save();
 
             $sistemas = $request->input("sistemas");
@@ -268,7 +267,7 @@ class UsuarioController extends Controller
             }
             //Dar de alta a usuario de empresa
             $id_usuario_empresa = $this->getSigId("liga_usuario_empresa");
-            DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_usuario_empresa, $id_usuario, $id_empresa, $fecha, $usuario, 1]);
+            DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_usuario_empresa, $id_usuario, $id_empresa, $fecha, $usuario_creacion, 1]);
             
             return $this->crearRespuesta(1,"Usuario registrado con éxito",200);
 
