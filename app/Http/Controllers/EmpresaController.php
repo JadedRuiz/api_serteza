@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Direccion;
 use App\Models\Empresa;
+use Illuminate\Support\Facades\Storage;
 
 class EmpresaController extends Controller
 {
@@ -75,13 +76,8 @@ class EmpresaController extends Controller
             $fotografia = DB::table("cat_fotografia")
             ->where("id_fotografia",$empresa[0]->id_fotografia)
             ->get();
-            if(count($fotografia)>0){
-                $empresa[0]->fotografia = $fotografia[0]->fotografia;
-                $empresa[0]->extension = $fotografia[0]->extension;
-            }else{
-                $empresa[0]->fotografia = "";
-                $empresa[0]->extension = "";
-            }
+            $empresa[0]->fotografia = Storage::disk('empresa')->url($fotografia[0]->nombre);
+            
             return $this->crearRespuesta(1,$empresa,200);
         }else{
             return $this->crearRespuesta(2,"No se ha encontrado la empresa",301);
@@ -110,10 +106,17 @@ class EmpresaController extends Controller
         try{
             //Insertar fotografia
             $id_fotografia = $this->getSigId("cat_fotografia");
-            $fecha = $this->getHoraFechaActual();;
-            DB::insert('insert into cat_fotografia
-            (id_fotografia, nombre, fotografia, extension, fecha_creacion, usuario_creacion) values (?, ?, ?, ?, ?, ?)',
-            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"]]);
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('empresa')->put($nombre_image, $file); 
+            }
             //Insertar dirección
             $id_direccion = $this->getSigId("cat_direccion");
             $direccion = new Direccion;
@@ -130,7 +133,7 @@ class EmpresaController extends Controller
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
             $direccion->fecha_creacion = $fecha;
-            $direccion->usuario_creacion = $request["usuario"];
+            $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = $request["activo"];
             $direccion->save();
             //Insertar Empresa
@@ -145,7 +148,7 @@ class EmpresaController extends Controller
             $empresa->rfc = $request["rfc"];
             $empresa->descripcion = $request["descripcion"];
             $empresa->fecha_creacion = $fecha;
-            $empresa->usuario_creacion = $request["usuario_creacion"];
+            $empresa->usuario_creacion = $usuario_creacion;
             $empresa->activo = $request["activo"];
             $empresa->save();
             return $this->crearRespuesta(1,"El candidato ha sido registrado correctamente",200);
