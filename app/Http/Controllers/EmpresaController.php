@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Direccion;
 use App\Models\Empresa;
+use Illuminate\Support\Facades\Storage;
 
 class EmpresaController extends Controller
 {
@@ -75,13 +76,8 @@ class EmpresaController extends Controller
             $fotografia = DB::table("cat_fotografia")
             ->where("id_fotografia",$empresa[0]->id_fotografia)
             ->get();
-            if(count($fotografia)>0){
-                $empresa[0]->fotografia = $fotografia[0]->fotografia;
-                $empresa[0]->extension = $fotografia[0]->extension;
-            }else{
-                $empresa[0]->fotografia = "";
-                $empresa[0]->extension = "";
-            }
+            $empresa[0]->fotografia = Storage::disk('empresa')->url($fotografia[0]->nombre);
+            
             return $this->crearRespuesta(1,$empresa,200);
         }else{
             return $this->crearRespuesta(2,"No se ha encontrado la empresa",301);
@@ -114,10 +110,10 @@ class EmpresaController extends Controller
             $usuario_creacion = $request["usuario_creacion"];
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
-                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
                 DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('empresa')->put($nombre_image, $file); 
             }

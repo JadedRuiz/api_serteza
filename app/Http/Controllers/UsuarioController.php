@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Usuario;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UsuarioController extends Controller
 {
@@ -153,7 +154,7 @@ class UsuarioController extends Controller
     public function obtenerUsuarioPorId($id_usuario)
     {
         $validar = DB::table('cat_usuario')
-        ->select("nombre","usuario","password","id_usuario","id_usuario as sistemas","activo")
+        ->select("nombre","usuario","password","id_usuario","id_usuario as sistemas","activo","id_fotografia")
         ->where("id_usuario",$id_usuario)
         ->get();
         if(count($validar)>0){
@@ -212,9 +213,9 @@ class UsuarioController extends Controller
                 DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
-                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
                 DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
-                Storage::disk('usuario')->put($nombre_image, $file);
+                Storage::disk('cliente')->put($nombre_image, $file);
             }
             //Nuevo usuario
             $user = new Usuario;
@@ -226,7 +227,7 @@ class UsuarioController extends Controller
             $user->usuario = $request->input('usuario');
             $plainPassword = $request->input('password');
             $user->password = $this->encode_json($plainPassword);
-            $user->fecha_creacion = $this->getHoraFechaActual();
+            $user->fecha_creacion = $fecha;
             $user->usuario_creacion = $usuario_creacion;
             $user->activo = $activo;
             $id_usuario = $this->getSigId("cat_usuario");
@@ -287,15 +288,32 @@ class UsuarioController extends Controller
     {
 
         try {
-            $id_usuario = $request["id_usuario"];
-            $activo = $request->input('activo');
             $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('cliente')->has($nombre_image)){
+                    Storage::disk('cliente')->delete($nombre_image);
+                    DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('cliente')->put($nombre_image, $file);
+                }else{
+                    DB::update('update cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('cliente')->put($nombre_image, $file);
+                }
+            }
+            $activo = $request->input('activo');
             $user = Usuario::find($id_usuario);
             $user->nombre = $request->input('nombre');
             $user->usuario = $request->input('usuario');
             $user->password = $this->encode_json($request->input("password"));
             $user->fecha_modificacion = $fecha;
-            $user->usuario_modificacion = $request->input('usuario_creacion');
+            $user->usuario_modificacion = $usuario_modificacion;
             $user->activo = $activo;
             $user->save();
             
