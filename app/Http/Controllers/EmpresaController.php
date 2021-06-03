@@ -110,10 +110,17 @@ class EmpresaController extends Controller
         try{
             //Insertar fotografia
             $id_fotografia = $this->getSigId("cat_fotografia");
-            $fecha = $this->getHoraFechaActual();;
-            DB::insert('insert into cat_fotografia
-            (id_fotografia, nombre, fotografia, extension, fecha_creacion, usuario_creacion) values (?, ?, ?, ?, ?, ?)',
-            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"]]);
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('empresa')->put($nombre_image, $file); 
+            }
             //Insertar dirección
             $id_direccion = $this->getSigId("cat_direccion");
             $direccion = new Direccion;
@@ -130,7 +137,7 @@ class EmpresaController extends Controller
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
             $direccion->fecha_creacion = $fecha;
-            $direccion->usuario_creacion = $request["usuario"];
+            $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = $request["activo"];
             $direccion->save();
             //Insertar Empresa
@@ -145,7 +152,7 @@ class EmpresaController extends Controller
             $empresa->rfc = $request["rfc"];
             $empresa->descripcion = $request["descripcion"];
             $empresa->fecha_creacion = $fecha;
-            $empresa->usuario_creacion = $request["usuario_creacion"];
+            $empresa->usuario_creacion = $usuario_creacion;
             $empresa->activo = $request["activo"];
             $empresa->save();
             return $this->crearRespuesta(1,"El candidato ha sido registrado correctamente",200);

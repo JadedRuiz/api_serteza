@@ -204,10 +204,18 @@ class UsuarioController extends Controller
         try {
             //Insertar fotografia
             $id_fotografia = $this->getSigId("cat_fotografia");
-            $fecha = $this->getHoraFechaActual();;
-            DB::insert('insert into cat_fotografia
-            (id_fotografia, nombre, fotografia, extension, fecha_creacion, usuario_creacion) values (?, ?, ?, ?, ?, ?)',
-            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"]]);
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            //Insertar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('usuario')->put($nombre_image, $file);
+            }
             //Nuevo usuario
             $user = new Usuario;
             $activo = $request->input('activo');
@@ -219,7 +227,7 @@ class UsuarioController extends Controller
             $plainPassword = $request->input('password');
             $user->password = $this->encode_json($plainPassword);
             $user->fecha_creacion = $this->getHoraFechaActual();
-            $user->usuario_creacion = $request->input('usuario_creacion');
+            $user->usuario_creacion = $usuario_creacion;
             $user->activo = $activo;
             $id_usuario = $this->getSigId("cat_usuario");
             $user->save();
