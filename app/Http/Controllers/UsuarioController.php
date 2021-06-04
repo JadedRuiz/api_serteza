@@ -153,12 +153,14 @@ class UsuarioController extends Controller
     }
     public function obtenerUsuarioPorId($id_usuario)
     {
-        $validar = DB::table('cat_usuario')
-        ->select("nombre","usuario","password","id_usuario","id_usuario as sistemas","activo","id_fotografia")
-        ->where("id_usuario",$id_usuario)
+        $validar = DB::table('cat_usuario as cu')
+        ->select("cu.nombre","usuario","password","id_usuario","id_usuario as sistemas","cu.activo","cf.nombre as fotografia","cu.id_fotografia")
+        ->join("cat_fotografia as cf","cf.id_fotografia","=","cu.id_fotografia")
+        ->where("cu.id_usuario",$id_usuario)
         ->get();
         if(count($validar)>0){
             $validar[0]->password = $this->decode_json($validar[0]->password);
+            $validar[0]->fotografia = Storage::disk('usuario')->url($validar[0]->fotografia);
             $sistemas = DB::table('liga_usuario_sistema as lus')
             ->select("cs.sistema","cs.id_sistema")
             ->join("cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
@@ -213,9 +215,9 @@ class UsuarioController extends Controller
                 DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
-                $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
                 DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
-                Storage::disk('cliente')->put($nombre_image, $file);
+                Storage::disk('usuario')->put($nombre_image, $file);
             }
             //Nuevo usuario
             $user = new Usuario;
@@ -230,7 +232,6 @@ class UsuarioController extends Controller
             $user->fecha_creacion = $fecha;
             $user->usuario_creacion = $usuario_creacion;
             $user->activo = $activo;
-            $id_usuario = $this->getSigId("cat_usuario");
             $user->save();
 
             $sistemas = $request->input("sistemas");
@@ -254,13 +255,26 @@ class UsuarioController extends Controller
         ]);
 
         try {
+            //Insertar fotografia
+            $id_fotografia = $this->getSigId("cat_fotografia");
             $fecha = $this->getHoraFechaActual();
-            $usuario_creacion =  $request->input('usuario_creacion');
+            $usuario_creacion = $request["usuario_creacion"];
+            //Insertar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('usuario')->put($nombre_image, $file);
+            }
             $id_empresa = $request->input('id_empresa');
             $user = new Usuario;
             $activo = $request->input('activo');
             $id_usuario = $this->getSigId("cat_usuario");
-            $user->id_usuario = $id_usuario; 
+            $user->id_usuario = $id_usuario;
+            $user->id_fotografia = $id_fotografia;
             $user->nombre = strtoupper($request->input('nombre'));
             $user->usuario = $request->input('usuario');
             $plainPassword = $request->input('password');
@@ -286,7 +300,6 @@ class UsuarioController extends Controller
     }
     public function modificarUsuario(Request $request)
     {
-
         try {
             $fecha = $this->getHoraFechaActual();
             $usuario_modificacion = $request["usuario_creacion"];
@@ -297,16 +310,17 @@ class UsuarioController extends Controller
                 DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
-                $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-                if(Storage::disk('cliente')->has($nombre_image)){
-                    Storage::disk('cliente')->delete($nombre_image);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('usuario')->has($nombre_image)){
+                    Storage::disk('usuario')->delete($nombre_image);
                     DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
-                    Storage::disk('cliente')->put($nombre_image, $file);
+                    Storage::disk('usuario')->put($nombre_image, $file);
                 }else{
                     DB::update('update cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
-                    Storage::disk('cliente')->put($nombre_image, $file);
+                    Storage::disk('usuario')->put($nombre_image, $file);
                 }
             }
+            $id_usuario = $request->input("id_usuario");
             $activo = $request->input('activo');
             $user = Usuario::find($id_usuario);
             $user->nombre = $request->input('nombre');
