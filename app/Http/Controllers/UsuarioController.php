@@ -429,6 +429,7 @@ class UsuarioController extends Controller
         $id_empresa = $request["empresa"];
         $id_bovedaxml = 0;
         $id_provcliente = 0;
+        $mi_id_emisor = 0;
         $es_cliente = 0;
         $es_proveedor = 0;
         $tipo_documento = '';
@@ -449,27 +450,31 @@ class UsuarioController extends Controller
                     ]
                 );
                 $id_bovedaxml = DB::getPdo()->lastInsertId();
+                $mi_id_emisor = DB::table('gen_cat_empresa')
+                                    ->select("id_empresa")
+                                    ->where("rfc", $miData['rfcEmisor'])
+                                    ->count();
                 $existeRfc = DB::table('con_provcliente')
                             ->select("id_provcliente")
                             ->where("rfc", $miData['rfcEmisor'])
                             ->count();
+                if($id_empresa == $mi_id_emisor){
+                    // es cliente - ingreso insertar datos RECEPTOR
+                    $es_cliente = 1;
+                    $es_proveedor = 0;
+                    $tipo_documento = 'I';
+                    $mi_razon = $miData['razonReceptor'];
+                    $mi_rfc = $miData['rfcReceptor'];
+                }else{
+                    // es proveedor - Egreso insertar datos Emisor
+                    $es_proveedor = 1;
+                    $es_cliente = 0;
+                    $tipo_documento = 'E';
+                    $mi_razon = $miData['razonEmisor'];
+                    $mi_rfc = $miData['rfcEmisor'];
+                }
                 if($existeRfc == 0){
-                    if($id_empresa == $id_provcliente){
-                        // es cliente - ingreso insertar datos RECEPTOR
-                        $es_cliente = 1;
-                        $es_proveedor = 0;
-                        $tipo_documento = 'I';
-                        $mi_razon = $miData['razonReceptor'];
-                        $mi_rfc = $miData['rfcReceptor'];
-                    }else{
-                        // es proveedor - Egreso insertar datos Emisor
-                        $es_proveedor = 1;
-                        $es_cliente = 0;
-                        $tipo_documento = 'E';
-                        $mi_razon = $miData['razonEmisor'];
-                        $mi_rfc = $miData['rfcEmisor'];
-                    }
-                    DB::table('gen_cat_direccion')->insert(
+                    DB::table('cat_direccion')->insert(
                         ['calle' => "",
                         'numero_interior'=> "",
                         'numero_exterior'=> "",
