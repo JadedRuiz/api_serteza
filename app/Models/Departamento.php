@@ -13,7 +13,7 @@ class Departamento extends Model {
      */
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'cat_departamento';
+    protected $table = 'gen_cat_departamento';
     protected $primaryKey = "id_departamento";
     protected $fillable = [
         'id_empresa',

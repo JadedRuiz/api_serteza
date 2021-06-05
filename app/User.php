@@ -21,9 +21,9 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     public $timestamps = false;
-    protected $table = "cat_usuario";
+    protected $table = "gen_cat_usuario";
     protected $fillable = [
-        'id_cat_usuario','nombre', 'password', 'usuario','fecha_creacion','fecha_modificacion','usuario_creacion','usuario_modificacion','activo'
+        'id_gen_cat_usuario','nombre', 'password', 'usuario','fecha_creacion','fecha_modificacion','usuario_creacion','usuario_modificacion','activo'
     ];
 
     /**

@@ -89,7 +89,7 @@ class Controller extends BaseController
     public function cambiarDeEstatus($id_candidato,$id_status)
     {
         try{
-            DB::update('update cat_candidato set id_status = ? where id_candidato = ?', [$id_status,$id_candidato]);
+            DB::update('update rh_cat_candidato set id_status = ? where id_candidato = ?', [$id_status,$id_candidato]);
             return ["ok" => true];
         }catch(Throwable $e){
             return ["ok"=> false, "message"=>$e->getMessage()];

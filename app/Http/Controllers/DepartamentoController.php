@@ -41,7 +41,7 @@ class DepartamentoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_departamento as cd')
+        $registros = DB::table('gen_cat_departamento as cd')
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
@@ -49,7 +49,7 @@ class DepartamentoController extends Controller
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_departamento as cd')
+        $contar = DB::table('gen_cat_departamento as cd')
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
@@ -70,11 +70,11 @@ class DepartamentoController extends Controller
         return $this->crearRespuesta(1,$respuesta,200);
     }
     public function obtenerDepartamentoPorIdDepartamento($id_departamento){
-        $departamento = DB::table('cat_departamento as cd')
+        $departamento = DB::table('gen_cat_departamento as cd')
         ->select("cd.id_departamento","cd.departamento","cd.descripcion","cd.disponibilidad","cd.activo as puestos","cd.activo")
         ->where("cd.id_departamento",$id_departamento)
         ->get();
-        $puestos = DB::table('cat_puesto as cp')
+        $puestos = DB::table('gen_cat_puesto as cp')
         ->select("cp.id_puesto","cp.puesto","cp.descripcion","cp.disponibilidad")
         ->where("cp.id_departamento",$id_departamento)
         ->where("activo",1)
@@ -91,7 +91,7 @@ class DepartamentoController extends Controller
             $fecha = $this->getHoraFechaActual();
             $id_empresa = $request["id_empresa"];
             //Alta departamento
-            $id_departamento = $this->getSigId("cat_departamento");
+            $id_departamento = $this->getSigId("gen_cat_departamento");
             $departamento = new Departamento;
             $departamento->id_departamento = $id_departamento;
             $departamento->departamento = $request["departamento"];
@@ -104,7 +104,7 @@ class DepartamentoController extends Controller
             //Alta puestos del departamento
             $puestos = $request["puestos"];
             foreach($puestos as $puesto){
-                $id_puesto = $this->getSigId("cat_puesto");
+                $id_puesto = $this->getSigId("gen_cat_puesto");
                 $puesto_clase = new Puesto;
                 $puesto_clase->id_puesto = $id_puesto;
                 $puesto_clase->id_departamento = $id_departamento;

@@ -38,7 +38,7 @@ class PuestoController extends Controller
     }
     public function eliminarPuesto($id_puesto){
         try{
-            DB::update('update cat_puesto set activo = 0 where id_puesto = ?', [$id_puesto]);
+            DB::update('update gen_cat_puesto set activo = 0 where id_puesto = ?', [$id_puesto]);
             return $this->crearRespuesta(1,"Elemento eliminado",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

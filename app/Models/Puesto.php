@@ -14,7 +14,7 @@ class Puesto extends Model {
     const UPDATED_AT = null;
     const CREATED_AT = null;
     protected $primaryKey = "id_puesto";
-    protected $table = 'cat_puesto';
+    protected $table = 'gen_cat_puesto';
     protected $fillable = [
         'id_empresa', 
         'puesto', 
