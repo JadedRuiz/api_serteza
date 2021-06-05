@@ -73,7 +73,7 @@ class EmpresaController extends Controller
         ->where("gce.id_empresa",$id)
         ->get();
         if(count($empresa)>0){
-            $fotografia = DB::table("gen_cat_fotografia")
+            $fotografia = DB::table("gen_gen_cat_fotografia")
             ->where("id_fotografia",$empresa[0]->id_fotografia)
             ->get();
             $empresa[0]->fotografia = Storage::disk('empresa')->url($fotografia[0]->nombre);
@@ -105,16 +105,16 @@ class EmpresaController extends Controller
         ]);
         try{
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("gen_cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('empresa')->put($nombre_image, $file); 
             }
             //Insertar dirección
@@ -189,7 +189,7 @@ class EmpresaController extends Controller
             $direccion->usuario_modificacion = $request["usuario_creacion"];
             $direccion->save();
             //Actualizar foto
-            DB::update('update gen_cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
+            DB::update('update gen_gen_cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
