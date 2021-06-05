@@ -15,7 +15,7 @@ class Usuario extends Model implements AuthenticatableContract, AuthorizableCont
     
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'cat_usuario';
+    protected $table = 'gen_cat_usuario';
     protected $primaryKey = "id_usuario";
     protected $fillable = [
         'id_fotografia','nombre', 'password', 'usuario','fecha_creacion','fecha_modificacion','usuario_creacion','usuario_modificacion','activo'

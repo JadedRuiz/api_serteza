@@ -8,7 +8,7 @@ class ContratoController extends Controller
 {
     public function obtenerMoviemientosContratacion(Request $res)
     {
-        $motivos = DB::table('mov_contratacion')
+        $motivos = DB::table('rh_mov_contratacion')
         ->select("id_contratacion","fecha_contratacion")
         ->where("id_cliente",$res["id_cliente"])
         ->get();
@@ -23,12 +23,12 @@ class ContratoController extends Controller
     }
     public function obtenerMoviemientosContratacionPorId($id_contratacion)
     {
-        $detalle_contratacion = DB::table('detalle_contratacion as dc')
+        $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
         ->select("dc.id_detalle_contratacion","cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa")
-        ->join("cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
-        ->join("cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
-        ->join("cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
-        ->join("cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
+        ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
+        ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
+        ->join("gen_cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
+        ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
         ->where("dc.id_contratacion",$id_contratacion)
         ->where("dc.activo",1)
         ->get();
@@ -44,13 +44,13 @@ class ContratoController extends Controller
             $fecha_creacion = $this->getHoraFechaActual();
             $usuario_creacion = $res["usuario_creacion"];
             //Movimiento de contratacion
-            $id_contratacion = $this->getSigId("mov_contratacion");
+            $id_contratacion = $this->getSigId("rh_mov_contratacion");
             $id_cliente = $res["id_cliente"];
-            DB::insert('insert into mov_contratacion (id_contratacion, id_cliente, fecha_contratacion, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_contratacion, $id_cliente, $fecha_creacion, $fecha_creacion, $usuario_creacion, 1]);
+            DB::insert('insert into rh_mov_contratacion (id_contratacion, id_cliente, fecha_contratacion, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_contratacion, $id_cliente, $fecha_creacion, $fecha_creacion, $usuario_creacion, 1]);
             //Detalle de contratacion
             $is_good = true;
             foreach($res["detalle_contratacion"] as $detalle){
-                $id_detalle_contratacion = $this->getSigId("detalle_contratacion");
+                $id_detalle_contratacion = $this->getSigId("rh_detalle_contratacion");
                 $id_departamento = $detalle["id_departamento"];
                 $id_puesto = $detalle["id_puesto"];
                 $id_candidato = $detalle["id_candidato"];
@@ -58,7 +58,7 @@ class ContratoController extends Controller
                 $observacion = $detalle["descripcion"];
                 $sueldo = $detalle["sueldo"];
                 $fecha_alta = $detalle["fecha_ingreso"];
-                 DB::insert('insert into detalle_contratacion (id_detalle_contratacion, id_empresa, id_contratacion, id_departamento, id_puesto, id_candidato, observacion, sueldo, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?)', 
+                 DB::insert('insert into rh_detalle_contratacion (id_detalle_contratacion, id_empresa, id_contratacion, id_departamento, id_puesto, id_candidato, observacion, sueldo, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?)', 
                  [$id_detalle_contratacion, $id_empresa, $id_contratacion, $id_departamento, $id_puesto, $id_candidato, $observacion, $sueldo, $fecha_alta, $fecha_creacion,$usuario_creacion, 1]);
                  $validar = $this->cambiarDeEstatus($id_candidato,5);
                  if(!$validar["ok"]){
@@ -84,7 +84,7 @@ class ContratoController extends Controller
             ->where("id_detalle_contratacion",$id_detalle)
             ->first();
             if($busca_candidato){
-                DB::update('update detalle_contratacion set activo = 0, usuario_modificacion = ? where id_detalle_contratacion = ?', [$usuario_creacion, $id_detalle]);
+                DB::update('update rh_detalle_contratacion set activo = 0, usuario_modificacion = ? where id_detalle_contratacion = ?', [$usuario_creacion, $id_detalle]);
                 $validar = $this->cambiarDeEstatus($busca_candidato->id_candidato,6);
                 if($validar["ok"]){
                     return $this->crearRespuesta(1,"Se ha eliminado con éxito",200);

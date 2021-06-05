@@ -46,13 +46,13 @@ class EmpresaController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_empresa')
+        $registros = DB::table('gen_cat_empresa')
         ->where("id_status",$otro,$status)
         ->where("empresa",$otro_dos,$palabra)
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_empresa')
+        $contar = DB::table('gen_cat_empresa')
         ->where("id_status",$otro,$status)
         ->where("empresa",$otro_dos,$palabra)
         ->get();
@@ -67,13 +67,13 @@ class EmpresaController extends Controller
         }
     }
     public function obtenerEmpresaPorId($id){
-        $empresa = DB::table("cat_empresa as gce")
+        $empresa = DB::table("gen_cat_empresa as gce")
         ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo")
-        ->join("cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->where("gce.id_empresa",$id)
         ->get();
         if(count($empresa)>0){
-            $fotografia = DB::table("cat_fotografia")
+            $fotografia = DB::table("gen_cat_fotografia")
             ->where("id_fotografia",$empresa[0]->id_fotografia)
             ->get();
             $empresa[0]->fotografia = Storage::disk('empresa')->url($fotografia[0]->nombre);
@@ -86,7 +86,7 @@ class EmpresaController extends Controller
     public function obtenerEmpresaPorIdUsuario($id_usuario)
     {
         $empresas_configuradas = DB::table('liga_usuario_empresa as lue')
-        ->join("cat_empresa","cat_empresa.id_empresa","lue.id_empresa")
+        ->join("gen_cat_empresa","gen_cat_empresa.id_empresa","lue.id_empresa")
         ->where("id_usuario",$id_usuario)
         ->where("lue.activo",1)
         ->get();
@@ -99,26 +99,26 @@ class EmpresaController extends Controller
     public function altaEmpresa(Request $request){
         //validate incoming request 
         $this->validate($request, [
-            'empresa' => 'required|string|max:300|unique:cat_empresa',
+            'empresa' => 'required|string|max:300|unique:gen_cat_empresa',
             'razon_social' => 'required|max:300',
-            'rfc' => 'required|max:150|unique:cat_empresa',
+            'rfc' => 'required|max:150|unique:gen_cat_empresa',
         ]);
         try{
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('empresa')->put($nombre_image, $file); 
             }
             //Insertar dirección
-            $id_direccion = $this->getSigId("cat_direccion");
+            $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
             $direccion->calle = $request["direccion"]["calle"];
@@ -137,7 +137,7 @@ class EmpresaController extends Controller
             $direccion->activo = $request["activo"];
             $direccion->save();
             //Insertar Empresa
-            $id_empresa = $this->getSigId("cat_empresa");
+            $id_empresa = $this->getSigId("gen_cat_empresa");
             $empresa = new Empresa();
             $empresa->id_empresa = $id_empresa;
             $empresa->id_status = $request["id_statu"];
@@ -157,7 +157,7 @@ class EmpresaController extends Controller
         }
     }
     public function bajaEmpresa($id){
-        $data = DB::update('update gen_cat_empresas set activo = 0 where id = ?',[$id]);
+        $data = DB::update('update gen_gen_cat_empresas set activo = 0 where id = ?',[$id]);
         return $this->crearRespuesta(1,"Empresa Eliminada",200);
     }
     public function actualizarEmpresa(Request $request){
@@ -189,7 +189,7 @@ class EmpresaController extends Controller
             $direccion->usuario_modificacion = $request["usuario_creacion"];
             $direccion->save();
             //Actualizar foto
-            DB::update('update cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
+            DB::update('update gen_cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
@@ -261,7 +261,7 @@ class EmpresaController extends Controller
     {
         $empresas = DB::table('liga_empresa_cliente as lec')
         ->select("lec.id_empresa","ce.empresa")
-        ->join("cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
+        ->join("gen_cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
         ->where("lec.id_cliente",$id_cliente)
         ->get();
         if(count($empresas)>0){
