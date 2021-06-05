@@ -453,7 +453,8 @@ class UsuarioController extends Controller
                 $mi_id_emisor = DB::table('gen_cat_empresa')
                                     ->select("id_empresa")
                                     ->where("rfc", $miData['rfcEmisor'])
-                                    ->count();
+                                    ->first();
+                $mi_id_emisor = $mi_id_emisor->id_empresa;
                 $existeRfc = DB::table('con_provcliente')
                             ->select("id_provcliente")
                             ->where("rfc", $miData['rfcEmisor'])
