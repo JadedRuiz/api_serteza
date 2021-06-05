@@ -24,7 +24,7 @@ class ContratoController extends Controller
     public function obtenerMoviemientosContratacionPorId($id_contratacion)
     {
         $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
-        ->select("dc.id_detalle_contratacion","cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa")
+        ->select("dc.id_detalle_contratacion","cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa","dc.id_nomina")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
         ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
         ->join("gen_cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
@@ -54,12 +54,13 @@ class ContratoController extends Controller
                 $id_departamento = $detalle["id_departamento"];
                 $id_puesto = $detalle["id_puesto"];
                 $id_candidato = $detalle["id_candidato"];
+                $id_nomina = $detalle["id_nomina"];
                 $id_empresa = $detalle["id_empresa"];
                 $observacion = $detalle["descripcion"];
                 $sueldo = $detalle["sueldo"];
                 $fecha_alta = $detalle["fecha_ingreso"];
-                 DB::insert('insert into rh_detalle_contratacion (id_detalle_contratacion, id_empresa, id_contratacion, id_departamento, id_puesto, id_candidato, observacion, sueldo, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?)', 
-                 [$id_detalle_contratacion, $id_empresa, $id_contratacion, $id_departamento, $id_puesto, $id_candidato, $observacion, $sueldo, $fecha_alta, $fecha_creacion,$usuario_creacion, 1]);
+                 DB::insert('insert into rh_detalle_contratacion (id_detalle_contratacion, id_empresa, id_contratacion, id_departamento, id_puesto, id_candidato, id_nomina, observacion, sueldo, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?,?)', 
+                 [$id_detalle_contratacion, $id_empresa, $id_contratacion, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $fecha_alta, $fecha_creacion,$usuario_creacion, 1]);
                  $validar = $this->cambiarDeEstatus($id_candidato,5);
                  if(!$validar["ok"]){
                     $is_good = false;
@@ -100,5 +101,14 @@ class ContratoController extends Controller
         }
         
     }
-
+    public function obtenerCatalogoNomina()
+    {
+        $nominas = DB::table('nom_cat_nomina')
+        ->select("id_nomina","nomina")
+        ->get();
+        if(count($nominas)>0){
+            return $this->crearRespuesta(1,$nominas,200);
+        }
+        return $this->crearRespuesta(2,"No se ha encontrar el catálogo de nóminas",200);
+    }
 }

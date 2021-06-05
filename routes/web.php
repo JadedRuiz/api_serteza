@@ -72,6 +72,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('obtenerMoviemientosContratacion','ContratoController@obtenerMoviemientosContratacion');
         $router->get('obtenerMoviemientosContratacionPorId/{id_contratacion}','ContratoController@obtenerMoviemientosContratacionPorId');
         $router->post('eliminarDetalleContratacion','ContratoController@eliminarDetalle');
+        $router->get('obtenerCatalogoNomina','ContratoController@obtenerCatalogoNomina');
     });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
