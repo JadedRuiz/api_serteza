@@ -6,6 +6,7 @@ use App\Models\Candidato;
 use App\Models\Direccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CandidatoController extends Controller
 {
@@ -57,9 +58,10 @@ class CandidatoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('rh_cat_candidato as cc')
-        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo","cc.id_fotografia as fotografia","cc.id_fotografia as extension")
-        ->join("gen_cat_statu as cs","cs.id_statu","=","cc.id_status")
+        $registros = DB::table('cat_candidato as cc')
+        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo","cf.nombre as fotografia")
+        ->join("cat_statu as cs","cs.id_statu","=","cc.id_status")
+        ->join("cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
@@ -73,16 +75,7 @@ class CandidatoController extends Controller
         ->get();
         if(isset($res["tipo"]) && $res["tipo"] == 1){
             foreach($registros as $registro){
-                $fotografia = DB::table('gen_cat_fotografia')
-                ->where("id_fotografia",$registro->fotografia)
-                ->get();
-                if(count($fotografia)>0){
-                    $registro->fotografia = $fotografia[0]->fotografia;
-                    $registro->extension = $fotografia[0]->extension;
-                }else{
-                    $registro->fotografia = "";
-                }
-                
+                $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
             }
         }
         $contar = DB::table('rh_cat_candidato as cc')
@@ -121,24 +114,16 @@ class CandidatoController extends Controller
         }
     }
     public function obtenerCandidatoPorId($id){
-        $respuesta = DB::table("rh_cat_candidato as rcc")
-        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension","gce.status")
-        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
-        ->join("gen_cat_statu as gce","gce.id_statu","=","rcc.id_status")
+        $respuesta = DB::table("cat_candidato as rcc")
+        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia")
+        ->join("cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
+        ->join("cat_statu as gce","gce.id_statu","=","rcc.id_status")
+        ->join("cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
         ->where("rcc.id_candidato",$id)
         ->where("rcc.activo",1)
         ->get();
         if(count($respuesta)>0){
-            $fotografia = DB::table("gen_cat_fotografia")
-            ->where("id_fotografia",$respuesta[0]->id_fotografia)
-            ->get();
-            if(count($fotografia)>0){
-                $respuesta[0]->fotografia = $fotografia[0]->fotografia;
-                $respuesta[0]->extension = $fotografia[0]->extension;
-            }else{
-                $respuesta[0]->fotografia = "";
-                $respuesta[0]->extension = "";
-            }
+            $respuesta[0]->fotografia = Storage::disk('candidato')->url($respuesta[0]->fotografia);
             return $this->crearRespuesta(1,$respuesta,200);
         }else{
             return $this->crearRespuesta(2,"El usuario no ha sido encontrado",200);
@@ -156,10 +141,17 @@ class CandidatoController extends Controller
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = $request["usuario_creacion"];
         //insertar fotografia
-        $id_fotografia = $this->getSigId("gen_cat_fotografia");
-        DB::insert('insert into gen_cat_fotografia
-        (id_fotografia,nombre, fotografia, extension, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?, ?)',
-        [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$usuario_creacion,1]);
+        $id_fotografia = $this->getSigId("cat_fotografia");
+        //Insertar fotografia
+        if($request["fotografia"]["docB64"] == ""){
+            //Guardar foto default
+            DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$fecha,$usuario_creacion,1]);
+        }else{
+            $file = base64_decode($request["fotografia"]["docB64"]);
+            $nombre_image = "candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+            DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+            Storage::disk('candidato')->put($nombre_image, $file);
+        }
         //Insertar dirección
             $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
