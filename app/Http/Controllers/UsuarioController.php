@@ -474,7 +474,7 @@ class UsuarioController extends Controller
                     $mi_rfc = $miData['rfcEmisor'];
                 }
                 if($existeRfc == 0){
-                    DB::table('cat_direccion')->insert(
+                    DB::table('gen_cat_direccion')->insert(
                         ['calle' => "",
                         'numero_interior'=> "",
                         'numero_exterior'=> "",
