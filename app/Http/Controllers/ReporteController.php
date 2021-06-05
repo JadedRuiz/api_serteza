@@ -15,18 +15,18 @@ class ReporteController extends Controller
      */
     public function reporteContratado($id_detalle)
     {
-        $detalle_contratacion = DB::table('detalle_contratacion as dc')
+        $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
         ->select("cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_departamento","ce.empresa","ccd.cliente","cu.nombre as usuario","cc.rfc","cc.curp","cc.numero_seguro","cc.correo","cdd.calle","cdd.numero_interior","cdd.numero_exterior","cdd.cruzamiento_uno","cdd.cruzamiento_dos","cdd.colonia","cdd.municipio","cdd.estado","cf.extension","cf.fotografia","cff.nombre as name_foto")
-        ->join("mov_contratacion as mc","mc.id_contratacion","=","dc.id_contratacion")
-        ->join("cat_cliente as ccd","ccd.id_cliente","=","mc.id_cliente")
-        ->join("cat_fotografia as cff","cff.id_fotografia","=","ccd.id_fotografia")
-        ->join("cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
-        ->join("cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
-        ->join("cat_direccion as cdd","cdd.id_direccion","=","cc.id_direccion")
-        ->join("cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
-        ->join("cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
-        ->join("cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
-        ->join("cat_usuario as cu","cu.id_usuario","=","dc.usuario_creacion")
+        ->join("rh_mov_contratacion as mc","mc.id_contratacion","=","dc.id_contratacion")
+        ->join("gen_cat_cliente as ccd","ccd.id_cliente","=","mc.id_cliente")
+        ->join("gen_cat_fotografia as cff","cff.id_fotografia","=","ccd.id_fotografia")
+        ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
+        ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
+        ->join("gen_cat_direccion as cdd","cdd.id_direccion","=","cc.id_direccion")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
+        ->join("gen_cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
+        ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
+        ->join("gen_cat_usuario as cu","cu.id_usuario","=","dc.usuario_creacion")
         ->where("dc.id_detalle_contratacion",$id_detalle)
         ->where("dc.activo",1)
         ->get();
@@ -38,21 +38,21 @@ class ReporteController extends Controller
 
     public function reporteContrato($id_contratacion)
     {
-        $reporte_contrato = DB::table('mov_contratacion as mc')
+        $reporte_contrato = DB::table('rh_mov_contratacion as mc')
         ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_contratacion","mc.id_contratacion as folio","cu.nombre as usuario","cu.id_usuario as detalle")
-        ->join("cat_cliente as cc","cc.id_cliente","=","mc.id_cliente")
-        ->join("cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
-        ->join("cat_usuario as cu","cu.id_usuario","=","mc.usuario_creacion")
+        ->join("gen_cat_cliente as cc","cc.id_cliente","=","mc.id_cliente")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
+        ->join("gen_cat_usuario as cu","cu.id_usuario","=","mc.usuario_creacion")
         ->where("mc.id_contratacion",$id_contratacion)
         ->get();
         if(count($reporte_contrato)>0){
             $reporte_contrato[0]->detalle = [];
-            $detalle = DB::table('detalle_contratacion as dc')
+            $detalle = DB::table('rh_detalle_contratacion as dc')
             ->select("cc.nombre","cc.apellido_paterno","cc.apellido_materno","ce.empresa","dp.departamento","cp.puesto","dc.sueldo")
-            ->join("cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
-            ->join("cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
-            ->join("cat_departamento as dp","dp.id_departamento","=","dc.id_departamento")
-            ->join("cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
+            ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
+            ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
+            ->join("gen_cat_departamento as dp","dp.id_departamento","=","dc.id_departamento")
+            ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
             ->where("dc.id_contratacion",$id_contratacion)
             ->get();
             if(count($detalle)>0){

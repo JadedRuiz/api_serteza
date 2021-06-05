@@ -47,13 +47,13 @@ class ClienteController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_cliente')
+        $registros = DB::table('gen_cat_cliente')
         ->where("activo",$otro,$status)
         ->where("cliente",$otro_dos,$palabra)
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_cliente')
+        $contar = DB::table('gen_cat_cliente')
         ->where("activo",$otro,$status)
         ->where("cliente",$otro_dos,$palabra)
         ->get();
@@ -68,10 +68,10 @@ class ClienteController extends Controller
         }
     }
     function obtenerClientesPorId($id){
-        $cliente = DB::table("cat_cliente as gcc")
+        $cliente = DB::table("gen_cat_cliente as gcc")
         ->select("gcc.id_cliente","gcc.cliente","gcc.contacto","gcc.descripcion","gcc.activo","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","cf.nombre as fotografia","cf.id_fotografia")
-        ->join("cat_direccion as gcd","gcd.id_direccion","=","gcc.id_direccion")
-        ->join("cat_fotografia as cf","cf.id_fotografia","=","gcc.id_fotografia")
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gcc.id_direccion")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","gcc.id_fotografia")
         ->where("gcc.id_cliente",$id)
         ->get();
         if(count($cliente)>0){            
@@ -84,7 +84,7 @@ class ClienteController extends Controller
     public function obtenerClientesPorIdEmpresa($id_empresa)
     {
         $clientes = DB::table('liga_empresa_cliente as lec')
-        ->join("cat_cliente as cc","cc.id_cliente","=","lec.id_cliente")
+        ->join("gen_cat_cliente as cc","cc.id_cliente","=","lec.id_cliente")
         ->where("id_empresa",$id_empresa)
         ->get();
         if(count($clientes)>0){
@@ -96,7 +96,7 @@ class ClienteController extends Controller
     public function obtenerClientePorIdUsuario($id_usuario)
     {
         $clientes_configuradas = DB::table('liga_usuario_cliente as lue')
-        ->join("cat_cliente","cat_cliente.id_cliente","lue.id_cliente")
+        ->join("gen_cat_cliente","gen_cat_cliente.id_cliente","lue.id_cliente")
         ->where("id_usuario",$id_usuario)
         ->where("lue.activo",1)
         ->get();
@@ -108,25 +108,25 @@ class ClienteController extends Controller
     }
     function altaCliente(Request $request){
         $this->validate($request, [
-            'cliente' => 'required|string|max:150|unique:cat_cliente',
+            'cliente' => 'required|string|max:150|unique:gen_cat_cliente',
             'contacto' => 'required|max:150'
         ]);
         try{
-            $id_fotografia = $this->getSigId("cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             //Insertar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"cliente_default.png",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"cliente_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('cliente')->put($nombre_image, $file);
             }
             //Insertar dirección
-            $id_direccion = $this->getSigId("cat_direccion");
+            $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
             $direccion->calle = $request["direccion"]["calle"];
@@ -145,7 +145,7 @@ class ClienteController extends Controller
             $direccion->activo = 1;
             $direccion->save();
             //Insertar Cliente
-            $id_cliente = $this->getSigId("cat_cliente");
+            $id_cliente = $this->getSigId("gen_cat_cliente");
             $cliente = new Cliente;
             $cliente->id_cliente = $id_cliente;
             $cliente->cliente = $request["cliente"];
@@ -169,16 +169,16 @@ class ClienteController extends Controller
             //Actualizar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
                 if(Storage::disk('cliente')->has($nombre_image)){
                     Storage::disk('cliente')->delete($nombre_image);
-                    DB::update('update cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
                     Storage::disk('cliente')->put($nombre_image, $file);
                 }else{
-                    DB::update('update cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
                     Storage::disk('cliente')->put($nombre_image, $file);
                 }
             }
@@ -216,7 +216,7 @@ class ClienteController extends Controller
     }
     function eliminarCliente($id){
         try{
-            $data = DB::update('update gen_cat_cliente set activo = 0 where id = ?',[$id]);
+            $data = DB::update('update gen_gen_cat_cliente set activo = 0 where id = ?',[$id]);
             return $this->crearRespuesta(1,"Cliente Eliminado",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

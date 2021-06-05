@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Usuario;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UsuarioController extends Controller
 {
@@ -42,17 +43,17 @@ class UsuarioController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
-        ->join("cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
+        ->join("gen_cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
         ->where("id_sistema",5)
         ->first();
-        $registros = DB::table('cat_usuario')
+        $registros = DB::table('gen_cat_usuario')
         ->where("activo",$otro,$status)
         ->where("usuario",$otro_dos,$palabra)
         ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_usuario')
+        $contar = DB::table('gen_cat_usuario')
         ->where("activo",$otro,$status)
         ->where("usuario",$otro_dos,$palabra)
         ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
@@ -99,11 +100,11 @@ class UsuarioController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
-        ->join("cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
+        ->join("gen_cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
         ->where("id_sistema",5)
         ->first();
         if($tipo_entidad == 1){         //Es una entidad de tipo empresa
-            $usuarios = DB::table('cat_usuario as cu')
+            $usuarios = DB::table('gen_cat_usuario as cu')
             ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
             ->where("cu.activo",$otro,$status)
             ->where("cu.nombre",$otro_dos,$palabra)
@@ -112,7 +113,7 @@ class UsuarioController extends Controller
             ->skip($incia)
             ->take($take)
             ->get();
-            $contar = DB::table('cat_usuario as cu')
+            $contar = DB::table('gen_cat_usuario as cu')
             ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
             ->where("cu.activo",$otro,$status)
             ->where("cu.usuario",$otro_dos,$palabra)
@@ -122,7 +123,7 @@ class UsuarioController extends Controller
             ->count();
         }
         if($tipo_entidad == 2){
-            $usuarios = DB::table('cat_usuario as cu')
+            $usuarios = DB::table('gen_cat_usuario as cu')
             ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
             ->where("cu.activo",$otro,$status)
             ->where("cu.nombre",$otro_dos,$palabra)
@@ -131,7 +132,7 @@ class UsuarioController extends Controller
             ->skip($incia)
             ->take($take)
             ->get();
-            $contar = DB::table('cat_usuario as cu')
+            $contar = DB::table('gen_cat_usuario as cu')
             ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
             ->where("cu.activo",$otro,$status)
             ->where("cu.usuario",$otro_dos,$palabra)
@@ -152,15 +153,17 @@ class UsuarioController extends Controller
     }
     public function obtenerUsuarioPorId($id_usuario)
     {
-        $validar = DB::table('cat_usuario')
-        ->select("nombre","usuario","password","id_usuario","id_usuario as sistemas","activo")
-        ->where("id_usuario",$id_usuario)
+        $validar = DB::table('cat_usuario as cu')
+        ->select("cu.nombre","usuario","password","id_usuario","id_usuario as sistemas","cu.activo","cf.nombre as fotografia","cu.id_fotografia")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cu.id_fotografia")
+        ->where("cu.id_usuario",$id_usuario)
         ->get();
         if(count($validar)>0){
             $validar[0]->password = $this->decode_json($validar[0]->password);
+            $validar[0]->fotografia = Storage::disk('usuario')->url($validar[0]->fotografia);
             $sistemas = DB::table('liga_usuario_sistema as lus')
             ->select("cs.sistema","cs.id_sistema")
-            ->join("cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
+            ->join("gen_cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
             ->where("lus.id_usuario",$validar[0]->id_usuario)
             ->where("lus.activo",1)
             ->get();
@@ -174,7 +177,7 @@ class UsuarioController extends Controller
         }
     }
     public function obtenerSistemas(){
-        return DB::table('cat_sistemas')
+        return DB::table('gen_cat_sistemas')
         ->where("activo",1)
         ->where("id_sistema","!=",5)
         ->get();
@@ -182,7 +185,7 @@ class UsuarioController extends Controller
     public function obtenerSistemasAdmin($id_usuario)
     {
         $sistemas = DB::table('liga_usuario_sistema as lus')
-        ->join("cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
+        ->join("gen_cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
         ->where("id_usuario",$id_usuario)
         ->where("lus.activo",1)
         ->get();
@@ -197,31 +200,38 @@ class UsuarioController extends Controller
         //validate incoming request 
         $this->validate($request, [
             'nombre' => 'required|string|max:100',
-            'usuario' => 'required|unique:cat_usuario|max:50',
+            'usuario' => 'required|unique:gen_cat_usuario|max:50',
             'password' => 'required|max:50',
         ]);
 
         try {
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("cat_fotografia");
-            $fecha = $this->getHoraFechaActual();;
-            DB::insert('insert into cat_fotografia
-            (id_fotografia, nombre, fotografia, extension, fecha_creacion, usuario_creacion) values (?, ?, ?, ?, ?, ?)',
-            [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"]]);
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            //Insertar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('usuario')->put($nombre_image, $file);
+            }
             //Nuevo usuario
             $user = new Usuario;
             $activo = $request->input('activo');
-            $id_usuario = $this->getSigId("cat_usuario");
+            $id_usuario = $this->getSigId("gen_cat_usuario");
             $user->id_usuario = $id_usuario; 
             $user->id_fotografia = $id_fotografia;
             $user->nombre = strtoupper($request->input('nombre'));
             $user->usuario = $request->input('usuario');
             $plainPassword = $request->input('password');
             $user->password = $this->encode_json($plainPassword);
-            $user->fecha_creacion = $this->getHoraFechaActual();
-            $user->usuario_creacion = $request->input('usuario_creacion');
+            $user->fecha_creacion = $fecha;
+            $user->usuario_creacion = $usuario_creacion;
             $user->activo = $activo;
-            $id_usuario = $this->getSigId("cat_usuario");
             $user->save();
 
             $sistemas = $request->input("sistemas");
@@ -240,18 +250,31 @@ class UsuarioController extends Controller
         //validate incoming request 
         $this->validate($request, [
             'nombre' => 'required|string|max:100',
-            'usuario' => 'required|unique:cat_usuario|max:50',
+            'usuario' => 'required|unique:gen_cat_usuario|max:50',
             'password' => 'required|max:50',
         ]);
 
         try {
+            //Insertar fotografia
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
-            $usuario_creacion =  $request->input('usuario_creacion');
+            $usuario_creacion = $request["usuario_creacion"];
+            //Insertar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('usuario')->put($nombre_image, $file);
+            }
             $id_empresa = $request->input('id_empresa');
             $user = new Usuario;
             $activo = $request->input('activo');
-            $id_usuario = $this->getSigId("cat_usuario");
-            $user->id_usuario = $id_usuario; 
+            $id_usuario = $this->getSigId("gen_cat_usuario");
+            $user->id_usuario = $id_usuario;
+            $user->id_fotografia = $id_fotografia;
             $user->nombre = strtoupper($request->input('nombre'));
             $user->usuario = $request->input('usuario');
             $plainPassword = $request->input('password');
@@ -277,17 +300,34 @@ class UsuarioController extends Controller
     }
     public function modificarUsuario(Request $request)
     {
-
         try {
-            $id_usuario = $request["id_usuario"];
-            $activo = $request->input('activo');
             $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('usuario')->has($nombre_image)){
+                    Storage::disk('usuario')->delete($nombre_image);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('usuario')->put($nombre_image, $file);
+                }else{
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('usuario')->put($nombre_image, $file);
+                }
+            }
+            $id_usuario = $request->input("id_usuario");
+            $activo = $request->input('activo');
             $user = Usuario::find($id_usuario);
             $user->nombre = $request->input('nombre');
             $user->usuario = $request->input('usuario');
             $user->password = $this->encode_json($request->input("password"));
             $user->fecha_modificacion = $fecha;
-            $user->usuario_modificacion = $request->input('usuario_creacion');
+            $user->usuario_modificacion = $usuario_modificacion;
             $user->activo = $activo;
             $user->save();
             
@@ -342,7 +382,7 @@ class UsuarioController extends Controller
             return $this->crearRespuesta(2,"El usuario se encuentra desactivado",200);
         }
         $sistemas = DB::table("liga_usuario_sistema as lus")
-        ->join("cat_sistemas as gce","gce.id_sistema","=","lus.id_sistema")
+        ->join("gen_cat_sistemas as gce","gce.id_sistema","=","lus.id_sistema")
         ->select("gce.id_sistema","gce.sistema")
         ->where("lus.id_usuario",$usuario[0]->id_usuario)
         ->where("lus.activo",1)
@@ -367,7 +407,7 @@ class UsuarioController extends Controller
     }
     public function validarSesion($usuario,$password)
     {
-        $validar = DB::table('cat_usuario')
+        $validar = DB::table('gen_cat_usuario')
         ->where("usuario",$usuario)
         ->get();
         if(count($validar)>0){
@@ -389,6 +429,7 @@ class UsuarioController extends Controller
         $id_empresa = $request["empresa"];
         $id_bovedaxml = 0;
         $id_provcliente = 0;
+        $mi_id_emisor = 0;
         $es_cliente = 0;
         $es_proveedor = 0;
         $tipo_documento = '';
@@ -409,27 +450,40 @@ class UsuarioController extends Controller
                     ]
                 );
                 $id_bovedaxml = DB::getPdo()->lastInsertId();
+                $mi_id_emisor = DB::table('gen_cat_empresa')
+                                    ->select("id_empresa")
+                                    ->where("rfc", $miData['rfcEmisor'])
+                                    ->count();
+                if($mi_id_emisor > 0){
+                    $mi_id_emisor = DB::table('gen_cat_empresa')
+                    ->select("id_empresa")
+                    ->where("rfc", $miData['rfcEmisor'])
+                    ->first();
+                    $mi_id_emisor = $mi_id_emisor->id_empresa;
+                }else{
+                    $mi_id_emisor = 0;
+                }
                 $existeRfc = DB::table('con_provcliente')
                             ->select("id_provcliente")
                             ->where("rfc", $miData['rfcEmisor'])
                             ->count();
+                if($id_empresa == $mi_id_emisor){
+                    // es cliente - ingreso insertar datos RECEPTOR
+                    $es_cliente = 1;
+                    $es_proveedor = 0;
+                    $tipo_documento = 'I';
+                    $mi_razon = $miData['razonReceptor'];
+                    $mi_rfc = $miData['rfcReceptor'];
+                }else{
+                    // es proveedor - Egreso insertar datos Emisor
+                    $es_proveedor = 1;
+                    $es_cliente = 0;
+                    $tipo_documento = 'E';
+                    $mi_razon = $miData['razonEmisor'];
+                    $mi_rfc = $miData['rfcEmisor'];
+                }
                 if($existeRfc == 0){
-                    if($id_empresa == $id_provcliente){
-                        // es cliente - ingreso insertar datos RECEPTOR
-                        $es_cliente = 1;
-                        $es_proveedor = 0;
-                        $tipo_documento = 'I';
-                        $mi_razon = $miData['razonReceptor'];
-                        $mi_rfc = $miData['rfcReceptor'];
-                    }else{
-                        // es proveedor - Egreso insertar datos Emisor
-                        $es_proveedor = 1;
-                        $es_cliente = 0;
-                        $tipo_documento = 'E';
-                        $mi_razon = $miData['razonEmisor'];
-                        $mi_rfc = $miData['rfcEmisor'];
-                    }
-                    DB::table('cat_direccion')->insert(
+                    DB::table('gen_cat_direccion')->insert(
                         ['calle' => "",
                         'numero_interior'=> "",
                         'numero_exterior'=> "",

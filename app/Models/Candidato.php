@@ -13,7 +13,7 @@ class Candidato extends Model {
      */
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'cat_candidato';
+    protected $table = 'rh_cat_candidato';
     protected $primaryKey = "id_candidato";
     protected $fillable = [
         'id_status',
