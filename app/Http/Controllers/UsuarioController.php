@@ -206,13 +206,13 @@ class UsuarioController extends Controller
 
         try {
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("gen_gen_cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             //Insertar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into gen_gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
@@ -307,7 +307,7 @@ class UsuarioController extends Controller
             //Actualizar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::update('update gen_gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];

@@ -246,7 +246,7 @@ class CandidatoController extends Controller
             $direccion->usuario_modificacion = $usuario_creacion;
             $direccion->save();
             //Actualizar foto
-            DB::update('update gen_gen_cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
+            DB::update('update gen_cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
