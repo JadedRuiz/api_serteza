@@ -17,7 +17,7 @@ class ReporteController extends Controller
     {
         $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
         ->select("cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_departamento","ce.empresa","ccd.cliente","cu.nombre as usuario","cc.rfc","cc.curp","cc.numero_seguro","cc.correo","cdd.calle","cdd.numero_interior","cdd.numero_exterior","cdd.cruzamiento_uno","cdd.cruzamiento_dos","cdd.colonia","cdd.municipio","cdd.estado","cf.extension","cf.fotografia","cff.nombre as name_foto")
-        ->join("rh_mov_contratacion as mc","mc.id_contratacion","=","dc.id_contratacion")
+        ->join("rh_movimientos as mc","mc.id_movimiento","=","dc.id_movimiento")
         ->join("gen_cat_cliente as ccd","ccd.id_cliente","=","mc.id_cliente")
         ->join("gen_cat_fotografia as cff","cff.id_fotografia","=","ccd.id_fotografia")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
@@ -36,14 +36,14 @@ class ReporteController extends Controller
         return $pdf->stream();
     }
 
-    public function reporteContrato($id_contratacion)
+    public function reporteContrato($id_movimiento)
     {
-        $reporte_contrato = DB::table('rh_mov_contratacion as mc')
-        ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_contratacion","mc.id_contratacion as folio","cu.nombre as usuario","cu.id_usuario as detalle")
+        $reporte_contrato = DB::table('rh_movimientos as mc')
+        ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_contratacion","mc.id_movimiento as folio","cu.nombre as usuario","cu.id_usuario as detalle")
         ->join("gen_cat_cliente as cc","cc.id_cliente","=","mc.id_cliente")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->join("gen_cat_usuario as cu","cu.id_usuario","=","mc.usuario_creacion")
-        ->where("mc.id_contratacion",$id_contratacion)
+        ->where("mc.id_movimiento",$id_movimiento)
         ->get();
         if(count($reporte_contrato)>0){
             $reporte_contrato[0]->detalle = [];
@@ -53,7 +53,7 @@ class ReporteController extends Controller
             ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
             ->join("gen_cat_departamento as dp","dp.id_departamento","=","dc.id_departamento")
             ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
-            ->where("dc.id_contratacion",$id_contratacion)
+            ->where("dc.id_movimiento",$id_movimiento)
             ->get();
             if(count($detalle)>0){
                 foreach($detalle as $trabajador){
