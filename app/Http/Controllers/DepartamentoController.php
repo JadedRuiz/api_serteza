@@ -71,7 +71,7 @@ class DepartamentoController extends Controller
     }
     public function obtenerDepartamentoPorIdDepartamento($id_departamento){
         $departamento = DB::table('gen_cat_departamento as cd')
-        ->select("cd.id_departamento","cd.departamento","cd.descripcion","cd.disponibilidad","cd.activo as puestos","cd.activo")
+        ->select("cd.id_departamento","cd.departamento","cd.descripcion","cd.activo as puestos","cd.activo")
         ->where("cd.id_departamento",$id_departamento)
         ->get();
         $puestos = DB::table('gen_cat_puesto as cp')
