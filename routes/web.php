@@ -70,13 +70,18 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => "contratacion"], function () use ($router){
         $router->post('altaMovContratacion','ContratoController@altaMovContrato');
         $router->post('obtenerMoviemientosContratacion','ContratoController@obtenerMoviemientosContratacion');
-        $router->get('obtenerMoviemientosContratacionPorId/{id_contratacion}','ContratoController@obtenerMoviemientosContratacionPorId');
+        $router->get('obtenerMoviemientosContratacionPorId/{id_movimiento}','ContratoController@obtenerMoviemientosContratacionPorId');
         $router->post('eliminarDetalleContratacion','ContratoController@eliminarDetalle');
+        $router->get('obtenerCatalogoNomina','ContratoController@obtenerCatalogoNomina');
     });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
     $router->group(['prefix' => 'reporte'], function () use ($router) {
         $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
-        $router->get('reporteContrato/{id_contratacion}','ReporteController@reporteContrato');
+        $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
+    });
+    $router->group(['prefix' => 'dashboard'], function () use ($router) {
+        $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
+        $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
     });
 });

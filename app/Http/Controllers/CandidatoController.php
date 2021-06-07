@@ -116,7 +116,7 @@ class CandidatoController extends Controller
     public function obtenerCandidatoPorId($id){
         $respuesta = DB::table("rh_cat_candidato as rcc")
         ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia")
-        ->join("cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
         ->join("gen_cat_statu as gce","gce.id_statu","=","rcc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
         ->where("rcc.id_candidato",$id)
@@ -246,7 +246,7 @@ class CandidatoController extends Controller
             $direccion->usuario_modificacion = $usuario_creacion;
             $direccion->save();
             //Actualizar foto
-            DB::update('update gen_gen_cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
+            DB::update('update gen_cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

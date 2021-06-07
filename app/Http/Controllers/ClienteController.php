@@ -71,7 +71,7 @@ class ClienteController extends Controller
         $cliente = DB::table("gen_cat_cliente as gcc")
         ->select("gcc.id_cliente","gcc.cliente","gcc.contacto","gcc.descripcion","gcc.activo","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","cf.nombre as fotografia","cf.id_fotografia")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gcc.id_direccion")
-        ->join("gen_gen_cat_fotografia as cf","cf.id_fotografia","=","gcc.id_fotografia")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","gcc.id_fotografia")
         ->where("gcc.id_cliente",$id)
         ->get();
         if(count($cliente)>0){            
@@ -112,17 +112,17 @@ class ClienteController extends Controller
             'contacto' => 'required|max:150'
         ]);
         try{
-            $id_fotografia = $this->getSigId("gen_gen_cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             //Insertar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into gen_gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"cliente_default.png",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"cliente_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-                DB::insert('insert into gen_gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('cliente')->put($nombre_image, $file);
             }
             //Insertar dirección
@@ -169,16 +169,16 @@ class ClienteController extends Controller
             //Actualizar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::update('update gen_gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "cliente_img_".$id_fotografia.".".$request["fotografia"]["extension"];
                 if(Storage::disk('cliente')->has($nombre_image)){
                     Storage::disk('cliente')->delete($nombre_image);
-                    DB::update('update gen_gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
                     Storage::disk('cliente')->put($nombre_image, $file);
                 }else{
-                    DB::update('update gen_gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
                     Storage::disk('cliente')->put($nombre_image, $file);
                 }
             }

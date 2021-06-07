@@ -153,7 +153,7 @@ class UsuarioController extends Controller
     }
     public function obtenerUsuarioPorId($id_usuario)
     {
-        $validar = DB::table('cat_usuario as cu')
+        $validar = DB::table('gen_cat_usuario as cu')
         ->select("cu.nombre","usuario","password","id_usuario","id_usuario as sistemas","cu.activo","cf.nombre as fotografia","cu.id_fotografia")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cu.id_fotografia")
         ->where("cu.id_usuario",$id_usuario)
@@ -206,13 +206,13 @@ class UsuarioController extends Controller
 
         try {
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("gen_gen_cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             //Insertar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into gen_gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"usuario_default.svg",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
@@ -307,7 +307,7 @@ class UsuarioController extends Controller
             //Actualizar fotografia
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::update('update gen_gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "usuario_img_".$id_fotografia.".".$request["fotografia"]["extension"];
@@ -398,7 +398,7 @@ class UsuarioController extends Controller
             "info_usuario" => [
                 "id" => $usuario[0]->id_usuario,
                 "nombre" => $usuario[0]->nombre,
-                "url_foto" => $this->getEnv("APP_URL")."/api_serteza/resources/img/foto_perfil_".$usuario[0]->id_usuario.".png",
+                "url_foto" => Storage::disk('usuario')->url($usuario[0]->fotografia),
                 "usuario" => $res["usuario"],
                 "sistemas" => $sistemas_info
             ]
@@ -407,8 +407,11 @@ class UsuarioController extends Controller
     }
     public function validarSesion($usuario,$password)
     {
-        $validar = DB::table('gen_cat_usuario')
-        ->where("usuario",$usuario)
+        $validar = DB::table('gen_cat_usuario as gcu')
+        ->select("gcu.id_usuario","gcu.nombre","gcu.password","cf.nombre as fotografia","gcu.activo")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","gcu.id_fotografia")
+        ->where("gcu.usuario",$usuario)
+        ->where("gcu.activo",1)
         ->get();
         if(count($validar)>0){
             $password_decode = $this->decode_json($validar[0]->password);
