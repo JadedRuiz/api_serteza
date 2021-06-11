@@ -79,10 +79,13 @@ class ContabilidadController extends Controller
 
         $data = DB::table('con_provcliente')
         ->select('id_provcliente', 'nombrecomercial')
-        ->orWhere("nombrecomercial", "Like", '%'.$clien_prov.'%')
-        ->orWhere("rfc", "Like", '%'.$clien_prov.'%')
-        ->orWhere("rfc", "Like", '%'.$clien_prov.'%')
+       
         ->where("id_empresa", $id_empresa)
+        ->where(function ($query) use ($clien_prov){
+            $query->orWhere("nombrecomercial", "Like", '%'.$clien_prov.'%')
+                        ->orWhere("rfc", "Like", '%'.$clien_prov.'%')
+                        ->orWhere("rfc", "Like", '%'.$clien_prov.'%');
+        })
         ->take(8)
         ->get();
         return ["ok"=> true, "data" => $data];       
