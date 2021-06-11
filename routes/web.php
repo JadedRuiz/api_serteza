@@ -19,6 +19,17 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('altaUsuarioAdmin', 'UsuarioController@altaUsuarioAdmin');  
         $router->post('upload-xml', 'UsuarioController@xmlUpload');     
     });
+    $router->group(['prefix' => 'contabilidad'], function () use ($router) { 
+        $router->post('upload-xml', 'ContabilidadController@xmlUpload');     
+        $router->post('get-facturas-cp', 'ContabilidadController@getFacturasCP');     
+        $router->post('guardar-factura', 'ContabilidadController@guardarFacturas');   
+        $router->post('actualizar-factura', 'ContabilidadController@actualizarFacturas'); 
+        $router->get('get-ivas/{id_empresa}', 'ContabilidadController@getCatIvas'); 
+        $router->post('get-cliente-proveedor', 'ContabilidadController@buscarClienteProveedor');  
+    });
+
+
+    
 
     $router->group(['prefix' => 'empresa'], function () use ($router) {
         $router->post('obtenerEmpresas','EmpresaController@obtenerEmpresas');         //Obtener empresas
