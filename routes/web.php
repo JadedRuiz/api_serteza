@@ -93,6 +93,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
-        $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
+        $router->get('obtenerDashboardRh/{id_cliente}','DashboardController@obtenerDashboardRh');
     });
 });

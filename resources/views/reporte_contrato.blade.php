@@ -107,7 +107,7 @@
     <p class="fuente_titulos_Heebo" style="margin-left: 230px;">REPORTE DE CONTRATACIÓN</p>
     <div class="info_general mt-10">
         <div class="fecha_folio dib">
-            <div class="fecha dib vat fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_contratacion}}</div></div>
+            <div class="fecha dib vat fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_movimiento}}</div></div>
             <br>
             <div class="folio dib vat mt-10 fuente_titulos_Heebo">Folio: <div class="folio_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->folio}}</div></div>
         </div>
