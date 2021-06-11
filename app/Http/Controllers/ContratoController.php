@@ -9,11 +9,11 @@ class ContratoController extends Controller
     public function obtenerMoviemientosContratacion(Request $res)
     {
         $motivos = DB::table('rh_movimientos')
-        ->select("id_movimiento","fecha_contratacion")
+        ->select("id_movimiento","fecha_movimiento")
         ->where("id_cliente",$res["id_cliente"])
         ->get();
         foreach($motivos as $motivo){
-            $motivo->fecha_contratacion = date('d-m-Y',strtotime($motivo->fecha_contratacion));
+            $motivo->fecha_movimiento = date('d-m-Y',strtotime($motivo->fecha_movimiento));
         }
         if(count($motivos)>0){
             return $this->crearRespuesta(1,$motivos,200);
@@ -46,7 +46,7 @@ class ContratoController extends Controller
             //Movimiento de contratacion
             $id_movimiento = $this->getSigId("rh_movimientos");
             $id_cliente = $res["id_cliente"];
-            DB::insert('insert into rh_movimientos (id_movimiento, id_cliente, id_status, tipo_movimiento, fecha_contratacion, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?)', [$id_movimiento, $id_cliente, 5, "A", $fecha_creacion, $fecha_creacion, $usuario_creacion, 1]);
+            DB::insert('insert into rh_movimientos (id_movimiento, id_cliente, id_status, tipo_movimiento, fecha_movimiento, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?)', [$id_movimiento, $id_cliente, 5, "A", $fecha_creacion, $fecha_creacion, $usuario_creacion, 1]);
             //Detalle de contratacion
             $is_good = true;
             foreach($res["detalle_contratacion"] as $detalle){

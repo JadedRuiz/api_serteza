@@ -39,7 +39,7 @@ class ReporteController extends Controller
     public function reporteContrato($id_movimiento)
     {
         $reporte_contrato = DB::table('rh_movimientos as mc')
-        ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_contratacion","mc.id_movimiento as folio","cu.nombre as usuario","cu.id_usuario as detalle")
+        ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_movimiento","mc.id_movimiento as folio","cu.nombre as usuario","cu.id_usuario as detalle")
         ->join("gen_cat_cliente as cc","cc.id_cliente","=","mc.id_cliente")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->join("gen_cat_usuario as cu","cu.id_usuario","=","mc.usuario_creacion")
