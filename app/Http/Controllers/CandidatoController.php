@@ -19,18 +19,21 @@ class CandidatoController extends Controller
     {
         //
     }
-    public function obtenerDatosDashBoard(){
-        $usuario_totales = count(Candidato::where("activo",1)->get());
-        $usuarios_contratatos = count(Candidato::where("gen_gen_cat_status_id",1)->where("activo",1)->get());
-        $usuarios_por_contratar = count(Candidato::where("gen_gen_cat_status_id",6)->where("activo",1)->get());
-        $numero_solicitudes = 0; //Aun no se como sacarlo
-        $respuesta = [
-            "num_solicitudes" => $numero_solicitudes,
-            "por_contratar" => $usuarios_por_contratar,
-            "contratados" => $usuarios_contratatos,
-            "total" => $usuario_totales
-        ];
-        return $this->crearRespuesta(1,$respuesta,200);
+    public function autoComplete(Request $res){
+        $palabra = "%".strtoupper($res["nombre_candidato"])."%";
+        $id_cliente = $res["id_cliente"];
+        $busqueda = Candidato::select(DB::raw('CONCAT(apellido_paterno, " ", apellido_materno, " ", nombre) AS nombre'),'id_candidato')
+        ->where("id_cliente",$id_cliente)
+        ->where("activo",1)
+        ->where(DB::raw('CONCAT(apellido_paterno, " ", apellido_materno, " ", nombre)'),"like",$palabra)
+        ->get();
+        if(count($busqueda)>0){
+            foreach ($busqueda as $canditado) {
+                $canditado->nombre = $canditado->apellido_paterno." ".$canditado->apellido_materno." ".$canditado->nombre;
+            }
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
     }
     public function obtenerCandidatos(Request $res){
         $take = $res["taken"];

@@ -13,7 +13,22 @@ class DepartamentoController extends Controller
     {
         //
     }
-
+    public function autoComplete(Request $res){
+        $palabra = strtoupper($res["nombre_departamento"]);
+        $id_empresa = $res["id_empresa"];
+        $busqueda = DB::table('gen_cat_departamento as cd')
+        ->select("cd.departamento","cd.id_departamento")
+        ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+        ->where("led.activo",1)
+        ->where("cd.departamento","like","%".$palabra."%")
+        ->where("led.id_empresa",$id_empresa)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
     public function obtenerDepartamentos(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
@@ -42,7 +57,7 @@ class DepartamentoController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $registros = DB::table('gen_cat_departamento as cd')
-        ->select("cd.departamento","cd.id_departamento")
+        ->select("cd.departamento","cd.id_departamento","led.activo")
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
@@ -121,7 +136,7 @@ class DepartamentoController extends Controller
             $id_departamento = $this->getSigId("gen_cat_departamento");
             $departamento = new Departamento;
             $departamento->id_departamento = $id_departamento;
-            $departamento->departamento = $request["departamento"];
+            $departamento->departamento = strtoupper($request["departamento"]);
             $departamento->disponibilidad = $request["disponibilidad"];
             $departamento->descripcion = $request["descripcion"];
             $departamento->fecha_creacion = $fecha;
@@ -135,7 +150,7 @@ class DepartamentoController extends Controller
                 $puesto_clase = new Puesto;
                 $puesto_clase->id_puesto = $id_puesto;
                 $puesto_clase->id_departamento = $id_departamento;
-                $puesto_clase->puesto = $puesto["puesto"];
+                $puesto_clase->puesto = strtoupper($puesto["puesto"]);
                 $puesto_clase->disponibilidad = $puesto["disponibilidad"];
                 $puesto_clase->descripcion = $puesto["descripcion"];
                 $puesto_clase->fecha_creacion = $fecha;
@@ -157,7 +172,7 @@ class DepartamentoController extends Controller
     public function actualizarDepartamento(Request $request){
         try{
             $departamento = Departamento::find($request["id_departamento"]);
-            $departamento->departamento = $request["departamento"];
+            $departamento->departamento = strtoupper($request["departamento"]);
             $departamento->disponibilidad = $request["disponibilidad"];
             $departamento->descripcion = $request["descripcion"];
             $departamento->fecha_modificacion = $this->getHoraFechaActual();
@@ -168,7 +183,7 @@ class DepartamentoController extends Controller
             $puestos = $request["puestos"];
             foreach($puestos as $puesto){
                 $puesto_clase = Puesto::find($puesto["id_puesto"]);
-                $puesto_clase->puesto = $puesto["puesto"];
+                $puesto_clase->puesto = strtoupper($puesto["puesto"]);
                 $puesto_clase->disponibilidad = $puesto["disponibilidad"];
                 $puesto_clase->descripcion = $puesto["descripcion"];
                 $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];

@@ -19,7 +19,19 @@ class EmpresaController extends Controller
     {
         //
     }
-
+    public function autoComplete(Request $res){
+        $palabra = strtoupper($res["nombre_empresa"]);
+        $busqueda = DB::table("gen_cat_empresa as ce")
+        ->select("ce.id_empresa","ce.empresa")
+        ->where("ce.empresa","like","%".$palabra."%")
+        ->where("ce.activo",1)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
     public function obtenerEmpresas(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
