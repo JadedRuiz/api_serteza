@@ -21,8 +21,10 @@ class ContabilidadController extends Controller
         $pre_data = DB::table('con_movfacturas as mf')
         ->join("gen_cat_statu as s", "mf.id_status", "=", "s.id_statu")
         ->join("con_bovedaxml as bx", "bx.id_bovedaxml", "=", "mf.id_bovedaxml", "left outer")
+        ->join("con_provcliente as pc", "pc.id_provcliente", "=", "mf.id_provcliente", "left outer")
         ->join("con_cativas as i", "i.id_cativas", "=", "mf.id_cativas")
-        ->select("mf.*", "bx.uuid", "s.status", DB::raw("CONCAT(i.clave_sat, ' - ', i.tasa) AS iva"))
+        ->select("mf.*", "bx.uuid", "s.status", "i.clave_sat",  'bx.xml',
+        DB::raw("CONCAT(i.clave_sat, ' - ', i.tasa) AS ivas_con"), "pc.rfc", "pc.razonsocial")
         ->where("mf.id_empresa", $id_empresa);
         if($request["id_provcliente"]){
             $pre_data->where('mf.id_provcliente', $id_provcliente);
@@ -79,12 +81,25 @@ class ContabilidadController extends Controller
 
         $data = DB::table('con_provcliente')
         ->select('id_provcliente', 'nombrecomercial')
-       
         ->where("id_empresa", $id_empresa)
         ->where(function ($query) use ($clien_prov){
             $query->orWhere("nombrecomercial", "Like", '%'.$clien_prov.'%')
                         ->orWhere("rfc", "Like", '%'.$clien_prov.'%')
-                        ->orWhere("rfc", "Like", '%'.$clien_prov.'%');
+                        ->orWhere("razonsocial", "Like", '%'.$clien_prov.'%');
+        })
+        ->take(8)
+        ->get();
+        return ["ok"=> true, "data" => $data];       
+    }
+    public function buscarUUID(Request $request){
+        $uuid = $request["buscar"];
+        $id_empresa = $request["id_empresa"];
+
+        $data = DB::table('con_bovedaxml')
+        ->select('id_bovedaxml', 'uuid')
+        ->where("id_empresa", $id_empresa)
+        ->where(function ($query) use ($uuid){
+            $query->orWhere("uuid", "Like", '%'.$uuid.'%');
         })
         ->take(8)
         ->get();
@@ -96,6 +111,7 @@ class ContabilidadController extends Controller
         $data = $ojso["data"];
         $usuario = $request["usuario"];
         $id_empresa = $request["empresa"];
+        $movimiento = $request["movimiento"];
         $id_bovedaxml = 0;
         $id_provcliente = 0;
         $mi_id_emisor = 0;
@@ -111,7 +127,8 @@ class ContabilidadController extends Controller
             ->count();
             if($existe == 0){
                 DB::table('con_bovedaxml')->insert(
-                    ['uuid' => $miData['uuid'], 
+                    ['id_empresa'=> $id_empresa,
+                    'uuid' => $miData['uuid'], 
                     'fechatimbrado'=> $miData['fechaTimbrado'],
                     'xml'=> $miData["xml"],
                     'fecha_creacion'=>  $this->getHoraFechaActual(),
@@ -119,19 +136,37 @@ class ContabilidadController extends Controller
                     ]
                 );
                 $id_bovedaxml = DB::getPdo()->lastInsertId();
+            }else{
+                $id_bovedaxml = DB::table('con_bovedaxml')
+                ->select("id_bovedaxml")
+                ->where("uuid", $miData['uuid'])
+                ->first();
+                $id_bovedaxml = $id_bovedaxml->id_bovedaxml;
+            }
+            // desde aqui
+            // if($movimiento == "editar"){
+            //     $miData['rfcEmisor'] = $id_empresa
+            // }else{
+
+            // }
+            if($miData['id_empresa'] > 0){
+                $mi_id_emisor = $miData['id_empresa'];
+            }else{
                 $mi_id_emisor = DB::table('gen_cat_empresa')
-                                    ->select("id_empresa")
-                                    ->where("rfc", $miData['rfcEmisor'])
-                                    ->count();
+                ->select("id_empresa")
+                ->where("rfc", $miData['rfcEmisor'])
+                ->count();
                 if($mi_id_emisor > 0){
                     $mi_id_emisor = DB::table('gen_cat_empresa')
-                    ->select("id_empresa")
-                    ->where("rfc", $miData['rfcEmisor'])
-                    ->first();
+                                ->select("id_empresa")
+                                ->where("rfc", $miData['rfcEmisor'])
+                                ->first();
                     $mi_id_emisor = $mi_id_emisor->id_empresa;
                 }else{
                     $mi_id_emisor = 0;
                 }
+            }
+                
                 
                 if($id_empresa == $mi_id_emisor){
                     // es cliente - ingreso insertar datos RECEPTOR
@@ -150,7 +185,7 @@ class ContabilidadController extends Controller
                 }
                 $existeRfc = DB::table('con_provcliente')
                             ->select("id_provcliente")
-                            ->where("rfc", $miData['rfcEmisor'])
+                            ->where("rfc", $mi_rfc)
                             ->count();
                 if($existeRfc == 0){
                     DB::table('gen_cat_direccion')->insert(
@@ -198,41 +233,66 @@ class ContabilidadController extends Controller
                 }else{
                     $id_provcliente = DB::table('con_provcliente')
                     ->select('id_provcliente')
-                    ->where('rfc', $miData['rfcEmisor'])
+                    ->where('rfc', $mi_rfc)
                     ->first();
                     $id_provcliente = $id_provcliente->id_provcliente;
                 }
+                // hasta aqui
                 $id_iva = DB::table('con_cativas')
                 ->select('id_cativas')
                 ->where('id_empresa', $id_empresa)
                 ->where('clave_sat', $miData['clave_sat'])
                 ->first();
                 $id_iva = $id_iva->id_cativas;
-                DB::table('con_movfacturas')->insert(
-                    ['id_empresa' => $id_empresa, 
-                    'id_bovedaxml'=> $id_bovedaxml,
-                    'id_provcliente'=> $id_provcliente,
-                    'id_status'=>  1,
-                    'folio'=> $miData['folio'],
-                    'fecha'=> $miData['fecha'],
-                    'metodopago'=> $miData['metodopago'],
-                    'formapago'=> $miData['formapago'],
-                    'moneda'=> $miData['moneda'],
-                    'subtotal'=> $miData['subtotal'],
-                    'total'=> $miData['total'],
-                    'iva'=> $miData['iva'],
-                    'retencion_iva'=> 1,
-                    'retencion_isr'=> 1,
-                    'id_cativas'=> $id_iva,
-                    'cuentacontable'=> "",
-                    'tipo_documento'=> $tipo_documento,
-                    'ieps' => $miData['ieps'],
-                    'tipocambio' => $miData['tipo_cambio']
-                    ]
-                );
-            }
+                $id_mifolio = DB::table('con_movfacturas')
+                ->select('id_movfactura')
+                ->where('folio', $miData['folio'])
+                ->count();
+                if($id_mifolio == 0){
+                    // nuevo
+                    DB::table('con_movfacturas')->insert(
+                        ['id_empresa' => $id_empresa, 
+                        'id_bovedaxml'=> $id_bovedaxml,
+                        'id_provcliente'=> $id_provcliente,
+                        'id_status'=>  1,
+                        'folio'=> $miData['folio'],
+                        'fecha'=> $miData['fecha'],
+                        'metodopago'=> $miData['metodopago'],
+                        'formapago'=> $miData['formapago'],
+                        'moneda'=> $miData['moneda'],
+                        'subtotal'=> $miData['subtotal'],
+                        'total'=> $miData['total'],
+                        'iva'=> $miData['iva'],
+                        'retencion_iva'=> 1,
+                        'retencion_isr'=> 1,
+                        'id_cativas'=> $id_iva,
+                        'cuentacontable'=> $miData['cuentacontable'],
+                        'tipo_documento'=> $tipo_documento,
+                        'ieps' => $miData['ieps'],
+                        'tipocambio' => $miData['tipo_cambio']
+                        ]
+                    );
+                }else{
+                    //actualiza
+                    $id_mifolio = DB::table('con_movfacturas')
+                                ->select('id_movfactura')
+                                ->where('folio', $miData['folio'])
+                                ->first();
+                    DB::update('update con_movfacturas 
+                    set id_bovedaxml = ?, id_status = ?,
+                    folio = ?, fecha = ?, metodopago = ?, formapago = ?, moneda = ?, subtotal = ?,
+                    total = ?, iva = ?, retencion_iva = ?, retencion_isr = ?, id_cativas = ?, 
+                    cuentacontable = ?, tipo_documento = ?, ieps = ?
+                    where id_movfactura = ?', 
+                    [$id_bovedaxml,
+                    1, $miData["folio"], $miData["fecha"],
+                    $miData["metodopago"], $miData["formapago"], $miData["moneda"], 
+                    $miData["subtotal"], $miData["total"], $miData["iva"],
+                    $miData["retencion_iva"], $miData["retencion_isr"], $id_iva,
+                    $miData["cuentacontable"], $miData["tipo"], $miData["ieps"], $id_mifolio->id_movfactura]);
+                }
         }
-        return ["ok"=> true,"message"=> "xml`s insertador", "datos" => $data];
+        return ["ok"=> true,"message"=> "xml`s insertador"];
     }
 
 }
