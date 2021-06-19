@@ -29,6 +29,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('actualizar-factura', 'ContabilidadController@actualizarFacturas'); 
         $router->get('get-ivas/{id_empresa}', 'ContabilidadController@getCatIvas'); 
         $router->post('get-cliente-proveedor', 'ContabilidadController@buscarClienteProveedor');  
+        $router->post('get-uuid', 'ContabilidadController@buscarUUID');  
     });
 
 
