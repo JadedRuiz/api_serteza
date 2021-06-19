@@ -39,7 +39,7 @@ class CandidatoController extends Controller
         $take = $res["taken"];
         $pagina = $res["pagina"];
         $status = $res["status"];
-        $palabra = $res["palabra"];
+        $palabra = strtoupper($res["palabra"]);
         $id_cliente = $res["id_cliente"];
         $otro = "";
         if($status == "-1"){
@@ -62,17 +62,13 @@ class CandidatoController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $registros = DB::table('rh_cat_candidato as cc')
-        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo","cf.nombre as fotografia")
+        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre")
         ->join("gen_cat_statu as cs","cs.id_statu","=","cc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
-        ->where(function ($query) use ($otro_dos,$palabra){
-            $query->where("cc.nombre",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
-        })
+        ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
         ->skip($incia)
         ->take($take)
         ->get();
@@ -85,11 +81,7 @@ class CandidatoController extends Controller
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
-        ->where(function ($query) use ($otro_dos,$palabra){
-            $query->where("cc.nombre",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
-        })
+        ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
         ->get();
         if(count($registros)>0){
             $respuesta = [
