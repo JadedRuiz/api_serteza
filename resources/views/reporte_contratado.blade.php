@@ -37,15 +37,15 @@
         }
         .hijo_header{
             margin-top:20px;
-            width: 40%;
+            width: 30%;
             display: inline-block;
-            height: 100px;
+            height: 80px;
             margin-left: 10px;
             margin-bottom: -30px;
         }
         .hijo_header_dos{
             margin-top:0px;
-            width: 55%;
+            width: 65%;
             display: inline-block;
             text-align: center;
             margin-right: 10px;
