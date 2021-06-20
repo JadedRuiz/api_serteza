@@ -137,7 +137,6 @@ class DepartamentoController extends Controller
             $departamento = new Departamento;
             $departamento->id_departamento = $id_departamento;
             $departamento->departamento = strtoupper($request["departamento"]);
-            $departamento->disponibilidad = $request["disponibilidad"];
             $departamento->descripcion = $request["descripcion"];
             $departamento->fecha_creacion = $fecha;
             $departamento->usuario_creacion = $request["usuario_creacion"];
@@ -151,7 +150,7 @@ class DepartamentoController extends Controller
                 $puesto_clase->id_puesto = $id_puesto;
                 $puesto_clase->id_departamento = $id_departamento;
                 $puesto_clase->puesto = strtoupper($puesto["puesto"]);
-                $puesto_clase->disponibilidad = $puesto["disponibilidad"];
+                $puesto_clase->autorizados = $puesto["autorizados"];
                 $puesto_clase->descripcion = $puesto["descripcion"];
                 $puesto_clase->fecha_creacion = $fecha;
                 $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
@@ -173,7 +172,6 @@ class DepartamentoController extends Controller
         try{
             $departamento = Departamento::find($request["id_departamento"]);
             $departamento->departamento = strtoupper($request["departamento"]);
-            $departamento->disponibilidad = $request["disponibilidad"];
             $departamento->descripcion = $request["descripcion"];
             $departamento->fecha_modificacion = $this->getHoraFechaActual();
             $departamento->usuario_modificacion = $request["usuario_creacion"];
@@ -184,7 +182,7 @@ class DepartamentoController extends Controller
             foreach($puestos as $puesto){
                 $puesto_clase = Puesto::find($puesto["id_puesto"]);
                 $puesto_clase->puesto = strtoupper($puesto["puesto"]);
-                $puesto_clase->disponibilidad = $puesto["disponibilidad"];
+                $puesto_clase->autorizados = $puesto["autorizados"];
                 $puesto_clase->descripcion = $puesto["descripcion"];
                 $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
                 $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];

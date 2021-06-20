@@ -161,6 +161,7 @@ class ClienteController extends Controller
             $cliente = new Cliente;
             $cliente->id_cliente = $id_cliente;
             $cliente->cliente = strtoupper($request["cliente"]);
+            $cliente->id_fotografia = $id_fotografia;
             $cliente->contacto = $request["contacto"];
             $cliente->id_direccion = $id_direccion;
             $cliente->descripcion = $request["descripcion"];
