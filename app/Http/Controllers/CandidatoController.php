@@ -39,7 +39,7 @@ class CandidatoController extends Controller
         $take = $res["taken"];
         $pagina = $res["pagina"];
         $status = $res["status"];
-        $palabra = $res["palabra"];
+        $palabra = strtoupper($res["palabra"]);
         $id_cliente = $res["id_cliente"];
         $otro = "";
         if($status == "-1"){
@@ -62,17 +62,13 @@ class CandidatoController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $registros = DB::table('rh_cat_candidato as cc')
-        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo","cf.nombre as fotografia")
+        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre")
         ->join("gen_cat_statu as cs","cs.id_statu","=","cc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
-        ->where(function ($query) use ($otro_dos,$palabra){
-            $query->where("cc.nombre",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
-        })
+        ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
         ->skip($incia)
         ->take($take)
         ->get();
@@ -85,11 +81,7 @@ class CandidatoController extends Controller
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
-        ->where(function ($query) use ($otro_dos,$palabra){
-            $query->where("cc.nombre",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
-        })
+        ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
         ->get();
         if(count($registros)>0){
             $respuesta = [
@@ -118,7 +110,7 @@ class CandidatoController extends Controller
     }
     public function obtenerCandidatoPorId($id){
         $respuesta = DB::table("rh_cat_candidato as rcc")
-        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia")
+        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia","rcc.id_cliente")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
         ->join("gen_cat_statu as gce","gce.id_statu","=","rcc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
@@ -143,6 +135,7 @@ class CandidatoController extends Controller
         try{
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = $request["usuario_creacion"];
+        $id_cliente = $request["id_cliente"];
         //insertar fotografia
         $id_fotografia = $this->getSigId("gen_cat_fotografia");
         //Insertar fotografia
@@ -151,7 +144,7 @@ class CandidatoController extends Controller
             DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$fecha,$usuario_creacion,1]);
         }else{
             $file = base64_decode($request["fotografia"]["docB64"]);
-            $nombre_image = "candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+            $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
             DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
             Storage::disk('candidato')->put($nombre_image, $file);
         }
@@ -179,7 +172,7 @@ class CandidatoController extends Controller
             $canditado = new Candidato;
             $canditado->id_candidato = $this->getSigId("rh_cat_candidato");
             $canditado->id_status = $request["id_statu"];  //En reclutamiento
-            $canditado->id_cliente = $request["id_cliente"];
+            $canditado->id_cliente = $id_cliente;
             $canditado->id_fotografia = $id_fotografia;
             $canditado->id_direccion = $id_direccion;
             $canditado->nombre = strtoupper($request["nombre"]);
@@ -210,10 +203,27 @@ class CandidatoController extends Controller
     }
     public function actualizarCandidato(Request $request){
         try{
-            $fecha = $this->getHoraFechaActual();
-            $usuario_creacion = $request["usuario_creacion"];
-            //Actualizar candidato
             $canditado = Candidato::find($request["id_candidato"]);
+            $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "Cliente".$canditado->id_cliente."/candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('candidato')->has($nombre_image)){
+                    Storage::disk('candidato')->delete($nombre_image);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('candidato')->put($nombre_image, $file);
+                }else{
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('candidato')->put($nombre_image, $file);
+                }
+            }
+            //Actualizar candidato
             $canditado->id_status = $request["id_statu"];  //En reclutamiento
             $canditado->nombre = strtoupper($request["nombre"]);
             $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
@@ -229,7 +239,7 @@ class CandidatoController extends Controller
             $canditado->telefono_tres =$request["telefono_tres"];
             $canditado->descripcion = $request["descripcion"];
             $canditado->fecha_modificacion = $fecha;
-            $canditado->usuario_modificacion = $usuario_creacion;
+            $canditado->usuario_modificacion = $usuario_modificacion;
             $canditado->activo = 1;
             $canditado->save();
             //Actualizar direccion
@@ -246,11 +256,9 @@ class CandidatoController extends Controller
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
             $direccion->fecha_modificacion = $fecha;
-            $direccion->usuario_modificacion = $usuario_creacion;
+            $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();
-            //Actualizar foto
-            DB::update('update gen_cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
-            return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
+            return $this->crearRespuesta(1,"El candidato se ha editado con éxito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }

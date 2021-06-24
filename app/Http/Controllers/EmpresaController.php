@@ -174,15 +174,34 @@ class EmpresaController extends Controller
     }
     public function actualizarEmpresa(Request $request){
         try{
-            //Actualizar empresa
+            //Actualizar foto
             $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('empresa')->has($nombre_image)){
+                    Storage::disk('empresa')->delete($nombre_image);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('empresa')->put($nombre_image, $file);
+                }else{
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('empresa')->put($nombre_image, $file);
+                }
+            }
+            //Actualizar empresa
             $empresa = Empresa::find($request["id_empresa"]);
             $empresa->empresa = $request["empresa"];
             $empresa->razon_social = $request["razon_social"];
             $empresa->rfc = $request["rfc"];
             $empresa->descripcion = $request["descripcion"];
             $empresa->fecha_modificacion = $fecha;
-            $empresa->usuario_modificacion = $request["usuario_creacion"];
+            $empresa->usuario_modificacion = $usuario_modificacion;
             $empresa->save();
             //Actualizar direccion
             $direccion = Direccion::find($request["direccion"]["id_direccion"]);
@@ -198,10 +217,8 @@ class EmpresaController extends Controller
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
             $direccion->fecha_modificacion = $fecha;
-            $direccion->usuario_modificacion = $request["usuario_creacion"];
+            $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();
-            //Actualizar foto
-            DB::update('update gen_cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

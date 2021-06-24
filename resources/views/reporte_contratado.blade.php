@@ -37,15 +37,15 @@
         }
         .hijo_header{
             margin-top:20px;
-            width: 55%;
+            width: 30%;
             display: inline-block;
-            height: 130px;
+            height: 80px;
             margin-left: 10px;
             margin-bottom: -30px;
         }
         .hijo_header_dos{
             margin-top:0px;
-            width: 35%;
+            width: 65%;
             display: inline-block;
             text-align: center;
             margin-right: 10px;
@@ -53,7 +53,7 @@
         }
         .logo_cliente{
             width: 100%;
-            height: 130px;
+            height: 100%;
         }
         .container-body{
             margin-top: 15px;
@@ -61,7 +61,7 @@
         }
         .titulo_contenedor{
             border-bottom: 2px black solid;
-            background-color: rgba(99, 98, 98, 0.877);
+            background-color: rgba(167, 167, 167, 0.877);
             padding: 5px 5px;
             font-size: 14px;
         }
@@ -122,8 +122,8 @@
         .input{
             margin-bottom: 10px;
         }
-        .domicilio .input {
-            margin-bottom: 10px;
+        .domicilio{
+            border: 1px transparent solid;
         }
     </style>
 </head>
@@ -210,9 +210,17 @@
                     <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Estado</p>
                 </div>
                 <br>
-                <div class="input" style="text-align: center;width: 99%;">
+                <div class="input display-block" style="text-align: center;width: 33%;">
                     <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;;text-transform: uppercase;">{{$detalle_contratacion[0]->colonia}}</div>
                     <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Colonia</p>
+                </div>
+                <div class="input display-block" style="text-align: center;width: 33%;">
+                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;;text-transform: uppercase;">{{$detalle_contratacion[0]->telefono}}</div>
+                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Telefono</p>
+                </div>
+                <div class="input display-block" style="text-align: center;width: 33%;">
+                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;;text-transform: uppercase;">{{$detalle_contratacion[0]->telefono_dos}}</div>
+                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Telefono secundario</p>
                 </div>
             </div>
         </div>

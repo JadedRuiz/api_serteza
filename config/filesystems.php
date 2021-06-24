@@ -47,7 +47,14 @@ return [
             'driver' => 'local',
             'root' => "",
         ],
-        
+
+        'favicon' => [
+            'driver' => 'local',
+            'root' => storage_path('favicon'),
+            'url' => env('APP_URL').'/storage/favicon',
+            'visibility' => 'public',
+        ],
+
         'usuario' => [
             'driver' => 'local',
             'root' => storage_path('usuario'),

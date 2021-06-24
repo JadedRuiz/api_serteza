@@ -37,15 +37,15 @@
         }
         .hijo_header{
             margin-top:20px;
-            width: 55%;
+            width: 40%;
             display: inline-block;
-            height: 130px;
+            height: 100px;
             margin-left: 10px;
             margin-bottom: -30px;
         }
         .hijo_header_dos{
             margin-top:0px;
-            width: 35%;
+            width: 55%;
             display: inline-block;
             text-align: center;
             margin-right: 10px;
@@ -53,7 +53,7 @@
         }
         .logo_cliente{
             width: 100%;
-            height: 130px;
+            height: 100%;
         }
         .dib{
             display: inline-block;
