@@ -22,6 +22,24 @@ class Controller extends BaseController
         $mytime = Carbon::now();
         return $mytime;
     }
+    public function getEstatus($tipo){
+            $data = '';
+        if($tipo = "cancelar"){
+                $data = DB::table('gen_cat_statu')
+                ->select('id_statu')
+                ->where('status', "Cancelado")
+                ->first();
+                $data = $data->id_statu;
+        }
+        if($tipo = "activo"){
+                $data = DB::table('gen_cat_statu')
+                ->select('id_statu')
+                ->where('status', "Activo")
+                ->first();
+                $data = $data->id_statu;
+        }
+        return $data;
+    }
 
     public function crearRespuesta($tipo,$obj,$http_response){
         if($tipo == 1){ //Success
@@ -33,6 +51,13 @@ class Controller extends BaseController
     }
     public function getEnv($nombre){
         return env($nombre,"");
+    }
+    public function getConceptoDefault(){
+        $data = DB::table('con_catconceptos')
+        ->select('id_concepto')
+        ->where('concepto', 'Por clasificar')
+        ->first();
+        return $data->id_concepto;
     }
     public function getSigId($nombre_tabla){
         $bol = true;

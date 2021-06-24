@@ -83,6 +83,13 @@ return [
             'visibility' => 'public',
         ],
 
+        'cancelaciones' => [
+            'driver' => 'local',
+            'root' => storage_path('cancelaciones'),
+            'url' => env('APP_URL').'/storage/cancelaciones',
+            'visibility' => 'public',
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
