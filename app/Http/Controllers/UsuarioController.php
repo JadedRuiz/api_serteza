@@ -16,6 +16,46 @@ class UsuarioController extends Controller
     public function getRegistros(){
         return count(Usuario::all());
     }
+    public function autoComplete(Request $res){
+        $palabra = strtoupper($res["nombre_usuario"]);
+        $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
+        ->select("cu.id_usuario")
+        ->join("gen_cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
+        ->where("id_sistema",5)
+        ->first();
+        $busqueda = DB::table("gen_cat_usuario as cu")
+        ->select("cu.id_usuario","cu.nombre")
+        ->where("id_usuario","!=",$usuario_super_admin->id_usuario)
+        ->where("nombre","like","%".$palabra."%")
+        ->where("activo",1)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
+    public function autoCompletePorIdEmpresa(Request $res){
+        $palabra = strtoupper($res["nombre_usuario"]);
+        $id_empresa = $res["id_empresa"];
+        $usuario_super_admin = DB::table('liga_usuario_sistema as lus')
+        ->select("cu.id_usuario")
+        ->join("gen_cat_usuario as cu","lus.id_usuario","=","lus.id_usuario")
+        ->where("id_sistema",5)
+        ->first();
+        $busqueda = DB::table('gen_cat_usuario as cu')
+        ->join("liga_usuario_empresa as lue","lue.id_usuario","=","cu.id_usuario")
+        ->where("cu.activo",1)
+        ->where("cu.nombre","like","%".$palabra."%")
+        ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
+        ->where("lue.id_empresa",$id_empresa)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
     public function obtenerUsuarios(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
@@ -153,7 +193,7 @@ class UsuarioController extends Controller
     }
     public function obtenerUsuarioPorId($id_usuario)
     {
-        $validar = DB::table('cat_usuario as cu')
+        $validar = DB::table('gen_cat_usuario as cu')
         ->select("cu.nombre","usuario","password","id_usuario","id_usuario as sistemas","cu.activo","cf.nombre as fotografia","cu.id_fotografia")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cu.id_fotografia")
         ->where("cu.id_usuario",$id_usuario)
@@ -398,7 +438,7 @@ class UsuarioController extends Controller
             "info_usuario" => [
                 "id" => $usuario[0]->id_usuario,
                 "nombre" => $usuario[0]->nombre,
-                "url_foto" => $this->getEnv("APP_URL")."/api_serteza/resources/img/foto_perfil_".$usuario[0]->id_usuario.".png",
+                "url_foto" => Storage::disk('usuario')->url($usuario[0]->fotografia),
                 "usuario" => $res["usuario"],
                 "sistemas" => $sistemas_info
             ]
@@ -407,8 +447,11 @@ class UsuarioController extends Controller
     }
     public function validarSesion($usuario,$password)
     {
-        $validar = DB::table('gen_cat_usuario')
-        ->where("usuario",$usuario)
+        $validar = DB::table('gen_cat_usuario as gcu')
+        ->select("gcu.id_usuario","gcu.nombre","gcu.password","cf.nombre as fotografia","gcu.activo")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","gcu.id_fotografia")
+        ->where("gcu.usuario",$usuario)
+        ->where("gcu.activo",1)
         ->get();
         if(count($validar)>0){
             $password_decode = $this->decode_json($validar[0]->password);
@@ -562,5 +605,18 @@ class UsuarioController extends Controller
         }
         return ["ok"=> true,"message"=> "xml`s insertador", "datos" => $data];
     }
-
+    public function tieneSistema(Request $res)
+    {
+        $usuario = $res["usuario"];
+        $sistema = $res["id_sistema"];
+        $validar = DB::table("liga_usuario_sistema")
+        ->where("id_usuario",$usuario)
+        ->where("id_sistema",$sistema)
+        ->where("activo",1)
+        ->get();
+        if(count($validar)>0){
+            return $this->crearRespuesta(1,"Cuenta con el sistema",200);
+        }
+        return $this->crearRespuesta(2,"No cuenta con el sistema",200);
+    }
 }

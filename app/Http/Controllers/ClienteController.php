@@ -19,7 +19,19 @@ class ClienteController extends Controller
     {
         //
     }
-
+    public function autoComplete(Request $res){
+        $palabra = strtoupper($res["nombre_cliente"]);
+        $busqueda = DB::table("gen_cat_cliente as cc")
+        ->select("cc.id_cliente","cc.cliente")
+        ->where("cc.cliente","like","%".$palabra."%")
+        ->where("cc.activo",1)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
     function obtenerClientes(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
@@ -148,7 +160,7 @@ class ClienteController extends Controller
             $id_cliente = $this->getSigId("gen_cat_cliente");
             $cliente = new Cliente;
             $cliente->id_cliente = $id_cliente;
-            $cliente->cliente = $request["cliente"];
+            $cliente->cliente = strtoupper($request["cliente"]);
             $cliente->contacto = $request["contacto"];
             $cliente->id_direccion = $id_direccion;
             $cliente->descripcion = $request["descripcion"];

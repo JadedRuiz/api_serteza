@@ -31,6 +31,17 @@ class PuestoController extends Controller
     {
         $puestos = Puesto::where("id_departamento",$id_departamento)->get();
         if(count($puestos)>0){
+            $autorizados = 0;
+            $contratados = 0;
+            foreach($puestos as $puesto){
+                $puesto->vacantes = intval($puesto->autorizados) - intval($puesto->contratados);
+                if($puesto->contratados != null){
+                    $puesto->contratados = $contratados + intval($puesto->contratados);
+                }else{
+                    $puesto->contratados = 0;
+                }
+                $puesto->autorizados = $autorizados + intval($puesto->autorizados);
+            }
             return $this->crearRespuesta(1,$puestos,200);
         }else{
             return $this->crearRespuesta(2,"No hay puestos que mostrar",200);
