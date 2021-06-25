@@ -29,7 +29,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('actualizar-factura', 'ContabilidadController@actualizarFacturas'); 
         $router->get('get-ivas/{id_empresa}', 'ContabilidadController@getCatIvas'); 
         $router->post('get-cliente-proveedor', 'ContabilidadController@buscarClienteProveedor');  
-        $router->post('get-uuid', 'ContabilidadController@buscarUUID');  
+        $router->post('get-uuid', 'ContabilidadController@buscarUUID');
+        
+        $router->get('get-monedas', 'ContabilidadController@getMonedas'); 
+        $router->get('get-metodos-pago', 'ContabilidadController@getMetodosPago'); 
+        $router->get('get-tipos-comprobantes', 'ContabilidadController@getTipoComprobantes'); 
+        $router->post('cancelar-factura', 'ContabilidadController@cancelarFactura'); 
+        $router->get('get-conceptos/{id_empresa}', 'ContabilidadController@getConceptos'); 
     });
 
 

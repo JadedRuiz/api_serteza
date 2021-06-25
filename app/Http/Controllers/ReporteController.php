@@ -16,7 +16,7 @@ class ReporteController extends Controller
     public function reporteContratado($id_detalle)
     {
         $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
-        ->select("cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_departamento","ce.empresa","ccd.cliente","cu.nombre as usuario","cc.rfc","cc.curp","cc.numero_seguro","cc.correo","cdd.calle","cdd.numero_interior","cdd.numero_exterior","cdd.cruzamiento_uno","cdd.cruzamiento_dos","cdd.colonia","cdd.municipio","cdd.estado","cf.extension","cf.fotografia","cff.nombre as name_foto")
+        ->select("cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_departamento","ce.empresa","ccd.cliente","cu.nombre as usuario","cc.rfc","cc.curp","cc.numero_seguro","cc.correo","cdd.calle","cdd.numero_interior","cdd.numero_exterior","cdd.cruzamiento_uno","cdd.cruzamiento_dos","cdd.colonia","cdd.municipio","cdd.estado","cf.extension","cf.fotografia","cff.nombre as name_foto","cc.telefono","cc.telefono_dos")
         ->join("rh_movimientos as mc","mc.id_movimiento","=","dc.id_movimiento")
         ->join("gen_cat_cliente as ccd","ccd.id_cliente","=","mc.id_cliente")
         ->join("gen_cat_fotografia as cff","cff.id_fotografia","=","ccd.id_fotografia")
