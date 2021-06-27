@@ -17,6 +17,7 @@ class ContabilidadController extends Controller
         $id_empresa = $request["id_empresa"];
         $id_provcliente = $request["id_provcliente"];
         $id_bovedaxml = $request["id_bovedaxml"];
+        $activo = $this->getEstatus("activo");
         $index = $request["index"];
         $pre_data = DB::table('con_movfacturas as mf')
         ->join("gen_cat_statu as s", "mf.id_status", "=", "s.id_statu")
@@ -27,7 +28,8 @@ class ContabilidadController extends Controller
         DB::raw("CONCAT(i.clave_sat, ' - ', i.tasa) AS ivas_con"), "pc.rfc", "pc.razonsocial")
         ->where("mf.id_empresa", $id_empresa);
         if($request["id_provcliente"]){
-            $pre_data->where('mf.id_provcliente', $id_provcliente);
+            $pre_data->where('mf.id_provcliente', $id_provcliente)
+            ->where('mf.id_status', $activo);
         }
         if($request["id_bovedaxml"]){
             $pre_data->where('mf.id_bovedaxml', $id_bovedaxml);
@@ -116,6 +118,7 @@ class ContabilidadController extends Controller
         $id_provcliente = 0;
         $mi_id_emisor = 0;
         $es_cliente = 0;
+        $miConcepto = 0;
         $es_proveedor = 0;
         $tipo_documento = '';
         $mi_razon = '';
@@ -208,9 +211,11 @@ class ContabilidadController extends Controller
                         ]
                     );
                     $id_direccion = DB::getPdo()->lastInsertId();
+                    $miConcepto = $this->getConceptoDefault();
                     DB::table('con_provcliente')->insert(
                         ['id_empresa' => $id_empresa, 
                         'id_direccion'=> $id_direccion,
+                        'id_concepto' => $miConcepto,
                         'id_status'=> 1,
                         'rfc'=>  $mi_rfc,
                         'razonsocial'=> $mi_razon,
@@ -232,9 +237,10 @@ class ContabilidadController extends Controller
                     $id_provcliente = DB::getPdo()->lastInsertId();
                 }else{
                     $id_provcliente = DB::table('con_provcliente')
-                    ->select('id_provcliente')
+                    ->select('id_provcliente', 'id_concepto')
                     ->where('rfc', $mi_rfc)
                     ->first();
+                    $miConcepto = $id_provcliente->id_concepto;
                     $id_provcliente = $id_provcliente->id_provcliente;
                 }
                 // hasta aqui
@@ -253,6 +259,7 @@ class ContabilidadController extends Controller
                     DB::table('con_movfacturas')->insert(
                         ['id_empresa' => $id_empresa, 
                         'id_bovedaxml'=> $id_bovedaxml,
+                        'id_concepto'=> $miConcepto,
                         'id_provcliente'=> $id_provcliente,
                         'id_status'=>  1,
                         'folio'=> $miData['folio'],
@@ -279,20 +286,102 @@ class ContabilidadController extends Controller
                                 ->where('folio', $miData['folio'])
                                 ->first();
                     DB::update('update con_movfacturas 
-                    set id_bovedaxml = ?, id_status = ?,
+                    set id_bovedaxml = ?, id_status = ?, id_concepto = ?,
                     folio = ?, fecha = ?, metodopago = ?, formapago = ?, moneda = ?, subtotal = ?,
                     total = ?, iva = ?, retencion_iva = ?, retencion_isr = ?, id_cativas = ?, 
                     cuentacontable = ?, tipo_documento = ?, ieps = ?
                     where id_movfactura = ?', 
-                    [$id_bovedaxml,
-                    1, $miData["folio"], $miData["fecha"],
+                    [$id_bovedaxml, 1, $miConcepto, $miData["folio"], $miData["fecha"],
                     $miData["metodopago"], $miData["formapago"], $miData["moneda"], 
                     $miData["subtotal"], $miData["total"], $miData["iva"],
                     $miData["retencion_iva"], $miData["retencion_isr"], $id_iva,
                     $miData["cuentacontable"], $miData["tipo"], $miData["ieps"], $id_mifolio->id_movfactura]);
                 }
+                    DB::update('update con_provcliente set id_concepto = ?, 
+                                fecha_modificacion = ?, usuario_modificacion = ?
+                                where id_provcliente = ?', 
+                                [$miConcepto, $this->getHoraFechaActual(), $usuario, $id_provcliente]);
         }
         return ["ok"=> true,"message"=> "xml`s insertador"];
+    }
+    public function cancelarFactura(Request $request){
+        $data = DB::table('con_movcancelaciones')
+                ->select('id_movfactura')
+                ->where('id_movfactura', $request["id_movfactura"])
+                ->count();
+        if($data == 0){
+            DB::update('update con_movfacturas set 
+            id_status = ? 
+            where id_movfactura = ?', 
+            [$this->getEstatus("cancelar"), $request["id_movfactura"]]);
+
+            DB::insert('insert into con_movcancelaciones 
+            (id_movfactura, motivo, fecha_cancelacion, usuario_creacion) 
+            values (?, ?, ?, ?)', 
+            [$request["id_movfactura"], $request["motivo"], 
+            $this->getHoraFechaActual(), $request["usuario"]]);
+
+            // $this->fileUpload($request, $request["id_movfactura"]);
+            $archivo = base64_encode($request["archivo"]);
+            $file = base64_decode($archivo);
+            $nombre_image = "cancelacion_file_".$request["id_movfactura"];
+            Storage::disk('cancelaciones')->put($nombre_image, $request["archivo"]);
+        }
+        return $this->crearRespuesta(1, "Factura cancelada", 200);
+    }
+    public function getMonedas(){
+        $data = DB::table('con_catmoneda')
+        ->select('*')
+        ->get();
+        return $this->crearRespuesta(1, $data, 200);
+    }
+    public function getMetodosPago(){
+        $data = DB::table('con_catmetodopago')
+        ->select('*')
+        ->get();
+        return $this->crearRespuesta(1, $data, 200);
+    }
+    public function getTipoComprobantes(){
+        $data = DB::table('con_cattipodecomprobante')
+        ->select('*')
+        ->get();
+        return $this->crearRespuesta(1, $data, 200);
+    }
+    public function getConceptos($id_empresa){
+        $data = DB::table('con_catconceptos')
+        ->select('id_concepto', 'concepto')
+        ->where('id_empresa', $id_empresa)
+        ->get();
+        return $this->crearRespuesta(1, $data, 200);
+    }
+    public function fileUpload(Request $request, $id) {
+        $response = null;
+            if ($request->hasFile('archivo')) {
+                $original_filename = $request->file('archivo')->getClientOriginalName();
+                $original_filename_arr = explode('.', $original_filename);
+                $file_ext = end($original_filename_arr);
+                $destination_path = './upload/cancelaciones/';
+                $image = 'C-' . $id . '.' . $file_ext;
+                if ($request->file('archivo')->move($destination_path, $image)) {
+                    // $user->image = './upload/pendientes/'.$image;
+                    // $pasiente->imagen = $image;
+                    $data = DB::table('con_movcancelaciones')
+                        ->select('archivo')
+                        ->where('id_movfactura', $id)
+                        ->first();
+                    if(file_exists("upload/cancelaciones/".$data->archivo)) {
+                        @unlink("upload/cancelaciones/".$data->archivo);
+                    }
+                    DB::update('update con_movcancelaciones set archivo = ? where id_movfactura = ?', 
+                    [$image, $id]);
+                   // $pasiente->save();
+                    // return $this->crearRespuesta('El archivo ha sido subida con éxito', 201);
+                } else {
+                   // return $this->crearRespuestaError('Ha ocurrido un error con la imagen', 400);
+                }
+            } else {
+               // return $this->crearRespuestaError('No existe el archivo', 400);
+            }
     }
 
 }
