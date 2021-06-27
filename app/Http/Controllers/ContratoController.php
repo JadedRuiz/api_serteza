@@ -19,6 +19,7 @@ class ContratoController extends Controller
             $motivos = DB::table('rh_movimientos as rm')
             ->select("rm.id_movimiento","rm.fecha_movimiento","rm.id_status","gcs.status")
             ->where("rm.id_status",$otro,$status)
+            ->where("tipo_movimiento","A")
             ->where("rm.id_cliente",$res["id_cliente"])
             ->where(function ($query) use ($fecha_inicial,$fecha_final){
                 if($fecha_final != "" && $fecha_inicial != ""){
@@ -80,6 +81,39 @@ class ContratoController extends Controller
                 $fecha_alta = $detalle["fecha_ingreso"];
                  DB::insert('insert into rh_detalle_contratacion (id_detalle_contratacion, id_empresa, id_movimiento, id_departamento, id_puesto, id_candidato, id_nomina, observacion, sueldo, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?,?)', 
                  [$id_detalle_contratacion, $id_empresa, $id_movimiento, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $fecha_alta, $fecha_creacion,$usuario_creacion, 1]);
+                 $validar = $this->cambiarDeEstatus($id_candidato,5);
+                 if(!$validar["ok"]){
+                    $is_good = false;
+                 }
+            }
+            if($is_good){
+                return $this->crearRespuesta(1,"El movimiento de contratacion ha salido con éxito",200);
+            }else{
+                return $this->crearRespuesta(2,"Ha ocurrido un error al actualizar el status del candidato.",200);
+            }
+            
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function editarMovContrato(Request $res){
+        try{
+            $fecha_modificacion = $this->getHoraFechaActual();
+            $usuario_modificacion = $res["usuario_creacion"];
+            //Detalle de contratacion
+            $is_good = true;
+            foreach($res["detalle_contratacion"] as $detalle){
+                $id_detalle_contratacion = $detalle["id_detalle"];
+                $id_departamento = $detalle["id_departamento"];
+                $id_puesto = $detalle["id_puesto"];
+                $id_candidato = $detalle["id_candidato"];
+                $id_nomina = $detalle["id_nomina"];
+                $id_empresa = $detalle["id_empresa"];
+                $observacion = $detalle["descripcion"];
+                $sueldo = $detalle["sueldo"];
+                $fecha_alta = $detalle["fecha_ingreso"];
+                 DB::update('update rh_detalle_contratacion set id_empresa = ?, id_departamento = ?, id_puesto = ?, id_candidato = ?, id_nomina = ?, observacion = ?, sueldo = ?, fecha_alta = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_detalle_contratacion = ?', 
+                 [$id_empresa, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $fecha_alta, $fecha_modificacion,$usuario_modificacion,$id_detalle_contratacion]);
                  $validar = $this->cambiarDeEstatus($id_candidato,5);
                  if(!$validar["ok"]){
                     $is_good = false;

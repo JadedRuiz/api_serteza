@@ -88,11 +88,16 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
     $router->group(['prefix' => "contratacion"], function () use ($router){
         $router->post('altaMovContratacion','ContratoController@altaMovContrato');
+        $router->post('editarMovContrato','ContratoController@editarMovContrato');
         $router->post('obtenerMoviemientosContratacion','ContratoController@obtenerMoviemientosContratacion');
         $router->get('obtenerMoviemientosContratacionPorId/{id_movimiento}','ContratoController@obtenerMoviemientosContratacionPorId');
         $router->post('eliminarDetalleContratacion','ContratoController@eliminarDetalle');
         $router->get('obtenerCatalogoNomina','ContratoController@obtenerCatalogoNomina');
         $router->get('aplicarContratacion/{id_movimiento}/{usuario_creacion}','ContratoController@aplicarContratacion');
+    });
+    $router->group(['prefix' => "baja"], function () use ($router){
+        $router->post('crearSolicitudDeBaja','BajaController@crearSolicitudDeBaja');
+        $router->post('obtenerSolicitudesBaja','BajaController@obtenerSolicitudesBaja');
     });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
