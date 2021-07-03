@@ -263,4 +263,23 @@ class CandidatoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+
+    public function obtenerCandidatoActivoId($id_candidato)
+    {
+        $canditado_activo = DB::table('rh_detalle_contratacion as rdc')
+        ->select(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"gcd.departamento","gcp.puesto","rdc.fecha_alta","ncn.nomina","rdc.sueldo","rdc.id_nomina","rdc.id_empresa","rdc.id_departamento","rdc.id_puesto")
+        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdc.id_nomina")
+        ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","rdc.id_candidato")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdc.id_departamento")
+        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdc.id_puesto")
+        ->where("rdc.id_candidato",$id_candidato)
+        ->where("rdc.activo",1)
+        ->get();
+        if(count($canditado_activo)>0){
+            $canditado_activo[0]->fecha_alta = date("Y-m-d",strtotime($canditado_activo[0]->fecha_alta));
+            return $this->crearRespuesta(1,$canditado_activo,200);
+        }else{
+            return $this->crearRespuesta(2,"No se ha encontrado el candidato",301);
+        }
+    }
 }

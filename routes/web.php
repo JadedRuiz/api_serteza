@@ -76,7 +76,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerCandidatosPorIdCliente/{id}',"CandidatoController@obtenerCandidatosPorIdCliente");
         $router->get("eliminarCandidato/{id}","CandidatoController@eliminarCandidato");
         $router->post("actualizarCandidato","CandidatoController@actualizarCandidato");
-        $router->post('autoCompleteCandidato','CandidatoController@autoComplete'); 
+        $router->post('autoCompleteCandidato','CandidatoController@autoComplete');
+        $router->get('obtenerCandidatoActivoId/{id_candidato}',"CandidatoController@obtenerCandidatoActivoId");
+        
     });
 
     $router->group(['prefix' => 'puesto'], function () use ($router) {  
@@ -103,7 +105,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
     $router->group(['prefix' => "baja"], function () use ($router){
         $router->post('crearSolicitudDeBaja','BajaController@crearSolicitudDeBaja');
+        $router->post('modificarDetalleSolicitud','BajaController@modificarDetalleSolicitud');
         $router->post('obtenerSolicitudesBaja','BajaController@obtenerSolicitudesBaja');
+        $router->get('obtenerDetalleSolicitudBaja/{id_movimiento}','BajaController@obtenerDetalleSolicitudBaja');
+        $router->get('eliminarDetalle/{id_detalle_baja}','BajaController@eliminarDetalle');
+        
     });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
