@@ -121,4 +121,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
         $router->get('obtenerDashboardRh/{id_cliente}','DashboardController@obtenerDashboardRh');
     });
+
+    $router->group(['prefix' => 'bancos'], function () use ($router) {
+        $router->get('index', 'BancoController@index');
+        $router->post('get-bancos', 'BancoController@busquedaBanco');
+        $router->post('guardarbanco', 'BancoController@guardarBanco');
+        $router->put('{id}', 'BancosController@actualizarBanco');
+        $router->delete('{id}', 'BancosController@borrarBanco');
+    });
 });
