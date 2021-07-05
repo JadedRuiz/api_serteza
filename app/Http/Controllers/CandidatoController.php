@@ -282,4 +282,65 @@ class CandidatoController extends Controller
             return $this->crearRespuesta(2,"No se ha encontrado el candidato",301);
         }
     }
+    public function obtenerMovientosCandidato($id_candidato)
+    {
+        $status_candidato = DB::table('rh_cat_candidato as rcc')
+        ->select("id_status")
+        ->where("rcc.id_candidato",$id_candidato)
+        ->first();
+        $informacion_contrato_baja = [];
+        if($status_candidato->id_status == 2){  //Candidato dato de baja
+            $informacion_contrato_baja = DB::table('rh_movimientos as rm')
+            ->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina",DB::raw('DATE_FORMAT(rdb.fecha_baja, "%Y-%m-%d") as fecha_alta'),"rm.fecha_movimiento")
+            ->join("rh_detalle_baja as rdb","rdb.id_movimiento","=","rm.id_movimiento")
+            ->join("gen_cat_empresa as gce","gce.id_empresa","=","rdb.id_empresa")
+            ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdb.id_departamento")
+            ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdb.id_puesto")
+            ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdb.id_nomina")
+            ->where("rm.id_status",1)
+            ->where("rdb.id_candidato",$id_candidato)
+            ->get();
+        }
+        $informacion_contrato = DB::table('rh_movimientos as rm')
+        ->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina","rdc.sueldo",DB::raw('DATE_FORMAT(rdc.fecha_alta, "%Y-%m-%d") as fecha_alta'),"rm.fecha_movimiento")
+        ->join("rh_detalle_contratacion as rdc","rdc.id_movimiento","=","rm.id_movimiento")
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","rdc.id_empresa")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdc.id_departamento")
+        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdc.id_puesto")
+        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdc.id_nomina")
+        ->where("rm.id_status",1)
+        ->where("rdc.id_candidato",$id_candidato)
+        ->get();
+        $informacion_contrato_actual = DB::table('rh_movimientos as rm')->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina","rdm.sueldo",DB::raw('DATE_FORMAT(rdm.fecha_de_modificacion, "%Y-%m-%d") as fecha_alta'),"rm.fecha_movimiento")
+        ->join("rh_detalle_modificacion as rdm","rdm.id_movimiento","=","rm.id_movimiento")
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","rdm.id_empresa")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdm.id_departamento")
+        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdm.id_puesto")
+        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdm.id_nomina")
+        ->where("rm.id_status",1)
+        ->where("rdm.id_candidato",$id_candidato)
+        ->where("rm.activo",1)
+        ->orderBy("rm.fecha_movimiento","DESC")
+        ->get();
+        if(count($informacion_contrato_actual)>0){  //El candidato tiene modificaciones
+            $respuesta = [
+                "informacion_contrato" => $informacion_contrato_actual[0],
+                "movimientos" => [
+                    "alta" => $informacion_contrato,
+                    "modificaciones" => $informacion_contrato_actual,
+                    "baja" => $informacion_contrato_baja
+                ]
+            ];
+        }else{
+            $respuesta = [
+                "informacion_contrato" => $informacion_contrato,
+                "movimientos" => [
+                    "alta" => $informacion_contrato,
+                    "modificaciones" => $informacion_contrato_actual,
+                    "baja" => $informacion_contrato_baja
+                ]
+            ];
+        }
+        return $this->crearRespuesta(1,$respuesta,200);
+    }
 }

@@ -78,7 +78,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("actualizarCandidato","CandidatoController@actualizarCandidato");
         $router->post('autoCompleteCandidato','CandidatoController@autoComplete');
         $router->get('obtenerCandidatoActivoId/{id_candidato}',"CandidatoController@obtenerCandidatoActivoId");
-        
+        $router->get("obtenerMovientosCandidato/{id_candidato}","CandidatoController@obtenerMovientosCandidato");
     });
 
     $router->group(['prefix' => 'puesto'], function () use ($router) {  
@@ -103,13 +103,21 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerCatalogoNomina','ContratoController@obtenerCatalogoNomina');
         $router->get('aplicarContratacion/{id_movimiento}/{usuario_creacion}','ContratoController@aplicarContratacion');
     });
+    $router->group(['prefix' => "modificacion"], function () use ($router){
+        $router->post('solicitudDeModificacion','ModificacionController@crearSolicitudDeModif');
+        $router->post('obtenerModificaciones','ModificacionController@obtenerModificaciones');
+        $router->get('obtenerDetalleModificacion/{id_movimiento}','ModificacionController@obtenerDetalleModificacion');
+        $router->post('modificarDetalleModificacion','ModificacionController@modificarDetalleModificacion');
+        $router->get('eliminarDetalle/{id_detalle_modificacion}','ModificacionController@eliminarDetalle');
+        $router->get('aplicarBaja/{id_movimiento}',"BajaController@aplicarBaja");
+    });
     $router->group(['prefix' => "baja"], function () use ($router){
         $router->post('crearSolicitudDeBaja','BajaController@crearSolicitudDeBaja');
         $router->post('modificarDetalleSolicitud','BajaController@modificarDetalleSolicitud');
         $router->post('obtenerSolicitudesBaja','BajaController@obtenerSolicitudesBaja');
         $router->get('obtenerDetalleSolicitudBaja/{id_movimiento}','BajaController@obtenerDetalleSolicitudBaja');
         $router->get('eliminarDetalle/{id_detalle_baja}','BajaController@eliminarDetalle');
-        
+        $router->get('aplicarBaja/{id_movimiento}',"BajaController@aplicarBaja");
     });
     $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
     });
