@@ -109,7 +109,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerDetalleModificacion/{id_movimiento}','ModificacionController@obtenerDetalleModificacion');
         $router->post('modificarDetalleModificacion','ModificacionController@modificarDetalleModificacion');
         $router->get('eliminarDetalle/{id_detalle_modificacion}','ModificacionController@eliminarDetalle');
-        $router->get('aplicarBaja/{id_movimiento}',"BajaController@aplicarBaja");
+        $router->get('aplicarModificacion/{id_movimiento}',"ModificacionController@aplicarModificacion");
     });
     $router->group(['prefix' => "baja"], function () use ($router){
         $router->post('crearSolicitudDeBaja','BajaController@crearSolicitudDeBaja');
