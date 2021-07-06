@@ -133,15 +133,33 @@ class ModificacionController extends Controller
     public function aplicarModificacion($id_movimiento)
     {
         try{
-            $recuperar_detalle = DB::table('rh_movimientos as rm')
-            ->select("rdm.id_candidato")
+            $recuperar_detalle_actual = DB::table('rh_movimientos as rm')
+            ->select("rdm.id_candidato","rdm.id_puesto","gcp.contratados","gcp.autorizados")
             ->join("rh_detalle_modificacion as rdm","rdm.id_movimiento","=","rm.id_movimiento")
+            ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdm.id_puesto")
             ->where("rm.id_movimiento",$id_movimiento)
+            ->where("rm.activo",1)
+            ->orderBy("rm.fecha_movimiento","DESC")
             ->get();
-            if(count($recuperar_detalle)>0){
+            if(count($recuperar_detalle_actual)>0){
                 // Modificar el status de la solicitud
                 DB::update('update rh_movimientos set id_status = 1 where id_movimiento = ?', [$id_movimiento]);
-                foreach($recuperar_detalle as $detalle){
+                foreach($recuperar_detalle_actual as $detalle){
+                    //Modificar las vacantes del puesto cambiado
+                    $recuperar_detalle_de_contratacion = DB::table('rh_detalle_contratacion as rdc')
+                    ->select("rdc.id_puesto","gcp.contratados")
+                    ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdc.id_puesto")
+                    ->where("id_candidato",$detalle->id_candidato)
+                    ->where("rdc.activo",1)
+                    ->get();
+                    if($recuperar_detalle_de_contratacion[0]->id_puesto != $detalle->id_puesto){
+                        if(intval($detalle->contratados)+1 <= intval($detalle->autorizados)){
+                            //Se agrega un contratado al puesto modificado
+                            DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [intval($detalle->contratados)+1,$detalle->id_puesto]);
+                            //Se aumenta la vacante al puesto anterior
+                            DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [intval($recuperar_detalle_de_contratacion[0]->contratados)-1,$recuperar_detalle_de_contratacion[0]->id_puesto]);
+                        }
+                    }
                     //Modificar el status de los candidatos
                     $this->cambiarDeEstatus($detalle->id_candidato,1);
                 }
