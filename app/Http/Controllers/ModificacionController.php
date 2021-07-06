@@ -130,4 +130,27 @@ class ModificacionController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+    public function aplicarModificacion($id_movimiento)
+    {
+        try{
+            $recuperar_detalle = DB::table('rh_movimientos as rm')
+            ->select("rdm.id_candidato")
+            ->join("rh_detalle_modificacion as rdm","rdm.id_movimiento","=","rm.id_movimiento")
+            ->where("rm.id_movimiento",$id_movimiento)
+            ->get();
+            if(count($recuperar_detalle)>0){
+                // Modificar el status de la solicitud
+                DB::update('update rh_movimientos set id_status = 1 where id_movimiento = ?', [$id_movimiento]);
+                foreach($recuperar_detalle as $detalle){
+                    //Modificar el status de los candidatos
+                    $this->cambiarDeEstatus($detalle->id_candidato,1);
+                }
+                return $this->crearRespuesta(1,"Se ha aplicado el movimiento",200);
+            }else{
+                return $this->crearRespuesta(2,"Este movimiento no cuenta con detalle",301);
+            }
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
 }
