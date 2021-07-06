@@ -13,12 +13,33 @@ class DashboardController extends Controller
      */
     public function obtenerDashboardAdmin($id_empresa)
     {
-        $movientos = DB::table("rh_movimientos as rm")
-        ->select("rm.id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
+        $movientos_alta = DB::table("rh_movimientos as rm")
+        ->select("rm.id_movimiento","rm.tipo_movimiento as id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
         ->join("rh_detalle_contratacion as rdc","rdc.id_movimiento","=","rm.id_movimiento")
         ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
-        ->where("id_empresa",$id_empresa)
-        ->where("rm.activo",1)
+        ->where("rdc.id_empresa",$id_empresa)
+        ->where("rdc.activo",1)
+        ->where("rm.id_status",1)
+        ->orderBy("rm.fecha_movimiento","DESC")
+        ->take(10)
+        ->get();
+        $movientos_mod = DB::table("rh_movimientos as rm")
+        ->select("rm.id_movimiento","rm.tipo_movimiento as id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
+        ->join("rh_detalle_modificacion as rdm","rdm.id_movimiento","=","rm.id_movimiento")
+        ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
+        ->where("rdm.id_empresa",$id_empresa)
+        ->where("rdm.activo",1)
+        ->where("rm.id_status",1)
+        ->orderBy("rm.fecha_movimiento","DESC")
+        ->take(10)
+        ->get();
+        $movientos_baja = DB::table("rh_movimientos as rm")
+        ->select("rm.id_movimiento","rm.tipo_movimiento as id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
+        ->join("rh_detalle_baja as rdb","rdb.id_movimiento","=","rm.id_movimiento")
+        ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
+        ->where("rdb.id_empresa",$id_empresa)
+        ->where("rdb.activo",1)
+        ->where("rm.id_status",1)
         ->orderBy("rm.fecha_movimiento","DESC")
         ->take(10)
         ->get();
@@ -56,8 +77,20 @@ class DashboardController extends Controller
                 "por_procesar" => count($solicitudes_empresa)
             ],
             "tabla_puesto" => $puestos_empresa,
-            "tabla_mov" => $movientos
+            "tabla_mov" => []
         ];
+        foreach($movientos_alta as $moviento){
+            $moviento->id_movimiento = 1;
+            array_push($arreglo["tabla_mov"],$moviento);
+        }
+        foreach($movientos_mod as $moviento){
+            $moviento->id_movimiento = 3;
+            array_push($arreglo["tabla_mov"],$moviento);
+        }
+        foreach($movientos_baja as $moviento){
+            $moviento->id_movimiento = 2;
+            array_push($arreglo["tabla_mov"],$moviento);
+        }
         return $this->crearRespuesta(1,$arreglo,200);
     }
     public function obtenerDashboardRh($id_cliente)
@@ -71,17 +104,16 @@ class DashboardController extends Controller
                 array_push($id_empresas,$id_empresa->id_empresa);
             }
             $movientos = DB::table("rh_movimientos as rm")
-            ->select("rm.id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
-            ->join("rh_detalle_contratacion as rdc","rdc.id_movimiento","=","rm.id_movimiento")
+            ->select("rm.id_movimiento","rm.tipo_movimiento as id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
             ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
             ->where("id_cliente",$id_cliente)
             ->where("rm.activo",1)
+            ->where("rm.id_status",1)
             ->orderBy("rm.fecha_movimiento","DESC")
             ->take(10)
             ->get();
             $movientos_por_procesar = DB::table("rh_movimientos as rm")
-            ->select("rm.id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
-            ->join("rh_detalle_contratacion as rdc","rdc.id_movimiento","=","rm.id_movimiento")
+            ->select("rm.id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")    
             ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
             ->where("id_cliente",$id_cliente)
             ->where("rm.id_status",5)
@@ -94,6 +126,7 @@ class DashboardController extends Controller
             ->join("gen_cat_departamento as gcd","gcd.id_departamento","led.id_departamento")
             ->join("gen_cat_puesto as gcp","gcp.id_departamento","=","gcd.id_departamento")
             ->whereIn("id_empresa",$id_empresas)
+            ->take(10)
             ->get();
             $autorizados = 0;
             $contratados = 0;
@@ -105,6 +138,17 @@ class DashboardController extends Controller
                     $puesto->contratados = 0;
                 }
                 $autorizados = $autorizados + intval($puesto->autorizados);
+            }
+            foreach($movientos as $moviento){
+                if($moviento->id_movimiento == "A"){
+                    $moviento->id_movimiento = 1;
+                }
+                if($moviento->id_movimiento == "B"){
+                    $moviento->id_movimiento = 2;
+                }
+                if($moviento->id_movimiento == "M"){
+                    $moviento->id_movimiento = 3;
+                }
             }
             $vacantes = $autorizados - $contratados;
             $arreglo = [
@@ -120,5 +164,4 @@ class DashboardController extends Controller
             return $this->crearRespuesta(1,$arreglo,200);
         }
     }
-    //
 }
