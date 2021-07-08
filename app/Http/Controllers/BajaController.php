@@ -103,9 +103,8 @@ class BajaController extends Controller
                         ->where("dc.activo",1)
                         ->first();
                         if($buscarInfoEmpleado){
-                            $id_detalle_baja = $this->getSigId("rh_detalle_baja");
                             $fecha_baja = date("Y-m-d",strtotime($candidato["fecha_baja"]));
-                            DB::insert("insert into rh_detalle_baja (id_detalle_baja, id_movimiento, id_candidato, id_empresa, id_departamento, id_puesto, fecha_baja, observaciones, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?)",[$id_detalle_baja,$id_movimiento,$candidato["id_candidato"],$buscarInfoEmpleado->id_empresa,$buscarInfoEmpleado->id_departamento,$buscarInfoEmpleado->id_puesto,$fecha_baja,$candidato["observacion"],$fecha,$usuario_creacion,1]);
+                            DB::insert("insert into rh_detalle_baja (id_movimiento, id_candidato, id_empresa, id_departamento, id_puesto, fecha_baja, observaciones, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?)",[$id_movimiento,$candidato["id_candidato"],$buscarInfoEmpleado->id_empresa,$buscarInfoEmpleado->id_departamento,$buscarInfoEmpleado->id_puesto,$fecha_baja,$candidato["observacion"],$fecha,$usuario_creacion,1]);
                             $this->cambiarDeEstatus($candidato["id_candidato"],5);
                         }
                     }
@@ -156,6 +155,33 @@ class BajaController extends Controller
                 DB::update('update rh_movimientos set activo = 0 where id_movimiento = ?', [$recuperar_detalle[0]->id_movimiento]);
                 $this->cambiarDeEstatus($recuperar_detalle[0]->id_candidato,1);
                 return $this->crearRespuesta(1,true,200);
+            }
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function aplicarBaja($id_movimiento)
+    {
+        try{
+            //Actualizar el status del movimiento
+            DB::update('update rh_movimientos set id_status = 1 where id_movimiento = ?', [$id_movimiento]);
+            //Recuperamos el detalle
+            $recuperar_detalle_baja = DB::table('rh_detalle_baja as rdb')
+            ->select("id_candidato","rdb.id_puesto","gcp.contratados")
+            ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdb.id_puesto")
+            ->where("rdb.id_movimiento",$id_movimiento)
+            ->where("rdb.activo",1)
+            ->get();
+            if(count($recuperar_detalle_baja)>0){
+                foreach($recuperar_detalle_baja as $detalle){
+                    $this->cambiarDeEstatus($detalle->id_candidato,2);
+                    //Actualizar vacantes
+                    $contratados_actual = intval($detalle->contratados) - 1;
+                    DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [$contratados_actual,$detalle->id_puesto]);
+                }
+                return $this->crearRespuesta(1,"Baja aplicada con éxito",200);
+            }else{
+                return $this->crearRespuesta(2,"No se pudo recuperar los candidatos",301);
             }
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
