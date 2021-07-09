@@ -210,4 +210,12 @@ class Controller extends BaseController
         }
     
     }
+    public function obtenerCatalogo($nombre_tabla, $columnas)
+    {
+        $recuperar_catalogo = DB::table($nombre_tabla)
+        ->get();
+        if(count($recuperar_catalogo)>0){
+                return $recuperar_catalogo;
+        }
+    }
 }

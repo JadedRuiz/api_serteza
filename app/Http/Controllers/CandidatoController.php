@@ -10,15 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class CandidatoController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
     public function autoComplete(Request $res){
         $palabra = "%".strtoupper($res["nombre_candidato"])."%";
         $id_cliente = $res["id_cliente"];

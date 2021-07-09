@@ -164,4 +164,10 @@ class DashboardController extends Controller
             return $this->crearRespuesta(1,$arreglo,200);
         }
     }
+    public function obtenerDashboardNomina($id_empresa){
+        // $respuesta = [
+        //     "empleados_activos" => ,
+        //     "pero"
+        // ]
+    }
 }

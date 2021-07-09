@@ -55,4 +55,28 @@ class PuestoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+    public function obtenerPuestosPorEmpresa($id_empresa)
+    {
+        $recuperar_departamentos_empresa = DB::table('liga_empresa_departamento')
+        ->select("id_departamento")
+        ->where("id_empresa",$id_empresa)
+        ->get();
+        if(count($recuperar_departamentos_empresa)>0){
+            $id_departamentos = [];
+            foreach($recuperar_departamentos_empresa as $id_departamento){
+                array_push($id_departamentos,$id_departamento->id_departamento);
+            }
+            $puestos = DB::table('gen_cat_puesto')
+            ->select("id_puesto","puesto")
+            ->whereIn("id_departamento",$id_departamentos)
+            ->get();
+            if(count($puestos)>0){
+                return $this->crearRespuesta(1,$puestos,200);
+            }else{
+                return $this->crearRespuesta(2,"No se tienen puestos",200);
+            }
+        }else{
+            return $this->crearRespuesta(2,"No se ha recuperado ningun departamento",200);
+        }
+    }
 }

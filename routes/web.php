@@ -5,6 +5,7 @@ $router->get('/', function () use ($router) {
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
+    $router->get("obtenerCatalogo/{nombre_tabla}/{columnas}","Controller@obtenerCatalogo");
     //Rutas de Usuario
     $router->group(['prefix' => 'usuario'], function () use ($router) {
         $router->post('altaUsuario', 'UsuarioController@altaUsuario');                           //Registro del usuario 
@@ -37,10 +38,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('cancelar-factura', 'ContabilidadController@cancelarFactura'); 
         $router->get('get-conceptos/{id_empresa}', 'ContabilidadController@getConceptos'); 
     });
-
-
-    
-
     $router->group(['prefix' => 'empresa'], function () use ($router) {
         $router->post('obtenerEmpresas','EmpresaController@obtenerEmpresas');         //Obtener empresas
         $router->post('autoCompleteEmpresa','EmpresaController@autoComplete');  
@@ -54,7 +51,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("ligarClienteAEmpresa","EmpresaController@ligarClienteAEmpresa");
         $router->get("obtenerEmpresasPorIdCliente/{id_cliente}","EmpresaController@obtenerEmpresasPorIdCliente");
     });
-
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
         $router->post('obtenerClientes','ClienteController@obtenerClientes');
         $router->get('obtenerClientesPorId/{id}','ClienteController@obtenerClientesPorId');
@@ -67,7 +63,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("obtenerClientesPorIdEmpresa/{id_empresa}","ClienteController@obtenerClientesPorIdEmpresa");
         $router->post("autoCompleteCliente","ClienteController@autoComplete");
     });
-    
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
         $router->post('altaCandidato','CandidatoController@altaCandidato');
@@ -80,13 +75,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerCandidatoActivoId/{id_candidato}',"CandidatoController@obtenerCandidatoActivoId");
         $router->get("obtenerMovientosCandidato/{id_candidato}","CandidatoController@obtenerMovientosCandidato");
     });
-
     $router->group(['prefix' => 'puesto'], function () use ($router) {  
-        $router->get("getPuestosPorIdEmpresa/{id_empresa}","PuestoController@getPuestosPorIdEmpresa");
+        $router->get("obtenerPuestosPorEmpresa/{id_empresa}","PuestoController@obtenerPuestosPorEmpresa");
         $router->get('eliminarPuesto/{id_puesto}',"PuestoController@eliminarPuesto");
         $router->get("obtenerPuestosPorIdDepartamento/{id_departamento}","PuestoController@obtenerPuestosPorIdDepartamento");
+        
     });
-
     $router->group(['prefix' => 'departamento'], function () use ($router) {
         $router->post('obtenerDepartamentos',"DepartamentoController@obtenerDepartamentos");
         $router->get('obtenerDepartamentoPorId/{id_departamento}',"DepartamentoController@obtenerDepartamentoPorIdDepartamento");
@@ -119,7 +113,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('eliminarDetalle/{id_detalle_baja}','BajaController@eliminarDetalle');
         $router->get('aplicarBaja/{id_movimiento}',"BajaController@aplicarBaja");
     });
-    $router->group(['prefix' => 'no_recuerdo'], function () use ($router) {
+    $router->group(['prefix' => 'empleado'], function () use ($router) {
+        $router->post('autocompleteEmpleado','EmpleadoController@autocompleteEmpleado');
+        $router->post("obtenerEmpleadosPorEmpresa","EmpleadoController@obtenerEmpleadosPorEmpresa");
+        $router->post("obtenerCandidatoPorEmpresa","EmpleadoController@obtenerCandidatoPorEmpresa");
+        $router->get("obtenerEmpleadoPorId/{id_empleado}","EmpleadoController@obtenerEmpleadoPorId");
+        $router->post('crearNuevoEmpleadoConCandidatoExistente','EmpleadoController@crearNuevoEmpleadoConCandidatoExistente');
+        $router->post("modificarEmpleado","EmpleadoController@modificarEmpleado");
     });
     $router->group(['prefix' => 'reporte'], function () use ($router) {
         $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
@@ -129,12 +129,18 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
         $router->get('obtenerDashboardRh/{id_cliente}','DashboardController@obtenerDashboardRh');
     });
-
     $router->group(['prefix' => 'bancos'], function () use ($router) {
         $router->get('index', 'BancoController@index');
         $router->post('get-bancos', 'BancoController@busquedaBanco');
         $router->post('guardarbanco', 'BancoController@guardarBanco');
         $router->put('{id}', 'BancosController@actualizarBanco');
         $router->delete('{id}', 'BancosController@borrarBanco');
+    });
+    $router->group(['prefix' => 'nomina'], function () use ($router) {
+        $router->get('obtenerNombreNominaPorId/{id_nomina}', 'NominaController@obtenerNombreNominaPorId');
+        $router->post('insertarLigaNominaEmpresa', 'NominaController@insertarLigaNominaEmpresa');
+        $router->post('obtenerLigaEmpresaNomina', 'NominaController@obtenerLigaEmpresaNomina');
+        $router->get('eliminarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@eliminarLigaEmpresaNomina');
+        $router->get('activarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@activarLigaEmpresaNomina');
     });
 });
