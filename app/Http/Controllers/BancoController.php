@@ -9,29 +9,36 @@ use Illuminate\Support\Facades\DB;
 class BancoController extends Controller
 {
     public function busquedaBanco(Request $request){
-        $empresaID = $request->get("id_empresa");
-        $bancoID = $request->get("id_catbanco");
+        $take = $request["taken"];
+        $pagina = $request["pagina"];
+        $empresaID = $request["id_empresa"];
+        $bancoID = $request["id_catbanco"];
+        $incia = intval($pagina) * intval($take);
 
         if($bancoID > 0){
             $query = DB::table('ban_catbancos as b')
             ->join("sat_catbancos AS s","s.id_bancosat", "=", "b.id_bancosat")
             ->join("gen_cat_empresa AS e","e.id_empresa", "=", "b.id_empresa")
-            ->select(DB::raw("b.*"), "s.c_banco, e.empresa", 
+            ->select(DB::raw("b.*"), "s.c_banco, e.empresa, s.descripcion", 
             DB::raw("CONCAT(b.cuenta,'/',s.descripcion) AS banco"))
             ->where("b.id", $bancoID)
             ->orderBy("s.descripcion", "ASC")
             ->orderBy("b.cuenta", "ASC")
+            ->skip($incia)
+            ->take($take)
             ->get();
 
          }else{
             $query = DB::table('ban_catbancos as b')
             ->join("sat_catbancos AS s","s.id_bancosat", "=", "b.id_bancosat")
             ->join("gen_cat_empresa AS e","e.id_empresa", "=", "b.id_empresa")
-            ->select(DB::raw("b.*,s.c_banco, e.empresa"),
+            ->select(DB::raw("b.*,s.c_banco, e.empresa, s.descripcion"),
             DB::raw("CONCAT(b.cuenta,'/',s.descripcion) AS banco"))
             ->where("b.id_empresa", $empresaID)
             ->orderBy("s.descripcion", "ASC")
             ->orderBy("b.cuenta", "ASC")
+            ->skip($incia)
+            ->take($take)
             ->get();
          }
 
