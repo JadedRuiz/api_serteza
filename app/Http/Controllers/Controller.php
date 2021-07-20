@@ -218,4 +218,40 @@ class Controller extends BaseController
                 return $recuperar_catalogo;
         }
     }
+
+    public function obtenerMovimientos($id_empresa)
+    {
+        $recuperar_id_clientes = DB::table('liga_empresa_cliente')
+        ->select("id_cliente")
+        ->where("id_empresa",$id_empresa)
+        ->get();
+        if(count($recuperar_id_clientes)>0){
+           $id_clientes = [];
+           foreach($recuperar_id_clientes as $id_cliente){
+             array_push($id_clientes,$id_cliente->id_cliente);
+           }
+           $movimientos = DB::table('rh_movimientos as rm')
+           ->select("rm.tipo_movimiento","rm.id_status","gcc.cliente","rm.id_movimiento","rm.fecha_movimiento")
+           ->join("gen_cat_cliente as gcc","gcc.id_cliente","=","rm.id_cliente")
+           ->whereIn("rm.id_cliente",$id_clientes)
+           ->where("rm.id_status",5)
+           ->where("rm.activo",1)
+           ->get();
+           foreach($movimientos as $movimiento){
+             $movimiento->fecha_movimiento =  date("Y-m-d",strtotime($movimiento->fecha_movimiento));
+             switch($movimiento->tipo_movimiento){
+                case "A":
+                  $movimiento->tipo_movimiento = "Alta";
+                  break;
+                case "M":
+                  $movimiento->tipo_movimiento = "Modificación";
+                  break;
+                case "B":
+                  $movimiento->tipo_movimiento = "Baja";
+                  break;
+             }
+           }
+           return $movimientos;
+        }
+    }
 }

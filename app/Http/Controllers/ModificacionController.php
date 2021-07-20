@@ -37,8 +37,11 @@ class ModificacionController extends Controller
     public function obtenerDetalleModificacion($id_movimiento)
     {
         $detalle_mod = DB::table('rh_detalle_modificacion as rdm')
-        ->select(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) AS nombre'),"rcc.id_candidato", "rdm.observacion as observacion","id_detalle_modificacion","rdm.id_empresa","rdm.id_departamento","rdm.id_puesto","rdm.id_nomina","rdm.sueldo",DB::raw('DATE_FORMAT(fecha_de_modificacion, "%Y-%m-%d") as fecha_modificacion'),)
+        ->select(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) AS nombre'),"rcc.id_candidato", "rdm.observacion as observacion","id_detalle_modificacion","rdm.id_empresa","rdm.id_departamento","rdm.id_puesto","rdm.id_nomina","rdm.sueldo",DB::raw('DATE_FORMAT(fecha_de_modificacion, "%Y-%m-%d") as fecha_modificacion'),"cp.puesto","ce.empresa","cd.departamento")
         ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","rdm.id_candidato")
+        ->join("gen_cat_departamento as cd","cd.id_departamento","=","rdm.id_departamento")
+        ->join("gen_cat_puesto as cp","cp.id_puesto","=","rdm.id_puesto")
+        ->join("gen_cat_empresa as ce","ce.id_empresa","=","rdm.id_empresa")
         ->where("id_movimiento",$id_movimiento)
         ->where("rdm.activo",1)
         ->get();

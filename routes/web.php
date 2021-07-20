@@ -6,6 +6,7 @@ $router->get('/', function () use ($router) {
 
 $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get("obtenerCatalogo/{nombre_tabla}/{columnas}","Controller@obtenerCatalogo");
+    $router->get("obtenerMovimientos/{id_empresa}","Controller@obtenerMovimientos");
     //Rutas de Usuario
     $router->group(['prefix' => 'usuario'], function () use ($router) {
         $router->post('altaUsuario', 'UsuarioController@altaUsuario');                           //Registro del usuario 
