@@ -177,20 +177,38 @@ class DepartamentoController extends Controller
             $departamento->usuario_modificacion = $request["usuario_creacion"];
             $departamento->activo = $request["activo"];
             $departamento->save();
+            $fecha = $this->getHoraFechaActual();
             //Alta puestos del departamento
             $puestos = $request["puestos"];
             foreach($puestos as $puesto){
-                $puesto_clase = Puesto::find($puesto["id_puesto"]);
-                $puesto_clase->puesto = strtoupper($puesto["puesto"]);
-                $puesto_clase->autorizados = $puesto["autorizados"];
-                $puesto_clase->descripcion = $puesto["descripcion"];
-                $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
-                $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
-                $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
-                $puesto_clase->fecha_modificacion = $this->getHoraFechaActual();
-                $puesto_clase->usuario_modificacion = $request["usuario_creacion"];
-                $puesto_clase->activo = 1;
-                $puesto_clase->save();
+                if($puesto["id_puesto"] != 0){
+                    $puesto_clase = Puesto::find($puesto["id_puesto"]);
+                    $puesto_clase->puesto = strtoupper($puesto["puesto"]);
+                    $puesto_clase->autorizados = $puesto["autorizados"];
+                    $puesto_clase->descripcion = $puesto["descripcion"];
+                    $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
+                    $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
+                    $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
+                    $puesto_clase->fecha_modificacion = $this->getHoraFechaActual();
+                    $puesto_clase->usuario_modificacion = $request["usuario_creacion"];
+                    $puesto_clase->activo = 1;
+                    $puesto_clase->save();
+                }else{
+                    $id_puesto = $this->getSigId("gen_cat_puesto");
+                    $puesto_clase = new Puesto;
+                    $puesto_clase->id_puesto = $id_puesto;
+                    $puesto_clase->id_departamento = $request["id_departamento"];
+                    $puesto_clase->puesto = strtoupper($puesto["puesto"]);
+                    $puesto_clase->autorizados = $puesto["autorizados"];
+                    $puesto_clase->descripcion = $puesto["descripcion"];
+                    $puesto_clase->fecha_creacion = $fecha;
+                    $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
+                    $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
+                    $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
+                    $puesto_clase->usuario_creacion = $request["usuario_creacion"];
+                    $puesto_clase->activo = 1;
+                    $puesto_clase->save();
+                }
             }
             return $this->crearRespuesta(1,"Departamento actualizado",200);
         }catch(Throwable $e){

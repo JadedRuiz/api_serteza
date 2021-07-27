@@ -25,12 +25,14 @@ class EmpleadoController extends Controller
                     array_push($id_clientes,$id_cliente->id_cliente);
                 }
                 $candidatos = DB::table('rh_cat_candidato as rcc')
+                ->select("ne.id_empleado",DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'))
                 ->join("nom_empleados as ne","ne.id_candidato","=","rcc.id_candidato")
                 ->whereIn("rcc.id_cliente",$id_clientes)
                 ->where(function ($query) use ($palabra){
                     $query->orWhere(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre)'),"like",$palabra)
                     ->orWhere("rcc.rfc", "like", $palabra)
-                    ->orWhere("rcc.curp", "like", $palabra);
+                    ->orWhere("rcc.curp", "like", $palabra)
+                    ->orWhere("ne.folio", "like", $palabra);
                 })
                 ->get();
                 if(count($candidatos)>0){
@@ -103,6 +105,36 @@ class EmpleadoController extends Controller
             }
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function obtenerEmpleadoPorTipoNomina(Request $res)
+    {
+        $recuperar_id_clientes = DB::table('liga_empresa_cliente')
+            ->select("id_cliente")
+            ->where("id_empresa",$res["id_empresa"])
+            ->get();
+        if(count($recuperar_id_clientes)>0){
+            $id_clientes = [];
+            foreach($recuperar_id_clientes as $id_cliente){
+                array_push($id_clientes,$id_cliente->id_cliente);
+            }
+            $empleados = DB::table('nom_empleados as ne')->select("ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia")
+            ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
+            ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
+            ->where("ne.id_nomina",$res["id_nomina"])
+            ->where("rcc..id_status","1")
+            ->whereIn("rcc.id_cliente",$id_clientes)
+            ->get();
+            if(count($empleados)>0){
+                foreach($empleados as $registro){
+                    $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
+                }
+                return $this->crearRespuesta(1,$empleados,200);
+            }else{
+                return $this->crearRespuesta(2,"No se han encontrado candidatos",200);
+            }
+        }else{
+            return $this->crearRespuesta(2,"Está empresa no cuenta con clientes configurados",301);
         }
     }
     public function crearNuevoEmpleadoConCandidatoExistente(Request $res)
