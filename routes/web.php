@@ -121,6 +121,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("obtenerEmpleadoPorTipoNomina","EmpleadoController@obtenerEmpleadoPorTipoNomina");
         $router->get("obtenerEmpleadoPorId/{id_empleado}","EmpleadoController@obtenerEmpleadoPorId");
         $router->post('crearNuevoEmpleadoConCandidatoExistente','EmpleadoController@crearNuevoEmpleadoConCandidatoExistente');
+        $router->post('crearNuevoEmpleado','EmpleadoController@crearNuevoEmpleado');
         $router->post("modificarEmpleado","EmpleadoController@modificarEmpleado");
     });
     $router->group(['prefix' => 'reporte'], function () use ($router) {
@@ -144,6 +145,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('obtenerLigaEmpresaNomina', 'NominaController@obtenerLigaEmpresaNomina');
         $router->get('eliminarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@eliminarLigaEmpresaNomina');
         $router->get('activarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@activarLigaEmpresaNomina');
+        $router->post('altaSucursal', 'NominaController@altaSucursal');
     });
     $router->group(['prefix' => 'concepto'], function () use ($router) { 
         $router->post("autocomplete","ConceptoController@autocomplete");
@@ -152,5 +154,10 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("crearConcepto","ConceptoController@crearConcepto");
         $router->post("modificarConcepto","ConceptoController@modificarConcepto");
         $router->get("cambiarActivo/{id_concepto}/{activo}","ConceptoController@cambiarActivo");
+    });
+    $router->group(['prefix' => 'sucursal'], function () use ($router) {
+        $router->post('crearSucursal', 'SucursalController@crearSucursal');
+        $router->get("obtenerSucursales/{id_empresa}","SucursalController@obtenerSucursales");
+        $router->get("obtenerSucursalPorIdSucursal/{id_sucursal}","SucursalController@obtenerSucursalPorIdSucursal");
     });
 });

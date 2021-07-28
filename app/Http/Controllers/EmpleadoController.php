@@ -173,17 +173,14 @@ class EmpleadoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function crearNuevoEmpleado(Request $res)
+    public function crearNuevoEmpleado(Request $request)
     {
-        //validate incoming request 
-        $this->validate($request["candidato"], [
-            'rfc' => 'required|string|max:14',
-            'curp' => 'required|max:18'
-        ]);
         try{
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = $request["usuario_creacion"];
-        $id_cliente = "0";
+        $id_cliente = DB::table('nom_sucursales')
+        ->where("id_sucursal",$request["id_sucursal"])
+        ->first()->id_cliente;
         //insertar fotografia
         $id_fotografia = $this->getSigId("gen_cat_fotografia");
         //Insertar fotografia
@@ -219,7 +216,7 @@ class EmpleadoController extends Controller
             $id_candidato = $this->getSigId("rh_cat_candidato");
             $canditado = new Candidato;
             $canditado->id_candidato = $id_candidato;
-            $canditado->id_status = 1;  //En reclutamiento
+            $canditado->id_status = 1;  //Activo
             $canditado->id_cliente = $id_cliente;
             $canditado->id_fotografia = $id_fotografia;
             $canditado->id_direccion = $id_direccion;
@@ -241,31 +238,34 @@ class EmpleadoController extends Controller
             $canditado->activo = 1;
             $canditado->save();
             //Insertar Empleado
+            $empleado = new Empleado;
             $empleado->id_candidato = $id_candidato;
-            $empleado->id_estatus = $res["id_status"];
-            $empleado->id_nomina = $res["id_nomina"];
-            $empleado->id_puesto = $res["id_puesto"];
-            $empleado->id_sucursal = $res["id_sucursal"];
-            $empleado->id_registropatronal = $res["id_registropatronal"];
-            $empleado->id_catbanco = $res["id_catbanco"];
-            $empleado->id_contratosat = $res["id_contratosat"];
-            $empleado->folio = $res["folio"];
-            $empleado->fecha_ingreso = $res["fecha_ingreso"];
-            $empleado->fecha_antiguedad = $res["fecha_antiguedad"];
-            $empleado->cuenta = $res["cuenta"];
-            $empleado->tarjeta = $res["tarjeta"];
-            $empleado->clabe = $res["clabe"];
-            $empleado->tipo_salario = $res["tipo_salario"];
-            $empleado->jornada = $res["jornada"];
-            $empleado->sueldo_integrado = $res["sueldo_integrado"];
-            $empleado->sueldo_diario = $res["sueldo_diario"];
-            $empleado->sueldo_complemento = $res["sueldo_complemento"];
-            $empleado->aplicarsueldoneto = $res["aplicarsueldoneto"];
-            $empleado->sinsubsidio = $res["sinsubsidio"];
-            $empleado->prestaciones_antiguedad = $res["prestaciones_antiguedad"];
+            $empleado->id_estatus = $request["id_status"];
+            $empleado->id_nomina = $request["id_nomina"];
+            $empleado->id_puesto = $request["id_puesto"];
+            $empleado->id_sucursal = $request["id_sucursal"];
+            $empleado->id_registropatronal = $request["id_registropatronal"];
+            $empleado->id_catbanco = $request["id_catbanco"];
+            $empleado->id_contratosat = $request["id_contratosat"];
+            $empleado->folio = $request["folio"];
+            $empleado->fecha_ingreso = date("Y-m-d",strtotime($request["fecha_ingreso"]));
+            $empleado->fecha_antiguedad = date("Y-m-d",strtotime($request["fecha_antiguedad"]));
+            $empleado->cuenta = $request["cuenta"];
+            $empleado->tarjeta = $request["tarjeta"];
+            $empleado->clabe = $request["clabe"];
+            $empleado->tipo_salario = $request["tipo_salario"];
+            $empleado->jornada = $request["jornada"];
+            $empleado->sueldo_integrado = $request["sueldo_integrado"];
+            $empleado->sueldo_diario = $request["sueldo_diario"];
+            $empleado->sueldo_complemento = $request["sueldo_complemento"];
+            $empleado->aplicarsueldoneto = $request["aplicarsueldoneto"];
+            $empleado->sinsubsidio = $request["sinsubsidio"];
+            $empleado->prestaciones_antiguedad = $request["prestaciones_antiguedad"];
             $empleado->usuario_creacion = $usuario_creacion;
             $empleado->fecha_creacion = $fecha;
             $empleado->save();
+            //Insertar puesto
+
             return $this->crearRespuesta(1,"El empleado se ha creado con éxito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

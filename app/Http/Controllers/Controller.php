@@ -214,6 +214,12 @@ class Controller extends BaseController
     {
         $recuperar_catalogo = DB::table($nombre_tabla)
         ->get();
+        if($nombre_tabla == "gen_cat_estados"){
+                $recuperar_catalogo = DB::table($nombre_tabla)
+                ->orderBy("estado","ASC")
+                ->get();
+        }
+        
         if(count($recuperar_catalogo)>0){
                 return $recuperar_catalogo;
         }
