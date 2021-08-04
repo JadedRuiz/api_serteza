@@ -95,10 +95,14 @@ class EmpleadoController extends Controller
     {
         try{
             $empleado = DB::table('nom_empleados as ne')
+            ->select("ne.id_empleado", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre","rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcf.nombre as fotografia","rcc.id_cliente")
             ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
+            ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
+            ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","rcc.id_fotografia")
             ->where("ne.id_empleado",$id_empleado)
             ->get();
             if(count($empleado)>0){
+                $empleado[0]->fotografia = Storage::disk('candidato')->url($empleado[0]->fotografia);
                 return $this->crearRespuesta(1,$empleado,200);
             }else{
                 return $this->crearRespuesta(2,"No se ha encontrado el empleado",301);
