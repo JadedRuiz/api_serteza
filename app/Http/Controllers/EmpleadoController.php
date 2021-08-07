@@ -95,7 +95,7 @@ class EmpleadoController extends Controller
     {
         try{
             $empleado = DB::table('nom_empleados as ne')
-            ->select("ne.id_empleado", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre","rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcf.nombre as fotografia","rcc.id_cliente")
+            ->select("ne.id_empleado", "rcc.id_candidato", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre","rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcf.nombre as fotografia","rcc.id_cliente", "ne.id_puesto","ne.id_sucursal","ne.id_registropatronal","ne.id_catbanco","ne.id_contratosat","ne.fecha_ingreso","ne.fecha_antiguedad","ne.cuenta","ne.tarjeta","ne.clabe","ne.tipo_salario","ne.jornada","ne.sueldo_diario","ne.sueldo_integrado","ne.sueldo_complemento","ne.aplicarsueldoneto","ne.sinsubsidio","ne.prestaciones_antiguedad","rcc.id_fotografia")
             ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
             ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
             ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","rcc.id_fotografia")
@@ -180,27 +180,138 @@ class EmpleadoController extends Controller
     public function crearNuevoEmpleado(Request $request)
     {
         try{
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $request["usuario_creacion"];
+            $id_cliente = DB::table('nom_sucursales')
+            ->where("id_sucursal",$request["id_sucursal"])
+            ->first()->id_cliente;
+            //insertar fotografia
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
+            //Insertar fotografia
+            if($request["candidato"]["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$fecha,$usuario_creacion,1]);
+            }else{
+                $file = base64_decode($request["candidato"]["fotografia"]["docB64"]);
+                $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["candidato"]["fotografia"]["extension"];
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                Storage::disk('candidato')->put($nombre_image, $file);
+            }
+            //Insertar dirección
+                $id_direccion = $this->getSigId("gen_cat_direccion");
+                $direccion = new Direccion;
+                $direccion->id_direccion = $id_direccion;
+                $direccion->calle = $request["candidato"]["direccion"]["calle"];
+                $direccion->numero_interior = $request["candidato"]["direccion"]["numero_interior"];
+                $direccion->numero_exterior = $request["candidato"]["direccion"]["numero_exterior"];
+                $direccion->cruzamiento_uno = $request["candidato"]["direccion"]["cruzamiento_uno"];
+                $direccion->cruzamiento_dos = $request["candidato"]["direccion"]["cruzamiento_dos"];
+                $direccion->codigo_postal = $request["candidato"]["direccion"]["codigo_postal"];
+                $direccion->colonia = $request["candidato"]["direccion"]["colonia"];
+                $direccion->localidad = $request["candidato"]["direccion"]["localidad"];
+                $direccion->municipio = $request["candidato"]["direccion"]["municipio"];
+                $direccion->estado = $request["candidato"]["direccion"]["estado"];
+                $direccion->descripcion = $request["candidato"]["direccion"]["descripcion"];
+                $direccion->fecha_creacion = $fecha;
+                $direccion->usuario_creacion = $usuario_creacion;
+                $direccion->activo = 1;
+                $direccion->save();
+                //Insertar candidato
+                $id_candidato = $this->getSigId("rh_cat_candidato");
+                $canditado = new Candidato;
+                $canditado->id_candidato = $id_candidato;
+                $canditado->id_status = 1;  //Activo
+                $canditado->id_cliente = $id_cliente;
+                $canditado->id_fotografia = $id_fotografia;
+                $canditado->id_direccion = $id_direccion;
+                $canditado->nombre = strtoupper($request["candidato"]["nombre"]);
+                $canditado->apellido_paterno = strtoupper($request["candidato"]["apellido_paterno"]);
+                $canditado->apellido_materno = strtoupper($request["candidato"]["apellido_materno"]);
+                $canditado->rfc = $request["candidato"]["rfc"];
+                $canditado->curp = $request["candidato"]["curp"];
+                $canditado->numero_seguro = $request["candidato"]["numero_social"];
+                $canditado->fecha_nacimiento = $request["candidato"]["fecha_nacimiento"];
+                $canditado->correo = $request["candidato"]["correo"];
+                $canditado->telefono =$request["candidato"]["telefono"];
+                $canditado->edad = $request["candidato"]["edad"];
+                $canditado->telefono_dos =$request["candidato"]["telefono_dos"];
+                $canditado->telefono_tres =$request["candidato"]["telefono_tres"];
+                $canditado->descripcion = $request["candidato"]["descripcion"];
+                $canditado->fecha_creacion = $fecha;
+                $canditado->usuario_creacion = $usuario_creacion;
+                $canditado->activo = 1;
+                $canditado->save();
+                //Insertar Empleado
+                $puesto = $request["id_puesto"];
+                $empleado = new Empleado;
+                $empleado->id_candidato = $id_candidato;
+                $empleado->id_estatus = $request["id_status"];
+                $empleado->id_nomina = $request["id_nomina"];
+                $empleado->id_puesto = $puesto;
+                $empleado->id_sucursal = $request["id_sucursal"];
+                $empleado->id_registropatronal = $request["id_registropatronal"];
+                $empleado->id_catbanco = $request["id_catbanco"];
+                $empleado->id_contratosat = $request["id_contratosat"];
+                $empleado->folio = $request["folio"];
+                $empleado->fecha_ingreso = date("Y-m-d",strtotime($request["fecha_ingreso"]));
+                $empleado->fecha_antiguedad = date("Y-m-d",strtotime($request["fecha_antiguedad"]));
+                $empleado->cuenta = $request["cuenta"];
+                $empleado->tarjeta = $request["tarjeta"];
+                $empleado->clabe = $request["clabe"];
+                $empleado->tipo_salario = $request["tipo_salario"];
+                $empleado->jornada = $request["jornada"];
+                $empleado->sueldo_integrado = $request["sueldo_integrado"];
+                $empleado->sueldo_diario = $request["sueldo_diario"];
+                $empleado->sueldo_complemento = $request["sueldo_complemento"];
+                $empleado->aplicarsueldoneto = $request["aplicarsueldoneto"];
+                $empleado->sinsubsidio = $request["sinsubsidio"];
+                $empleado->prestaciones_antiguedad = $request["prestaciones_antiguedad"];
+                $empleado->usuario_creacion = $usuario_creacion;
+                $empleado->fecha_creacion = $fecha;
+                $empleado->save();
+                //Modificar las vacantes del puesto
+                $contratados_actuales = DB::table('gen_cat_puesto')
+                ->select("contratados")
+                ->where("id_puesto",$puesto)
+                ->get();
+                $contratos_nuevos = 1;
+                if($contratados_actuales[0]->contratados != ""){
+                    $contratos_nuevos = intval($contratados_actuales[0]->contratados)+1;
+                }
+                DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [$contratos_nuevos,$puesto]);
+                return $this->crearRespuesta(1,"El empleado se ha creado con éxito",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function modificarEmpleadoAnt(Request $request)
+    {
+        try{
         $fecha = $this->getHoraFechaActual();
-        $usuario_creacion = $request["usuario_creacion"];
+        $usuario_modificacion = $request["usuario_creacion"];
         $id_cliente = DB::table('nom_sucursales')
         ->where("id_sucursal",$request["id_sucursal"])
         ->first()->id_cliente;
         //insertar fotografia
-        $id_fotografia = $this->getSigId("gen_cat_fotografia");
-        //Insertar fotografia
-        if($request["candidato"]["fotografia"]["docB64"] == ""){
-            //Guardar foto default
-            DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$fecha,$usuario_creacion,1]);
-        }else{
-            $file = base64_decode($request["candidato"]["fotografia"]["docB64"]);
-            $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["candidato"]["fotografia"]["extension"];
-            DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
-            Storage::disk('candidato')->put($nombre_image, $file);
-        }
-        //Insertar dirección
-            $id_direccion = $this->getSigId("gen_cat_direccion");
-            $direccion = new Direccion;
-            $direccion->id_direccion = $id_direccion;
+            $id_fotografia = $request["candidato"]["fotografia"]["id_fotografia"];
+        //Actualizar fotografia
+            if($request["candidato"]["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["candidato"]["fotografia"]["docB64"]);
+                $nombre_image = "Cliente".$id_cliente."/candidato_img_".$id_fotografia.".".$id_fotografia;
+                if(Storage::disk('candidato')->has($nombre_image)){
+                    Storage::disk('candidato')->delete($nombre_image);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+                    Storage::disk('candidato')->put($nombre_image, $file);
+                }else{
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$id_fotografia]);
+                    Storage::disk('candidato')->put($nombre_image, $file);
+                }
+            }
+            //Insertar dirección
+            $direccion = Direccion::find($request["candidato"]["direccion"]["id_direccion"]);
             $direccion->calle = $request["candidato"]["direccion"]["calle"];
             $direccion->numero_interior = $request["candidato"]["direccion"]["numero_interior"];
             $direccion->numero_exterior = $request["candidato"]["direccion"]["numero_exterior"];
@@ -212,18 +323,13 @@ class EmpleadoController extends Controller
             $direccion->municipio = $request["candidato"]["direccion"]["municipio"];
             $direccion->estado = $request["candidato"]["direccion"]["estado"];
             $direccion->descripcion = $request["candidato"]["direccion"]["descripcion"];
-            $direccion->fecha_creacion = $fecha;
-            $direccion->usuario_creacion = $usuario_creacion;
+            $direccion->fecha_modificacion = $fecha;
+            $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->activo = 1;
             $direccion->save();
             //Insertar candidato
-            $id_candidato = $this->getSigId("rh_cat_candidato");
-            $canditado = new Candidato;
-            $canditado->id_candidato = $id_candidato;
+            $canditado = Candidato::find($request["candidato"]["id_candidato"]);    
             $canditado->id_status = 1;  //Activo
-            $canditado->id_cliente = $id_cliente;
-            $canditado->id_fotografia = $id_fotografia;
-            $canditado->id_direccion = $id_direccion;
             $canditado->nombre = strtoupper($request["candidato"]["nombre"]);
             $canditado->apellido_paterno = strtoupper($request["candidato"]["apellido_paterno"]);
             $canditado->apellido_materno = strtoupper($request["candidato"]["apellido_materno"]);
@@ -237,16 +343,39 @@ class EmpleadoController extends Controller
             $canditado->telefono_dos =$request["candidato"]["telefono_dos"];
             $canditado->telefono_tres =$request["candidato"]["telefono_tres"];
             $canditado->descripcion = $request["candidato"]["descripcion"];
-            $canditado->fecha_creacion = $fecha;
-            $canditado->usuario_creacion = $usuario_creacion;
+            $canditado->fecha_modificacion = $fecha;
+            $canditado->usuario_modificacion = $usuario_modificacion;
             $canditado->activo = 1;
             $canditado->save();
+            $puesto = $request["id_puesto"];
+            //Modificar las vacantes del puesto
+            $puesto_anterior = DB::table('nom_empleados as ne')
+            ->select("ne.id_puesto")
+            ->where("ne.id_empleado",$request["id_empleado"])
+            ->get();
+            if($puesto != $puesto_anterior[0]->id_puesto){
+                //Modificar puesto anterior
+                $contratados_actuales = DB::table('gen_cat_puesto')
+                ->select("contratados")
+                ->where("id_puesto",$puesto_anterior[0]->id_puesto)
+                ->get();
+                $contratados_viejos = intval($contratados_actuales[0]->contratados)-1;
+                DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [$contratados_viejos,$puesto_anterior[0]->id_puesto]);
+                //Modificar puesto nuevo
+                $contratados_actuales = DB::table('gen_cat_puesto')
+                ->select("contratados")
+                ->where("id_puesto",$puesto)
+                ->get();
+                $contratos_nuevos = 1;
+                if($contratados_actuales[0]->contratados != ""){
+                    $contratos_nuevos = intval($contratados_actuales[0]->contratados)+1;
+                }
+                DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [$contratos_nuevos,$puesto]);
+            }
             //Insertar Empleado
-            $empleado = new Empleado;
-            $empleado->id_candidato = $id_candidato;
+            $empleado = Empleado::find($request["id_empleado"]);
             $empleado->id_estatus = $request["id_status"];
-            $empleado->id_nomina = $request["id_nomina"];
-            $empleado->id_puesto = $request["id_puesto"];
+            $empleado->id_puesto = $puesto;
             $empleado->id_sucursal = $request["id_sucursal"];
             $empleado->id_registropatronal = $request["id_registropatronal"];
             $empleado->id_catbanco = $request["id_catbanco"];
@@ -265,11 +394,9 @@ class EmpleadoController extends Controller
             $empleado->aplicarsueldoneto = $request["aplicarsueldoneto"];
             $empleado->sinsubsidio = $request["sinsubsidio"];
             $empleado->prestaciones_antiguedad = $request["prestaciones_antiguedad"];
-            $empleado->usuario_creacion = $usuario_creacion;
-            $empleado->fecha_creacion = $fecha;
+            $empleado->usuario_modificacion = $usuario_modificacion;
+            $empleado->fecha_modificacion = $fecha;
             $empleado->save();
-            //Insertar puesto
-
             return $this->crearRespuesta(1,"El empleado se ha creado con éxito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

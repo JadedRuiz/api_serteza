@@ -122,7 +122,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("obtenerEmpleadoPorId/{id_empleado}","EmpleadoController@obtenerEmpleadoPorId");
         $router->post('crearNuevoEmpleadoConCandidatoExistente','EmpleadoController@crearNuevoEmpleadoConCandidatoExistente');
         $router->post('crearNuevoEmpleado','EmpleadoController@crearNuevoEmpleado');
-        $router->post("modificarEmpleado","EmpleadoController@modificarEmpleado");
+        $router->post("modificarEmpleadoAnt","EmpleadoController@modificarEmpleadoAnt");
     });
     $router->group(['prefix' => 'reporte'], function () use ($router) {
         $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
@@ -159,5 +159,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('crearSucursal', 'SucursalController@crearSucursal');
         $router->get("obtenerSucursales/{id_empresa}","SucursalController@obtenerSucursales");
         $router->get("obtenerSucursalPorIdSucursal/{id_sucursal}","SucursalController@obtenerSucursalPorIdSucursal");
+    });
+    $router->group(['prefix' => 'excel'], function () use ($router) {
+        $router->get("prueba","ExcelController@test");
     });
 });

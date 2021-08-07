@@ -1,0 +1,10 @@
+<table>
+    <thead>
+    <tr>
+        <th>{{$prueba}}</th>
+        <th>Email</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>

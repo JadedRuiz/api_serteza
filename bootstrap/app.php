@@ -23,6 +23,7 @@ $app = new Laravel\Lumen\Application(
     dirname(__DIR__)
 );
 $app->withFacades();
+
 $app->withEloquent();
 
 /*
@@ -95,6 +96,7 @@ $app->routeMiddleware([
 
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
+$app->register(Maatwebsite\Excel\ExcelServiceProvider::class);
 $app->register(Barryvdh\DomPDF\ServiceProvider::class);
 
 // Add this line
