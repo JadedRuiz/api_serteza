@@ -161,6 +161,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("obtenerSucursalPorIdSucursal/{id_sucursal}","SucursalController@obtenerSucursalPorIdSucursal");
     });
     $router->group(['prefix' => 'excel'], function () use ($router) {
-        $router->get("prueba","ExcelController@test");
+        $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");
     });
 });
