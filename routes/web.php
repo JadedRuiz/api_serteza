@@ -7,6 +7,7 @@ $router->get('/', function () use ($router) {
 $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get("obtenerCatalogo/{nombre_tabla}/{columnas}","Controller@obtenerCatalogo");
     $router->get("obtenerMovimientos/{id_empresa}","Controller@obtenerMovimientos");
+    $router->post("obtenerCatalogoAutoComplete","Controller@obtenerCatalogoAutoComplete");
     //Rutas de Usuario
     $router->group(['prefix' => 'usuario'], function () use ($router) {
         $router->post('altaUsuario', 'UsuarioController@altaUsuario');                           //Registro del usuario 
@@ -154,11 +155,21 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("crearConcepto","ConceptoController@crearConcepto");
         $router->post("modificarConcepto","ConceptoController@modificarConcepto");
         $router->get("cambiarActivo/{id_concepto}/{activo}","ConceptoController@cambiarActivo");
+        //rutas para el consumo de captura de conceptos
+        $router->get("obtenerConceptoPorIdMovNomina/{id_movnomina}","ConceptoController@obtenerConceptoPorIdMovNomina");
+        $router->post("altaConceptoAEmpleado","ConceptoController@altaConceptoAEmpleado");
+        $router->post("modificarConceptoAEmpleado","ConceptoController@modificarConceptoAEmpleado");
+        $router->post("eliminarConceptoAEmpleado","ConceptoController@eliminarConceptoAEmpleado");
     });
     $router->group(['prefix' => 'sucursal'], function () use ($router) {
         $router->post('crearSucursal', 'SucursalController@crearSucursal');
         $router->get("obtenerSucursales/{id_empresa}","SucursalController@obtenerSucursales");
         $router->get("obtenerSucursalPorIdSucursal/{id_sucursal}","SucursalController@obtenerSucursalPorIdSucursal");
+    });
+    $router->group(['prefix' => 'periodo'], function () use ($router) {
+        $router->get("fechaFinalEjercicio/{anio}/{id_empresa}/{id_nomina}","PeriodoController@obtenerFechaFinalDelEjercicioAnt");
+        $router->post('crearNuevoPeriodo', 'PeriodoController@crearNuevoPeriodo');
+        $router->post('obtenerPeriodos', 'PeriodoController@obtenerPeriodos');
     });
     $router->group(['prefix' => 'excel'], function () use ($router) {
         $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");

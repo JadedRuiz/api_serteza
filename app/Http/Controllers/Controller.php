@@ -6,6 +6,7 @@ use Laravel\Lumen\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class Controller extends BaseController
 {
@@ -224,7 +225,33 @@ class Controller extends BaseController
                 return $recuperar_catalogo;
         }
     }
+    public function obtenerCatalogoAutoComplete(Request $res){
+        $nombre_columa_busqueda = $res["nombre_columna"];
+        $nombre_tabla = $res["nombre_tabla"];
+        $busqueda = "%".strtoupper($res["busqueda"])."%";
+        $filtros = $res["filtros"];
+        $select = $res["select"];
+        $buscar = DB::table($nombre_tabla)
+        ->select($select)
+        ->where(function ($query) use ($filtros,$nombre_columa_busqueda,$busqueda){
+                if(count($filtros)>0){
+                        foreach($filtros as $filtro){
+                                if($filtro["tipo"] == "where"){
+                                        $query->where($filtro["columna"],$filtro["dato"]);
+                                }
+                                if($filtro["tipo"] =="whereIn"){
+                                        $query->whereIn($filtro["columna"],$filtro["datos"]);
+                                }
+                        }
+                }
+                $query->where($nombre_columa_busqueda,"Like",$busqueda);
+        })
+        ->get();
 
+        if(count($buscar)>0){
+                return $this->crearRespuesta(1,$buscar,200);
+        }
+    }
     public function obtenerMovimientos($id_empresa)
     {
         $recuperar_id_clientes = DB::table('liga_empresa_cliente')

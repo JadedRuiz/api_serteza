@@ -52,9 +52,14 @@ class EmpleadoController extends Controller
         try{
             $id_empresa = $res["id_empresa"];
             $id_status = $res["id_status"];
+            $tipo_nomina = $res["id_nomina"];
             $pagina = $res["pagina"];
             $take = $res["take"];
-            $str = "";
+            $str = "=";
+            $str_nomina = "=";
+            if($tipo_nomina == -1){
+                $str_nomina = "!=";
+            }
             if($id_status == -1){
                 $str = "!=";
             }
@@ -71,7 +76,8 @@ class EmpleadoController extends Controller
                 ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
                 ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
                 ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
-                ->where("id_status",$str,$id_status)
+                ->where("rcc.id_status",$str,$id_status)
+                ->where("ne.id_nomina",$str_nomina,$tipo_nomina)
                 ->whereIn("rcc.id_cliente",$id_clientes)
                 ->skip($pagina)
                 ->take($take)
@@ -122,7 +128,8 @@ class EmpleadoController extends Controller
             foreach($recuperar_id_clientes as $id_cliente){
                 array_push($id_clientes,$id_cliente->id_cliente);
             }
-            $empleados = DB::table('nom_empleados as ne')->select("ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia")
+            $empleados = DB::table('nom_empleados as ne')
+            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","cf.nombre as conceptos","cf.nombre as editar")
             ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
             ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
             ->where("ne.id_nomina",$res["id_nomina"])
@@ -132,6 +139,13 @@ class EmpleadoController extends Controller
             if(count($empleados)>0){
                 foreach($empleados as $registro){
                     $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
+                    $registro->conceptos = DB::table('nom_movnomina as nmn')
+                    ->select("id_movnomina as id_concepto","nomc.concepto")
+                    ->join("nom_conceptos as nomc","nomc.id_concepto","=","nmn.id_concepto")
+                    ->where("id_empleado",$registro->id_empleado)
+                    ->where("nmn.activo",1)
+                    ->get();
+                    $registro->editar = false;
                 }
                 return $this->crearRespuesta(1,$empleados,200);
             }else{
