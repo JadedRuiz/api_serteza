@@ -25,11 +25,35 @@ class ConceptoController extends Controller
             return $this->crearRespuesta(2,"No se han encontrado resultados",200);
         }
     }
+    public function obtenerConceptosPorIdEmpleado($id_empleado,$id_empresa)
+    {
+        $conceptos_automaticos = DB::table('nom_conceptos')
+        ->select("id_concepto","concepto")
+        ->where("id_empresa",$id_empresa)
+        ->where("automatico",1)
+        ->get();
+        $conceptos_del_empleado = DB::table('nom_movnomina as nmn')
+        ->select("id_movnomina as id_concepto","nomc.concepto","nmn.unidad","nmn.importe","nmn.saldo")
+        ->join("nom_conceptos as nomc","nomc.id_concepto","=","nmn.id_concepto")
+        ->where("id_empleado",$id_empleado)
+        ->where("nmn.activo",1)
+        ->get();
+        if(count($conceptos_automaticos)==0 && count($conceptos_del_empleado)==0){
+            return $this->crearRespuesta(2,"No se tiene conceptos capturados");
+        }else{
+            $respuesta = [
+                "conceptos_automaticos" => $conceptos_automaticos,
+                "conceptos_empleado" => $conceptos_del_empleado
+            ];
+            return $this->crearRespuesta(1,$respuesta,200);
+        }
+    }
     public function obtenerConcpetosPorId($id_empresa)
     {
         $conceptos = DB::table('nom_conceptos as nc')
         ->select("folio","id_concepto", "concepto", "utiliza_unidade", "utiliza_importe", "utiliza_saldo")
         ->where("id_empresa",$id_empresa)
+        ->where("automatico",0)
         ->where("activo",1)
         ->get();
         if(count($conceptos)>0){

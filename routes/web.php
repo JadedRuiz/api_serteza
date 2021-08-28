@@ -128,6 +128,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'reporte'], function () use ($router) {
         $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
         $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
+        $router->get('reporteEmpleado/{id_empleado}/{id_empresa}','ReporteController@reporteEmpleado');
     });
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
@@ -160,6 +161,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("altaConceptoAEmpleado","ConceptoController@altaConceptoAEmpleado");
         $router->post("modificarConceptoAEmpleado","ConceptoController@modificarConceptoAEmpleado");
         $router->post("eliminarConceptoAEmpleado","ConceptoController@eliminarConceptoAEmpleado");
+        $router->get("obtenerConceptosPorIdEmpleado/{id_empleado}/{id_empresa}","ConceptoController@obtenerConceptosPorIdEmpleado");
     });
     $router->group(['prefix' => 'sucursal'], function () use ($router) {
         $router->post('crearSucursal', 'SucursalController@crearSucursal');
@@ -168,8 +170,10 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
     $router->group(['prefix' => 'periodo'], function () use ($router) {
         $router->get("fechaFinalEjercicio/{anio}/{id_empresa}/{id_nomina}","PeriodoController@obtenerFechaFinalDelEjercicioAnt");
-        $router->post('crearNuevoPeriodo', 'PeriodoController@crearNuevoPeriodo');
         $router->post('obtenerPeriodos', 'PeriodoController@obtenerPeriodos');
+        $router->get("obtenerPeriodoPorId/{id_periodo}","PeriodoController@obtenerPeriodoPorId");
+        $router->post('crearNuevoPeriodo', 'PeriodoController@crearNuevoPeriodo');
+        $router->post('modificarPeriodo', 'PeriodoController@modificarPeriodo');
     });
     $router->group(['prefix' => 'excel'], function () use ($router) {
         $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");

@@ -139,21 +139,12 @@
         <div class="titulo_contenedor fuente_bold_monospace">DATOS GENERALES</div>
         <div class="cuerpo_contenedor">
             <div class="fotografia">
-                <img  class="img_user" src="data:image/{{$detalle_contratacion[0]->extension}};base64, {{$detalle_contratacion[0]->fotografia}}" alt="">
+                <img  class="img_user" src="{{$detalle_contratacion[0]->fotografia}}" alt="">
             </div>
             <div class="informacion_persona">
                 <div class="input display-block" style="text-align: center;width: 90%;">
                     <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$detalle_contratacion[0]->nombre}}</div>
-                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Nombre(s)</p>
-                </div>
-                <br>
-                <div class="input display-block" style="text-align: center;width: 45%;">
-                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$detalle_contratacion[0]->apellido_paterno}}</div>
-                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Apellido paterno</p>
-                </div>
-                <div class="input display-block" style="text-align: center;width: 45%;">
-                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$detalle_contratacion[0]->apellido_materno}}</div>
-                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Apellido materno</p>
+                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Nombre completo</p>
                 </div>
                 <br>
                 <div class="input display-block" style="text-align: center;width: 45%;">
@@ -257,7 +248,7 @@
     <div class="firma-contenedor">
         <div class="firma_empleado hijo_firma">
             <p class="fuente_titulos_Heebo">Firma</p>
-            <p class="fuente_textos_monospace">{{$detalle_contratacion[0]->nombre.' '.$detalle_contratacion[0]->apellido_paterno.' '.$detalle_contratacion[0]->apellido_materno}}</p>
+            <p class="fuente_textos_monospace">{{$detalle_contratacion[0]->nombre}}</p>
             <div class="firma"></div>
         </div>
         <div class="firma_usuario hijo_firma">

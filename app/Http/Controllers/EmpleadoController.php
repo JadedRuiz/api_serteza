@@ -119,9 +119,27 @@ class EmpleadoController extends Controller
     }
     public function obtenerEmpleadoPorTipoNomina(Request $res)
     {
+        $id_nomina = $res["id_nomina"];
+        $id_sucursal = $res["id_sucursal"];
+        $id_departamento = $res["id_departamento"];
+        $palabra = "%".strtoupper($res["palabra"])."%";
+        $id_empresa = $res["id_empresa"];
+        $str_nomina = "=";
+        $tipo = $res["tipo"];
+        if($id_nomina == -1){
+            $str_nomina = "!=";
+        }
+        $str_depa = "=";
+        if($id_departamento == -1){
+            $str_depa = "!=";
+        }
+        $str_sucursal = "=";
+        if($id_sucursal == -1){
+            $str_sucursal = "!=";
+        }
         $recuperar_id_clientes = DB::table('liga_empresa_cliente')
             ->select("id_cliente")
-            ->where("id_empresa",$res["id_empresa"])
+            ->where("id_empresa",$id_empresa)
             ->get();
         if(count($recuperar_id_clientes)>0){
             $id_clientes = [];
@@ -129,23 +147,29 @@ class EmpleadoController extends Controller
                 array_push($id_clientes,$id_cliente->id_cliente);
             }
             $empleados = DB::table('nom_empleados as ne')
-            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","cf.nombre as conceptos","cf.nombre as editar")
+            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento")
             ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
             ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
-            ->where("ne.id_nomina",$res["id_nomina"])
+            ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
+            ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
+            ->join("nom_sucursales as ns","ns.id_sucursal","=","ne.id_sucursal")
+            ->join("gen_cat_cliente as gcc","gcc.id_cliente","=","ns.id_cliente")
+            ->where("ne.id_nomina",$str_nomina,$res["id_nomina"])
             ->where("rcc..id_status","1")
+            ->where(function ($query) use ($tipo,$palabra){
+                if($tipo == 2){
+                    $query->where(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre)'),"like",$palabra);
+                }
+            })
+            ->where("gcp.id_departamento",$str_depa,$id_departamento)
+            ->where("ne.id_sucursal",$str_sucursal,$id_sucursal)
             ->whereIn("rcc.id_cliente",$id_clientes)
             ->get();
             if(count($empleados)>0){
-                foreach($empleados as $registro){
-                    $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
-                    $registro->conceptos = DB::table('nom_movnomina as nmn')
-                    ->select("id_movnomina as id_concepto","nomc.concepto")
-                    ->join("nom_conceptos as nomc","nomc.id_concepto","=","nmn.id_concepto")
-                    ->where("id_empleado",$registro->id_empleado)
-                    ->where("nmn.activo",1)
-                    ->get();
-                    $registro->editar = false;
+                if($tipo == 1){
+                    foreach($empleados as $registro){
+                        $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
+                    }
                 }
                 return $this->crearRespuesta(1,$empleados,200);
             }else{
