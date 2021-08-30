@@ -72,7 +72,7 @@ class ReporteController extends Controller
     public function reporteEmpleado($id_empleado,$id_empresa)
     {
         $reporte_empleado = DB::table('nom_empleados as ne')
-        ->select("ne.id_empleado", DB::raw('CONCAT(rcc.nombre, " ", rcc.apellido_paterno, " ", rcc.apellido_materno) as nombre'),"rcc.telefono","rcc.telefono_dos","cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento","gcp.puesto","gcc.id_cliente as foto_empresa","gcc.id_cliente as empresa","rcc.rfc","rcc.curp","rcc.numero_seguro","rcc.correo","cdd.calle","cdd.numero_interior","cdd.numero_exterior","cdd.cruzamiento_uno","cdd.cruzamiento_dos","cdd.colonia","cdd.municipio","cdd.estado","ncn.nomina","scb.descripcion as banco","scs.tipocontrato","ne.fecha_ingreso","ne.fecha_antiguedad")
+        ->select("ne.id_empleado", DB::raw('CONCAT(rcc.nombre, " ", rcc.apellido_paterno, " ", rcc.apellido_materno) as nombre'),"rcc.telefono","rcc.telefono_dos","cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento","gcp.puesto","gcc.id_cliente as foto_empresa","gcc.id_cliente as empresa","rcc.rfc","rcc.curp","rcc.numero_seguro","rcc.correo","cdd.calle","cdd.numero_interior","cdd.numero_exterior","cdd.cruzamiento_uno","cdd.cruzamiento_dos","cdd.colonia","cdd.municipio","cdd.estado","ncn.nomina","scb.descripcion as banco","scs.tipocontrato","ne.fecha_ingreso","ne.fecha_antiguedad","ne.sueldo_diario","ne.sueldo_integrado","ne.sueldo_complemento")
         ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
         ->join("gen_cat_direccion as cdd","cdd.id_direccion","=","rcc.id_direccion")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")

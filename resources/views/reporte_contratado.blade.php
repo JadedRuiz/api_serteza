@@ -110,6 +110,7 @@
         }
         .input div {
             padding: 0;
+            margin-top: 0px;
             height: auto;
             word-wrap: break-word;
         }

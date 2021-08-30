@@ -88,7 +88,7 @@
         .container-body-seguido{
             border: 2px black solid;
             border-top: none;
-            height: 240px;
+            height: 220px;
         }
         .container-body-seguido-dos{
             border: 2px black solid;
@@ -96,6 +96,11 @@
         }
         .input{
             margin-bottom: 10px;
+        }
+        .input div {
+            padding: 0;
+            margin-top: 0px;
+            height: auto;
         }
         .display-block{
             display: inline-block;
@@ -204,7 +209,11 @@
         <div class="cuerpo_contenedor">
             <div class="input display-block" style="text-align: center;width: 23%;">
                 <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;text-transform: uppercase;">{{$reporte_empleado[0]->nomina}}</div>
-                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Tipo nómina</p>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Nómina</p>
+            </div>
+            <div class="input display-block" style="text-align: center;width: 23%;">
+                <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$reporte_empleado[0]->departamento}}</div>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Departamento</p>
             </div>
             <div class="input display-block" style="text-align: center;width: 23%;">
                 <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$reporte_empleado[0]->puesto}}</div>
@@ -213,10 +222,6 @@
             <div class="input display-block" style="text-align: center;width: 23%;">
                 <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$reporte_empleado[0]->sucursal}}</div>
                 <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Sucursal</p>
-            </div>
-            <div class="input display-block" style="text-align: center;width: 29%;">
-                <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;"></div>
-                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Registro patronal</p>
             </div>
             <br>
             <div class="input display-block" style="text-align: center;width: 25%;">
@@ -229,13 +234,25 @@
             </div>
             <div class="input display-block" style="text-align: center;width: 23%;">
                 <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;text-transform: uppercase;height: auto;">{{date("d-m-Y",strtotime($reporte_empleado[0]->fecha_ingreso))}}</div>
-                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Fecha de ingreso</p>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Fecha ingreso</p>
             </div>
             <br>
-            <div class="input display-block" style="text-align: center;width: 25%;">
+            <div class="input display-block" style="text-align: center;width: 20%;">
                 <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;text-transform: uppercase;height: auto;">{{date("d-m-Y",strtotime($reporte_empleado[0]->fecha_antiguedad))}}</div>
-                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Fecha de antiguedad</p>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Fecha antiguedad</p>
             </div>
+            <div class="input display-block" style="text-align: center;width: 20%;">
+                <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;text-transform: uppercase;height: auto;">{{$reporte_empleado[0]->sueldo_diario}}</div>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Sueldo diario</p>
+            </div>
+            {{-- <div class="input display-block" style="text-align: center;width: 20%;">
+                <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;text-transform: uppercase;height: auto;">{{$reporte_empleado[0]->sueldo_integrado}}</div>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Sueldo integrado</p>
+            </div>
+            <div class="input display-block" style="text-align: center;width: 25%;">
+                <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;text-transform: uppercase;height: auto;">{{$reporte_empleado[0]->sueldo_complemento}}</div>
+                <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Sueldo complemento</p>
+            </div> --}}
         </div>
     </div>
 </body>
