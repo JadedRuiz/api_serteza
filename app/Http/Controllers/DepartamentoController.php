@@ -56,6 +56,56 @@ class DepartamentoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
+        if(isset($res["id_cliente"])){
+            $getEmpresas = DB::table('liga_empresa_cliente')
+            ->where("id_cliente",$res["id_cliente"])
+            ->get();
+            $empresas = [];
+            foreach($getEmpresas as $empresa){
+                array_push($empresas, $empresa->id_empresa);
+            }
+            $registros = DB::table('gen_cat_departamento as cd')
+            ->select("cd.departamento","cd.id_departamento","led.activo","gce.empresa")
+            ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+            ->join("gen_cat_empresa as gce","gce.id_empresa","=","led.id_empresa")
+            ->where("led.activo",$otro,$status)
+            ->where("cd.departamento",$otro_dos,$palabra)
+            ->whereIn("led.id_empresa",$empresas)
+            ->skip($incia)
+            ->take($take)
+            ->get();
+            $contar = DB::table('gen_cat_departamento as cd')
+            ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+            ->where("led.activo",$otro,$status)
+            ->where("cd.departamento",$otro_dos,$palabra)
+            ->whereIn("led.id_empresa",$empresas)
+            ->get();
+            if(count($registros)>0){
+                foreach($registros as $registro){
+                    $puestos = DB::table('gen_cat_puesto')
+                    ->select("autorizados","contratados")
+                    ->where("id_departamento",$registro->id_departamento)
+                    ->get();
+                    $autorizados = 0;
+                    $contratados = 0;
+                    foreach($puestos as $puesto){
+                        if($puesto->contratados != null){
+                            $contratados = $contratados + intval($puesto->contratados);
+                        }
+                        $autorizados = $autorizados + intval($puesto->autorizados);
+                    }
+                    $registro->vacantes = $autorizados - $contratados;
+                    $registro->autorizados = $autorizados;
+                }
+                $respuesta = [
+                    "total" => count($contar),
+                    "registros" => $registros
+                ];
+                return $this->crearRespuesta(1,$respuesta,200);
+            }else{
+                return $this->crearRespuesta(2,"No hay departamentos que mostrar",200);
+            }    
+        }
         $registros = DB::table('gen_cat_departamento as cd')
         ->select("cd.departamento","cd.id_departamento","led.activo")
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
@@ -103,7 +153,8 @@ class DepartamentoController extends Controller
     }
     public function obtenerDepartamentoPorIdDepartamento($id_departamento){
         $departamento = DB::table('gen_cat_departamento as cd')
-        ->select("cd.id_departamento","cd.departamento","cd.descripcion","cd.activo as puestos","cd.activo")
+        ->select("cd.id_departamento","cd.departamento","cd.descripcion","cd.activo as puestos","cd.activo","led.id_empresa")
+        ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("cd.id_departamento",$id_departamento)
         ->get();
         if(count($departamento)>0){

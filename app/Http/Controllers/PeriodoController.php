@@ -6,6 +6,24 @@ use Illuminate\Http\Request;
 
 class PeriodoController extends Controller
 {
+    public function obtenerPeriodoEjercicioActual($id_empresa,$id_nomina)
+    {
+        $ano_actual = date("Y");
+        $periodo_actual = DB::table('nom_periodos')
+        ->select("fecha_inicial","fecha_final")
+        ->where("id_empresa",$id_empresa)
+        ->where("ejercicio",$ano_actual)
+        ->where("id_nomina",$id_nomina)
+        ->where("actual",1)
+        ->first();
+        if($periodo_actual){
+            $periodo_actual->fecha_inicial = date("d-m-Y",strtotime($periodo_actual->fecha_inicial));
+            $periodo_actual->fecha_final = date("d-m-Y",strtotime($periodo_actual->fecha_final));
+            return $this->crearRespuesta(1,$periodo_actual,200);
+        }else{
+            return $this->crearRespuesta(2,"No existe un periodo actual para el ejercicio"." ".$ano_actual,200);
+        }
+    }
     public function obtenerFechaFinalDelEjercicioAnt($anio,$id_empresa,$id_nomina)
     {
         $validar = DB::table('nom_periodos')

@@ -53,7 +53,7 @@ class EmpleadoController extends Controller
             $id_empresa = $res["id_empresa"];
             $id_status = $res["id_status"];
             $tipo_nomina = $res["id_nomina"];
-            $pagina = $res["pagina"];
+            $pagina = intval($res["pagina"])*5;
             $take = $res["take"];
             $str = "=";
             $str_nomina = "=";
@@ -72,7 +72,8 @@ class EmpleadoController extends Controller
                 foreach($recuperar_id_clientes as $id_cliente){
                     array_push($id_clientes,$id_cliente->id_cliente);
                 }
-                $empleados = DB::table('nom_empleados as ne')->select("ne.id_empleado","rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'), "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","cf.nombre as fotografia","rcc.id_cliente")
+                $empleados = DB::table('nom_empleados as ne')
+                ->select("ne.id_empleado","rcc.id_candidato", "rcc.id_fotografia", "ne.id_estatus", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'), "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","cf.nombre as fotografia","rcc.id_cliente")
                 ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
                 ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
                 ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
@@ -82,11 +83,21 @@ class EmpleadoController extends Controller
                 ->skip($pagina)
                 ->take($take)
                 ->get();
+                $total = DB::table('nom_empleados as ne')
+                ->select("ne.id_empleado","rcc.id_candidato", "rcc.id_fotografia", "ne.id_estatus", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'), "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","cf.nombre as fotografia","rcc.id_cliente")
+                ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
+                ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
+                ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
+                ->where("rcc.id_status",$str,$id_status)
+                ->where("ne.id_nomina",$str_nomina,$tipo_nomina)
+                ->whereIn("rcc.id_cliente",$id_clientes)
+                ->get()
+                ->count();
                 if(count($empleados)>0){
                     foreach($empleados as $registro){
                         $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
                     }
-                    return $this->crearRespuesta(1,$empleados,200);
+                    return $this->crearRespuesta(1,["data"=>$empleados,"total" => $total],200);
                 }else{
                     return $this->crearRespuesta(2,"No se han encontrado candidatos",200);
                 }
@@ -137,17 +148,9 @@ class EmpleadoController extends Controller
         if($id_sucursal == -1){
             $str_sucursal = "!=";
         }
-        $recuperar_id_clientes = DB::table('liga_empresa_cliente')
-            ->select("id_cliente")
-            ->where("id_empresa",$id_empresa)
-            ->get();
-        if(count($recuperar_id_clientes)>0){
-            $id_clientes = [];
-            foreach($recuperar_id_clientes as $id_cliente){
-                array_push($id_clientes,$id_cliente->id_cliente);
-            }
+        if(isset($res["id_cliente"])){
             $empleados = DB::table('nom_empleados as ne')
-            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento")
+            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento","ne.id_estatus")
             ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
             ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
             ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
@@ -155,7 +158,7 @@ class EmpleadoController extends Controller
             ->join("nom_sucursales as ns","ns.id_sucursal","=","ne.id_sucursal")
             ->join("gen_cat_cliente as gcc","gcc.id_cliente","=","ns.id_cliente")
             ->where("ne.id_nomina",$str_nomina,$res["id_nomina"])
-            ->where("rcc..id_status","1")
+            ->where("ne.id_estatus","1")
             ->where(function ($query) use ($tipo,$palabra){
                 if($tipo == 2){
                     $query->where(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre)'),"like",$palabra);
@@ -163,7 +166,7 @@ class EmpleadoController extends Controller
             })
             ->where("gcp.id_departamento",$str_depa,$id_departamento)
             ->where("ne.id_sucursal",$str_sucursal,$id_sucursal)
-            ->whereIn("rcc.id_cliente",$id_clientes)
+            ->where("rcc.id_cliente",$res["id_cliente"])
             ->get();
             if(count($empleados)>0){
                 if($tipo == 1){
@@ -176,8 +179,49 @@ class EmpleadoController extends Controller
                 return $this->crearRespuesta(2,"No se han encontrado candidatos",200);
             }
         }else{
-            return $this->crearRespuesta(2,"Está empresa no cuenta con clientes configurados",301);
+            $recuperar_id_clientes = DB::table('liga_empresa_cliente')
+            ->select("id_cliente")
+            ->where("id_empresa",$id_empresa)
+            ->get();
+            if(count($recuperar_id_clientes)>0){
+                $id_clientes = [];
+                foreach($recuperar_id_clientes as $id_cliente){
+                    array_push($id_clientes,$id_cliente->id_cliente);
+                }
+                $empleados = DB::table('nom_empleados as ne')
+                ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento","ne.id_estatus")
+                ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
+                ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
+                ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
+                ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
+                ->join("nom_sucursales as ns","ns.id_sucursal","=","ne.id_sucursal")
+                ->join("gen_cat_cliente as gcc","gcc.id_cliente","=","ns.id_cliente")
+                ->where("ne.id_nomina",$str_nomina,$res["id_nomina"])
+                ->where("ne.id_estatus","1")
+                ->where(function ($query) use ($tipo,$palabra){
+                    if($tipo == 2){
+                        $query->where(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre)'),"like",$palabra);
+                    }
+                })
+                ->where("gcp.id_departamento",$str_depa,$id_departamento)
+                ->where("ne.id_sucursal",$str_sucursal,$id_sucursal)
+                ->whereIn("rcc.id_cliente",$id_clientes)
+                ->get();
+                if(count($empleados)>0){
+                    if($tipo == 1){
+                        foreach($empleados as $registro){
+                            $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
+                        }
+                    }
+                    return $this->crearRespuesta(1,$empleados,200);
+                }else{
+                    return $this->crearRespuesta(2,"No se han encontrado candidatos",200);
+                }
+            }else{
+                return $this->crearRespuesta(2,"Está empresa no cuenta con clientes configurados",301);
+            }
         }
+        
     }
     public function crearNuevoEmpleadoConCandidatoExistente(Request $res)
     {
@@ -268,7 +312,7 @@ class EmpleadoController extends Controller
                 $canditado->rfc = $request["candidato"]["rfc"];
                 $canditado->curp = $request["candidato"]["curp"];
                 $canditado->numero_seguro = $request["candidato"]["numero_social"];
-                $canditado->fecha_nacimiento = $request["candidato"]["fecha_nacimiento"];
+                $canditado->fecha_nacimiento = date("Y-m-d",strtotime($request["candidato"]["fecha_nacimiento"]));
                 $canditado->correo = $request["candidato"]["correo"];
                 $canditado->telefono =$request["candidato"]["telefono"];
                 $canditado->edad = $request["candidato"]["edad"];
@@ -440,39 +484,124 @@ class EmpleadoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function modificarEmpleado(Request $res)
+    public function cargaEmpleado(Request $res)
     {
         try{
-            $empleado = Empleado::find($request["id_empleado"]);
-            $fecha = $this->getHoraFechaActual();
-            $usuario_modificacion = $request["usuario_creacion"];
-            $empleado->id_estatus = $res["id_status"];
-            $empleado->id_nomina = $res["id_nomina"];
-            $empleado->id_puesto = $res["id_puesto"];
-            $empleado->id_sucursal = $res["id_sucursal"];
-            $empleado->id_registropatronal = $res["id_registropatronal"];
-            $empleado->id_banco = $res["id_banco"];
-            $empleado->id_contratosat = $res["id_contratosat"];
-            $empleado->folio = $res["folio"];
-            $empleado->fecha_ingreso = $res["fecha_ingreso"];
-            $empleado->fecha_antiguedad = $res["fecha_antiguedad"];
-            $empleado->cuenta = $res["cuenta"];
-            $empleado->tarjeta = $res["tarjeta"];
-            $empleado->clabe = $res["clabe"];
-            $empleado->tipo_salario = $res["tipo_salario"];
-            $empleado->jornada = $res["jornada"];
-            $empleado->sueldo_integrado = $res["sueldo_integrado"];
-            $empleado->sueldo_diario = $res["sueldo_diario"];
-            $empleado->sueldo_complemento = $res["sueldo_complemento"];
-            $empleado->aplicarsueldoneto = $res["aplicarsueldoneto"];
-            $empleado->sinsubsidio = $res["sinsubsidio"];
-            $empleado->prestaciones_antiguedad = $res["prestaciones_antiguedad"];
-            $empleado->usuario_modificacion = $usuario_modificacion;
-            $empleado->fecha_modificacion = $fecha;
-            $empleado->save();
-            return $this->crearRespuesta(1,"Se ha modificado el empleado",200);
+            $nombre = $this->trataPalabra($res["nombre"]." ".$res["apellido_paterno"]." ".$res["apellido_materno"]);
+            $curp = $this->trataPalabra($res["curp"]);
+            $rfc = $this->trataPalabra($res["rfc"]);
+            if(isset($res["tipo"])){
+                $validar_existencia = DB::table('rh_cat_candidato as rcc')
+                ->select("id_candidato","id_direccion")
+                ->orwhere(DB::raw("CONCAT(rcc.nombre,' ',rcc.apellido_paterno,' ',rcc.apellido_materno)"),$nombre)
+                ->orWhere("rcc.rfc",$rfc)
+                ->orWhere("rcc.curp",$curp)
+                ->get();
+                if($res["tipo"] == 1){  //ALTAS Y MODIFICACIONES
+                    if(count($validar_existencia)>0){
+                        //RECUPERAR ID'S
+                        $id_empresa = $this->obtenerIdPorNombre("gen_cat_empresa","empresa",$this->trataPalabra($res["empresa"]),"id_empresa");
+                        $id_sucursal = $this->obtenerIdPorNombre("nom_sucursales","sucursal",$this->trataPalabra($res["sucursal"]),"id_sucursal");
+                        $id_nomina = $this->obtenerIdPorNombre("nom_cat_nomina","nomina",$this->trataPalabra($res["nomina"]),"id_nomina");
+                        $id_puesto_departamento = $this->obtenerIdPorNombre("gen_cat_puesto","puesto",$this->trataPalabra($res["puesto"]),["id_puesto","id_departamento"]);
+                        //SE ACTUALIZA EL CANDIDATO Y SU DIRECCIÓN
+                        DB::update('update rh_cat_candidato set nombre = ?, apellido_paterno = ?, apellido_materno = ?, rfc = ?, curp = ?, numero_seguro = ?, telefono = ? where id_candidato = ?', [$this->trataPalabra($res["nombre"]),$this->trataPalabra($res["apellido_paterno"]),$this->trataPalabra($res["apellido_materno"]),$this->trataPalabra($res["rfc"]),$this->trataPalabra($res["curp"]),$this->trataPalabra($res["numero_seguro"]),$res["telefono"],$validar_existencia[0]->id_candidato]);
+                        DB::update('update gen_cat_direccion set calle = ?, numero_interior = ?, numero_exterior = ?, cruzamiento_uno = ?, cruzamiento_dos = ?, colonia = ?, municipio = ?, estado = ?, codigo_postal = ? where id_direccion = ?', [$this->trataPalabra($res["calle"]),$this->trataPalabra($res["numero_interior"]),$this->trataPalabra($res["numero_exterior"]),$this->trataPalabra($res["cruzamiento_uno"]),$this->trataPalabra($res["cruzamiento_dos"]),$this->trataPalabra($res["colonia"]),$this->trataPalabra($res["municipio"]),$this->trataPalabra($res["estado"]),$res["codigo_postal"],$validar_existencia[0]->id_direccion]);
+                        //VALIDAR SI EL CANDIDATO EXISTE COMO EMPLEADO
+                        $es_empleado = DB::table('nom_empleados')
+                        ->select("id_empleado")
+                        ->where("id_candidato",$validar_existencia[0]->id_candidato)
+                        ->get();
+                        if(count($es_empleado)>0){
+                            //EL CANDIDATO EXISTE Y ES EMPLEADO SOLO SE ACTUALIZA
+                            DB::update('update nom_empleados set id_sucursal = ?, id_registropatronal = ?, id_nomina = ?, fecha_ingreso = ?, id_puesto = ?, cuenta = ?, sueldo_diario = ?, sueldo_integrado = ?, sueldo_complemento = ?  where id_empleado = ?', [$id_sucursal->id_sucursal,1,$id_nomina->id_nomina,date("Y-m-d",strtotime($res["fecha_ingreso"])),$id_puesto_departamento->id_puesto,$res["cuenta"],$res["sueldo_diario"],$res["sueldo_integrado"],$res["sueldo_complemento"],$es_empleado[0]->id_empleado]);
+                            
+                        }else{
+                            //EL CANDIDATO EXISTE PERO NO COMO EMPLEADO SE INSERTA
+                            DB::insert('insert into nom_empleados (id_candidato, id_estatus, id_nomina, id_puesto, id_sucursal, id_registropatronal, fecha_ingreso, cuenta, sueldo_diario, sueldo_integrado, sueldo_complemento, usuario_creacion, fecha_creacion) values (?,?,?,?,?,?,?,?,?,?,?,?,?)', [$validar_existencia[0]->id_candidato,1,$id_nomina->id_nomina,$id_puesto_departamento->id_puesto,$id_sucursal->id_sucursal,1,date("Y-m-d",strtotime($res["fecha_ingreso"])),$res["cuenta"],$res["sueldo_diario"],$res["sueldo_integrado"],$res["sueldo_complemento"],$res["usuario"],$this->getHoraFechaActual()]);
+                        }
+                        return $this->crearRespuesta(1,"Se ha completado con exito",200);
+                    }else{
+                        //NO EXISTE EL CANDIDATO, SE INSERTA EL CANDIDATO LA DIRECCIÓN Y EL EMPLEADO
+                        $id_empresa = $this->obtenerIdPorNombre("gen_cat_empresa","empresa",$this->trataPalabra($res["empresa"]),"id_empresa");
+                        $id_sucursal = $this->obtenerIdPorNombre("nom_sucursales","sucursal",$this->trataPalabra($res["sucursal"]),"id_sucursal");
+                        //Obtener id_cliente
+                        $id_cliente = $this->obtenerIdPorNombre("gen_cat_cliente","cliente",$this->trataPalabra($res["cliente"]),"id_cliente");
+                        //Insertar fotografia
+                        $id_fotografia = $this->getSigId("gen_cat_fotografia");
+                        DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$this->getHoraFechaActual(),$res["usuario"],1]);
+                        //Insertar dirección
+                        $id_direccion = $this->getSigId("gen_cat_direccion");
+                        $direccion = new Direccion;
+                        $direccion->id_direccion = $id_direccion;
+                        $direccion->calle = $this->trataPalabra($res["calle"]);
+                        $direccion->numero_interior = $this->trataPalabra($res["numero_interior"]);
+                        $direccion->numero_exterior = $this->trataPalabra($res["numero_exterior"]);
+                        $direccion->cruzamiento_uno = $this->trataPalabra($res["cruzamiento_uno"]);
+                        $direccion->cruzamiento_dos = $this->trataPalabra($res["cruzamiento_dos"]);
+                        $direccion->codigo_postal = $this->trataPalabra($res["codigo_postal"]);
+                        $direccion->colonia = $this->trataPalabra($res["colonia"]);
+                        $direccion->municipio = $this->trataPalabra($res["municipio"]);
+                        $direccion->estado = $this->trataPalabra($res["estado"]);
+                        $direccion->fecha_creacion = $this->getHoraFechaActual();
+                        $direccion->usuario_creacion = $res["usuario"];
+                        $direccion->activo = 1;
+                        $direccion->save();
+                        //Insertar candidato
+                        $id_candidato = $this->getSigId("rh_cat_candidato");
+                        $canditado = new Candidato;
+                        $canditado->id_candidato = $id_candidato;
+                        $canditado->id_status = 1;  //Activo
+                        $canditado->id_cliente = $id_cliente->id_cliente;
+                        $canditado->id_fotografia = $id_fotografia;
+                        $canditado->id_direccion = $id_direccion;
+                        $canditado->nombre = $this->trataPalabra($res["nombre"]);
+                        $canditado->apellido_paterno = $this->trataPalabra($res["apellido_paterno"]);
+                        $canditado->apellido_materno = $this->trataPalabra($res["apellido_materno"]);
+                        $canditado->rfc = $this->trataPalabra($res["rfc"]);
+                        $canditado->curp = $this->trataPalabra($res["curp"]);
+                        $canditado->numero_seguro = $this->trataPalabra($res["numero_social"]);
+                        $canditado->telefono = $this->trataPalabra($res["telefono"]);
+                        $canditado->fecha_creacion = $this->getHoraFechaActual();
+                        $canditado->usuario_creacion = $res["usuario"];
+                        $canditado->activo = 1;
+                        $canditado->save();
+                        //Insertar Empleado
+                        $id_puesto_departamento = $this->obtenerIdPorNombre("gen_cat_puesto","puesto",$this->trataPalabra($res["puesto"]),["id_puesto","id_departamento"]);
+                        //Aumentar vacantes del puesto
+                        $contratados = DB::table('gen_cat_puesto')
+                        ->select("contratados")
+                        ->where("id_puesto",$id_puesto_departamento->id_puesto)
+                        ->first()->contratados;
+                        DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [(intval($contratados)+1),$id_puesto_departamento->id_puesto]);
+                        $id_nomina = $this->obtenerIdPorNombre("nom_cat_nomina","nomina",$this->trataPalabra($res["nomina"]),"id_nomina");
+                        $puesto = $id_puesto_departamento->id_puesto;
+                        $empleado = new Empleado;
+                        $empleado->id_candidato = $id_candidato;
+                        $empleado->id_estatus = 1;
+                        $empleado->id_nomina = $id_nomina->id_nomina;
+                        $empleado->id_puesto = $puesto;
+                        $empleado->id_sucursal = $id_sucursal->id_sucursal;
+                        $empleado->id_registropatronal = 1;
+                        $empleado->fecha_antiguedad = date("Y-m-d",strtotime($res["fecha_antiguedad"]));
+                        $empleado->cuenta = $res["cuenta"];
+                        $empleado->sueldo_integrado = $res["sueldo_integrado"];
+                        $empleado->sueldo_diario = $res["sueldo_diario"];
+                        $empleado->sueldo_complemento = $res["sueldo_complemento"];
+                        $empleado->usuario_creacion = $res["usuario"];
+                        $empleado->fecha_creacion = $this->getHoraFechaActual();
+                        $empleado->save();
+                        return $this->crearRespuesta(1,"Empleado agregado",200);
+                    }
+                }
+                if($res["tipo"] == 2){  //BAJAS
+
+                }
+            }else{
+                return $this->crearRespuesta(2,"No se ha indentificado el tipo de importación",200);
+            }
         }catch(Throwable $e){
-            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),200);
         }
     }
     public function obtenerCandidatoPorEmpresa(Request $res)
@@ -509,6 +638,16 @@ class EmpleadoController extends Controller
             }
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function obtenerIdPorNombre($nombre_tabla,$columna_name,$data,$id_name)
+    {
+        $id = DB::table($nombre_tabla)
+        ->select($id_name)
+        ->where($columna_name,$data)
+        ->first();
+        if($id){
+            return $id;
         }
     }
 }

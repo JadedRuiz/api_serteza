@@ -8,6 +8,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get("obtenerCatalogo/{nombre_tabla}/{columnas}","Controller@obtenerCatalogo");
     $router->get("obtenerMovimientos/{id_empresa}","Controller@obtenerMovimientos");
     $router->post("obtenerCatalogoAutoComplete","Controller@obtenerCatalogoAutoComplete");
+    $router->get("obtenerPerfiles","Controller@obtenerPerfiles");
+    $router->get("decode_json/{code}","Controller@decode_json");
+    
     //Rutas de Usuario
     $router->group(['prefix' => 'usuario'], function () use ($router) {
         $router->post('altaUsuario', 'UsuarioController@altaUsuario');                           //Registro del usuario 
@@ -21,7 +24,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerUsuarioPorId/{id_usuario}', 'UsuarioController@obtenerUsuarioPorId');
         $router->post('obtenerUsuariosDeEntidad', 'UsuarioController@obtenerUsuariosDeEntidad');
         $router->post('modificarUsuario', 'UsuarioController@modificarUsuario');   
-        $router->post('altaUsuarioAdmin', 'UsuarioController@altaUsuarioAdmin');  
+        $router->post('altaUsuarioAdmin', 'UsuarioController@altaUsuarioAdmin');
         $router->post('upload-xml', 'UsuarioController@xmlUpload');
         $router->post('tieneSistema', 'UsuarioController@tieneSistema');
     });
@@ -124,6 +127,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('crearNuevoEmpleadoConCandidatoExistente','EmpleadoController@crearNuevoEmpleadoConCandidatoExistente');
         $router->post('crearNuevoEmpleado','EmpleadoController@crearNuevoEmpleado');
         $router->post("modificarEmpleadoAnt","EmpleadoController@modificarEmpleadoAnt");
+        $router->post("cargaEmpleado","EmpleadoController@cargaEmpleado");
     });
     $router->group(['prefix' => 'reporte'], function () use ($router) {
         $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
@@ -174,8 +178,10 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("obtenerPeriodoPorId/{id_periodo}","PeriodoController@obtenerPeriodoPorId");
         $router->post('crearNuevoPeriodo', 'PeriodoController@crearNuevoPeriodo');
         $router->post('modificarPeriodo', 'PeriodoController@modificarPeriodo');
+        $router->get("obtenerPeriodoEjercicioActual/{id_empresa}/{id_nomina}","PeriodoController@obtenerPeriodoEjercicioActual");
     });
     $router->group(['prefix' => 'excel'], function () use ($router) {
         $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");
+        $router->get("formatoEmpleados/{empresa}/{id_nomina}","ExcelController@formatoEmpleados");
     });
 });

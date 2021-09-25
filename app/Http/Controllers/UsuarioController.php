@@ -163,21 +163,32 @@ class UsuarioController extends Controller
             ->count();
         }
         if($tipo_entidad == 2){
+            $getEmpresas = DB::table('liga_empresa_cliente')
+            ->where("id_cliente",$id_entidad)
+            ->get();
+            $empresas = [];
+            foreach($getEmpresas as $empresa){
+                array_push($empresas, $empresa->id_empresa);
+            }
             $usuarios = DB::table('gen_cat_usuario as cu')
-            ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
+            ->select("cu.id_usuario","nombre","gcc.empresa","cu.activo")
+            ->join("liga_usuario_empresa as lue","lue.id_empresa","=","cu.id_usuario")
+            ->join("gen_cat_empresa as gcc","gcc.id_empresa","=","lue.id_empresa")
             ->where("cu.activo",$otro,$status)
             ->where("cu.nombre",$otro_dos,$palabra)
             ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
-            ->where("luc.id_cliente",$id_entidad)
+            ->whereIn("lue.id_empresa",$empresas)
             ->skip($incia)
             ->take($take)
+            ->distinct()
             ->get();
             $contar = DB::table('gen_cat_usuario as cu')
-            ->join("liga_usuario_cliente as luc","luc.id_usuario","=","cu.id_usuario")
+            ->join("liga_usuario_empresa as lue","lue.id_empresa","=","cu.id_usuario")
             ->where("cu.activo",$otro,$status)
-            ->where("cu.usuario",$otro_dos,$palabra)
+            ->where("cu.nombre",$otro_dos,$palabra)
             ->where("cu.id_usuario","!=",$usuario_super_admin->id_usuario)
-            ->where("luc.id_cliente",$id_entidad)
+            ->whereIn("lue.id_empresa",$empresas)
+            ->distinct()
             ->get()
             ->count();
         }
@@ -202,14 +213,24 @@ class UsuarioController extends Controller
             $validar[0]->password = $this->decode_json($validar[0]->password);
             $validar[0]->fotografia = Storage::disk('usuario')->url($validar[0]->fotografia);
             $sistemas = DB::table('liga_usuario_sistema as lus')
-            ->select("cs.sistema","cs.id_sistema")
+            ->select("cs.sistema","cs.id_sistema","lus.id_perfil","lue.id_empresa","gce.empresa")
             ->join("gen_cat_sistemas as cs","cs.id_sistema","=","lus.id_sistema")
+            ->join("liga_usuario_empresa as lue","lue.id_empresa","=","lus.id_usuario")
+            ->join("gen_cat_empresa as gce","gce.id_empresa","=","lue.id_empresa")
             ->where("lus.id_usuario",$validar[0]->id_usuario)
             ->where("lus.activo",1)
+            ->distinct()
             ->get();
             $validar[0]->sistemas = [];
             foreach($sistemas as $sistema){
-                array_push($validar[0]->sistemas,["id_sistema" => $sistema->id_sistema,"sistema" => $sistema->sistema]);
+                $id_perfil = 0;
+                $perfil = "";
+                $getperfil = DB::table('gen_catperfiles')->where("id_perfil",$sistema->id_perfil)->first();
+                if($getperfil){
+                    $id_perfil = $getperfil->id_perfil;
+                    $perfil = $getperfil->perfil;
+                }
+                array_push($validar[0]->sistemas,["id_sistema" => $sistema->id_sistema,"sistema" => $sistema->sistema,"id_perfil" => $id_perfil,"perfil"=>$perfil, "empresa" => $sistema->empresa, "id_empresa" => $sistema->id_empresa]);
             }
             return $this->crearRespuesta(1,$validar,200);
         }else{
@@ -276,7 +297,7 @@ class UsuarioController extends Controller
 
             $sistemas = $request->input("sistemas");
             foreach($sistemas as $sistema){
-                $validar = $this->ligarUsuarioSistema($sistema,$id_usuario,$request->input("usuario_creacion"),$activo);    
+                $validar = $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,$request->input("usuario_creacion"),$activo,$sistema["id_perfil"]);    
             }
             //return successful response
             return $this->crearRespuesta(1,"Usuario registrado con éxito",200);
@@ -309,7 +330,6 @@ class UsuarioController extends Controller
                 DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('usuario')->put($nombre_image, $file);
             }
-            $id_empresa = $request->input('id_empresa');
             $user = new Usuario;
             $activo = $request->input('activo');
             $id_usuario = $this->getSigId("gen_cat_usuario");
@@ -326,11 +346,12 @@ class UsuarioController extends Controller
 
             $sistemas = $request->input("sistemas");
             foreach($sistemas as $sistema){
-                $validar = $this->ligarUsuarioSistema($sistema,$id_usuario,$request->input("usuario_creacion"),$activo);    
+                $validar = $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,$request->input("usuario_creacion"),$activo,$sistema["id_perfil"]); 
+                //Dar de alta a usuario de empresa
+                $id_usuario_empresa = $this->getSigId("liga_usuario_empresa");
+                DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_usuario_empresa, $id_usuario, $sistema["id_empresa"], $fecha, $usuario_creacion, 1]);   
             }
-            //Dar de alta a usuario de empresa
-            $id_usuario_empresa = $this->getSigId("liga_usuario_empresa");
-            DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_usuario_empresa, $id_usuario, $id_empresa, $fecha, $usuario_creacion, 1]);
+            
             
             return $this->crearRespuesta(1,"Usuario registrado con éxito",200);
 
@@ -388,7 +409,7 @@ class UsuarioController extends Controller
         }
 
     }
-    public function ligarUsuarioSistema($id_sistema,$id_usuario,$usuario,$activo)
+    public function ligarUsuarioSistema($id_sistema,$id_usuario,$usuario,$activo,$id_perfil)
     {
         $fecha = $this->getHoraFechaActual();
         try{
@@ -398,7 +419,7 @@ class UsuarioController extends Controller
             ->where("id_usuario",$id_usuario)
             ->get();
             if(count($validar)==0){
-                DB::insert('insert into liga_usuario_sistema (id_usuario_sistema, id_usuario, id_sistema, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_usuario, $id_sistema, $fecha, $usuario, $activo]);
+                DB::insert('insert into liga_usuario_sistema (id_usuario_sistema, id_usuario, id_perfil, id_sistema, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?)', [$id_liga,$id_usuario,$id_perfil, $id_sistema, $fecha, $usuario, $activo]);
                 return ["ok" => true];
             }else{
                 return ["ok" => false,"message" => $validar[0]->id_usuario_sistema];
@@ -423,7 +444,7 @@ class UsuarioController extends Controller
         }
         $sistemas = DB::table("liga_usuario_sistema as lus")
         ->join("gen_cat_sistemas as gce","gce.id_sistema","=","lus.id_sistema")
-        ->select("gce.id_sistema","gce.sistema")
+        ->select("gce.id_sistema","gce.sistema","lus.id_perfil")
         ->where("lus.id_usuario",$usuario[0]->id_usuario)
         ->where("lus.activo",1)
         ->get();
@@ -431,7 +452,8 @@ class UsuarioController extends Controller
         foreach($sistemas as $sistema){ 
             array_push($sistemas_info,[
                 "id" => $sistema->id_sistema,
-                "sistema" => $sistema->sistema
+                "sistema" => $sistema->sistema,
+                "id_perfil" => $sistema->id_perfil
             ]);
         }
         $respuesta = [

@@ -23,6 +23,13 @@ class Controller extends BaseController
         $mytime = Carbon::now();
         return $mytime;
     }
+
+    public function obtenerPerfiles()
+    {
+        return DB::table('gen_catperfiles')
+        ->where("activo",1)
+        ->get();
+    }
     public function getEstatus($tipo){
             $data = '';
         if($tipo = "cancelar"){
@@ -286,5 +293,47 @@ class Controller extends BaseController
            }
            return $movimientos;
         }
+    }
+    public function trataPalabra($cadena)
+    {
+        //Reemplazamos la A y a
+        $cadena = str_replace(
+        array('Á', 'À', 'Â', 'Ä', 'á', 'à', 'ä', 'â', 'ª'),
+        array('A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A'),
+        $cadena
+        );
+
+        //Reemplazamos la E y e
+        $cadena = str_replace(
+        array('É', 'È', 'Ê', 'Ë', 'é', 'è', 'ë', 'ê'),
+        array('E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'),
+        $cadena );
+
+        //Reemplazamos la I y i
+        $cadena = str_replace(
+        array('Í', 'Ì', 'Ï', 'Î', 'í', 'ì', 'ï', 'î'),
+        array('I', 'I', 'I', 'I', 'I', 'I', 'I', 'I'),
+        $cadena );
+
+        //Reemplazamos la O y o
+        $cadena = str_replace(
+        array('Ó', 'Ò', 'Ö', 'Ô', 'ó', 'ò', 'ö', 'ô'),
+        array('O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'),
+        $cadena );
+
+        //Reemplazamos la U y u
+        $cadena = str_replace(
+        array('Ú', 'Ù', 'Û', 'Ü', 'ú', 'ù', 'ü', 'û'),
+        array('U', 'U', 'U', 'U', 'U', 'U', 'U', 'U'),
+        $cadena );
+
+        //Reemplazamos la N, n, C y c
+        $cadena = str_replace(
+        array('Ñ', 'ñ', 'Ç', 'ç'),
+        array('N', 'N', 'C', 'C'),
+        $cadena
+        );
+        
+        return strtoupper($cadena);
     }
 }
