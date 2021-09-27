@@ -43,12 +43,13 @@ class ContratoController extends Controller
     public function obtenerMoviemientosContratacionPorId($id_movimiento)
     {
         $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
-        ->select("dc.id_detalle_contratacion","cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo","dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa","dc.id_nomina","rm.id_status")
+        ->select("dc.id_detalle_contratacion","cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal")
         ->join("rh_movimientos as rm","rm.id_movimiento","=","dc.id_movimiento")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
         ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
         ->join("gen_cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
         ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
+        ->join("nom_sucursales as ns","ns.id_sucursal","=","dc.id_sucursal")
         ->where("dc.id_movimiento",$id_movimiento)
         ->where("dc.activo",1)
         ->get();
@@ -70,17 +71,18 @@ class ContratoController extends Controller
             //Detalle de contratacion
             $is_good = true;
             foreach($res["detalle_contratacion"] as $detalle){
-                $id_detalle_contratacion = $this->getSigId("rh_detalle_contratacion");
                 $id_departamento = $detalle["id_departamento"];
                 $id_puesto = $detalle["id_puesto"];
                 $id_candidato = $detalle["id_candidato"];
                 $id_nomina = $detalle["id_nomina"];
                 $id_empresa = $detalle["id_empresa"];
+                $id_sucursal = $detalle["id_sucursal"];
                 $observacion = $detalle["descripcion"];
+                $sueldo_neto = $detalle["sueldo_neto"];
                 $sueldo = $detalle["sueldo"];
                 $fecha_alta = $detalle["fecha_ingreso"];
-                 DB::insert('insert into rh_detalle_contratacion (id_detalle_contratacion, id_empresa, id_movimiento, id_departamento, id_puesto, id_candidato, id_nomina, observacion, sueldo, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?,?)', 
-                 [$id_detalle_contratacion, $id_empresa, $id_movimiento, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $fecha_alta, $fecha_creacion,$usuario_creacion, 1]);
+                 DB::insert('insert into rh_detalle_contratacion (id_empresa, id_sucursal, id_movimiento, id_departamento, id_puesto, id_candidato, id_nomina, observacion, sueldo, sueldo_neto, fecha_alta, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
+                 [$id_empresa, $id_sucursal, $id_movimiento, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $sueldo_neto, $fecha_alta, $fecha_creacion,$usuario_creacion, 1]);
                  $validar = $this->cambiarDeEstatus($id_candidato,5);
                  if(!$validar["ok"]){
                     $is_good = false;
@@ -109,11 +111,13 @@ class ContratoController extends Controller
                 $id_candidato = $detalle["id_candidato"];
                 $id_nomina = $detalle["id_nomina"];
                 $id_empresa = $detalle["id_empresa"];
+                $id_sucursal = $detalle["id_sucursal"];
                 $observacion = $detalle["descripcion"];
                 $sueldo = $detalle["sueldo"];
+                $sueldo_neto = $detalle["sueldo_neto"];
                 $fecha_alta = $detalle["fecha_ingreso"];
-                 DB::update('update rh_detalle_contratacion set id_empresa = ?, id_departamento = ?, id_puesto = ?, id_candidato = ?, id_nomina = ?, observacion = ?, sueldo = ?, fecha_alta = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_detalle_contratacion = ?', 
-                 [$id_empresa, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $fecha_alta, $fecha_modificacion,$usuario_modificacion,$id_detalle_contratacion]);
+                 DB::update('update rh_detalle_contratacion set id_empresa = ?, id_sucursal = ?, id_departamento = ?, id_puesto = ?, id_candidato = ?, id_nomina = ?, observacion = ?, sueldo = ?, sueldo_neto = ?, fecha_alta = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_detalle_contratacion = ?', 
+                 [$id_empresa, $id_sucursal, $id_departamento, $id_puesto, $id_candidato,$id_nomina, $observacion, $sueldo, $sueldo_neto, $fecha_alta, $fecha_modificacion,$usuario_modificacion,$id_detalle_contratacion]);
                  $validar = $this->cambiarDeEstatus($id_candidato,5);
                  if(!$validar["ok"]){
                     $is_good = false;

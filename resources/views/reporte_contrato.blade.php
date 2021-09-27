@@ -104,28 +104,31 @@
         </div>
         <div class="hijo_header_dos fuente_titulos_Heebo titulo_grande">{{$reporte_contrato[0]->cliente}}</div>
     </header>
-    <p class="fuente_titulos_Heebo" style="margin-left: 230px;">REPORTE DE CONTRATACIÓN</p>
-    <div class="info_general mt-10">
+    <p class="fuente_titulos_Heebo" style="margin-left: 380px;">REPORTE DE CONTRATACIÓN</p>
+    <div class="info_general">
         <div class="fecha_folio dib">
-            <div class="fecha dib vat fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_movimiento}}</div></div>
+            <div class="dib mt-5 fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_movimiento}}</div></div>
             <br>
-            <div class="folio dib vat mt-10 fuente_titulos_Heebo">Folio: <div class="folio_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->folio}}</div></div>
-        </div>
-        <div class="usuario_trabajador dib">
-            <div class="fecha dib va fuente_titulos_Heebo">Usuario: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->usuario}}</div></div>
+            <div class="dib mt-5 fuente_titulos_Heebo">Fecha de impresión: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_hoy}}</div></div>
             <br>
-            <div class="folio dib vat mt-10 fuente_titulos_Heebo">No. de trabajadores: <div class="folio_valor dib vat fuente_normal_Heebo">{{count($reporte_contrato[0]->detalle)}}</div></div>
+            <div class="dib mt-5 fuente_titulos_Heebo">Usuario: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->usuario}}</div></div>
+            <br>
+            <div class="dib mt-5 fuente_titulos_Heebo">No. de trabajadores: <div class="folio_valor dib vat fuente_normal_Heebo">{{count($reporte_contrato[0]->detalle)}}</div></div>
+            <br>
+            <div class="dib mt-5 fuente_titulos_Heebo">Folio: <div class="folio_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->folio}}</div></div>
         </div>
     </div>
     <div class="table">
         <table class="w100">
             <thead class="bb">
                 <tr class="fuente_titulos_Heebo">
-                    <th colspan="1">NOMBRE DEL EMPLEADO</th>
-                    <th colspan="1">EMPRESA</th>
-                    <th colspan="1">DEPARTAMENTO</th>
-                    <th colspan="1">PUESTO</th>
-                    <th colspan="1">SUELDO</th>
+                    <th colspan="1">NOMBRE</th>
+                    <th colspan="1">FECHA INGRESO</th>
+                    <th colspan="1">EMPRESA/SUCURSAL</th>
+                    <th colspan="1">DEPARTAMENTO/PUESTO</th>
+                    <th colspan="1">SUELDO DIARIO</th>
+                    <th colspan="1">SUELDO NETO</th>
+                    <th colspan="1">DESCRIPCIÓN</th>
                 </tr>
             </thead>
             <tbody>
@@ -133,10 +136,12 @@
                     @foreach ($reporte_contrato[0]->detalle as $trabajador)
                         <tr class="fuente_normal_Heebo text-center">
                             <td colspan="1">{{$trabajador->nombre.' '.$trabajador->apellido_paterno.' '.$trabajador->apellido_materno}}</td>
-                            <td colspan="1">{{$trabajador->empresa}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->departamento}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->puesto}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->sueldo}}</td>
+                            <td colspan="1">{{$trabajador->fecha_alta}}</td>
+                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->empresa}} / {{$trabajador->sucursal}}</td>
+                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->departamento}} / {{$trabajador->puesto}}</td>
+                            <td colspan="1" style="text-transform: uppercase;">${{$trabajador->sueldo}}</td>
+                            <td colspan="1">${{$trabajador->sueldo_neto}}</td>
+                            <td colspan="1">{{$trabajador->observacion}}</td>
                         </tr>
                     @endforeach
                 @else

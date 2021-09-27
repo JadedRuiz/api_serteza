@@ -33,14 +33,14 @@ class ReporteController extends Controller
         $detalle_contratacion[0]->name_foto = Storage::disk('cliente')->url($detalle_contratacion[0]->name_foto);
         $detalle_contratacion[0]->fotografia = Storage::disk('candidato')->url($detalle_contratacion[0]->fotografia);
         $pdf = PDF::loadView("reporte_contratado",compact('detalle_contratacion'))
-        ->setPaper('A4');
+        ->setPaper('A4',);
         return $pdf->stream();
     }
 
     public function reporteContrato($id_movimiento)
     {
         $reporte_contrato = DB::table('rh_movimientos as mc')
-        ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_movimiento","mc.id_movimiento as folio","cu.nombre as usuario","cu.id_usuario as detalle")
+        ->select("cc.cliente","cf.nombre as foto_cliente","mc.fecha_movimiento","mc.id_movimiento as folio","cu.nombre as usuario","cu.id_usuario as detalle","mc.fecha_movimiento as fecha_hoy")
         ->join("gen_cat_cliente as cc","cc.id_cliente","=","mc.id_cliente")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->join("gen_cat_usuario as cu","cu.id_usuario","=","mc.usuario_creacion")
@@ -48,22 +48,28 @@ class ReporteController extends Controller
         ->get();
         if(count($reporte_contrato)>0){
             $reporte_contrato[0]->detalle = [];
+            $reporte_contrato[0]->fecha_movimiento = date('d-m-Y',strtotime($reporte_contrato[0]->fecha_movimiento));
+            $reporte_contrato[0]->fecha_hoy = date('d-m-Y');
             $detalle = DB::table('rh_detalle_contratacion as dc')
-            ->select("cc.nombre","cc.apellido_paterno","cc.apellido_materno","ce.empresa","dp.departamento","cp.puesto","dc.sueldo")
+            ->select("cc.id_candidato","cc.nombre","cc.apellido_paterno","cc.apellido_materno","ce.empresa","dp.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto","dc.observacion","dc.fecha_alta","ns.sucursal")
             ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
             ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
             ->join("gen_cat_departamento as dp","dp.id_departamento","=","dc.id_departamento")
             ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
+            ->join("nom_sucursales as ns","ns.id_sucursal","=","dc.id_sucursal")
             ->where("dc.id_movimiento",$id_movimiento)
             ->get();
             if(count($detalle)>0){
                 foreach($detalle as $trabajador){
+                    $trabajador->sueldo_neto = number_format($trabajador->sueldo_neto,2,'.',',');
+                    $trabajador->sueldo = number_format($trabajador->sueldo,2,'.',',');
+                    $trabajador->fecha_alta = date('d-m-Y',strtotime($trabajador->fecha_alta));
                     array_push($reporte_contrato[0]->detalle,$trabajador);
                 }
             }
             $reporte_contrato[0]->foto_cliente = Storage::disk('cliente')->url($reporte_contrato[0]->foto_cliente);
             $pdf = PDF::loadView("reporte_contrato",compact('reporte_contrato'))
-            ->setPaper('A4');
+            ->setPaper('A4','landscape');
             return $pdf->stream(); 
         }else{
             return "NO SE HA PODIDO GENERAR EL PDF, POR FAVOR CONTACTE CON EL ADMINISTRADOR DEL SISTEMA";

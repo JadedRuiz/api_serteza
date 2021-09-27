@@ -61,6 +61,7 @@ class CandidatoController extends Controller
         ->where("cc.id_status",$otro,$status)
         ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
         ->skip($incia)
+        ->orderBy("cc.fecha_creacion","desc")
         ->take($take)
         ->get();
         if(isset($res["tipo"]) && $res["tipo"] == 1){
@@ -122,6 +123,8 @@ class CandidatoController extends Controller
             'nombre' => 'required|string|max:150',
             'apellido_paterno' => 'required|max:150',
             'apellido_materno' => 'required|max:150',
+            'rfc' => 'unique',
+            'curp' => 'unique'
         ]);
         try{
         $fecha = $this->getHoraFechaActual();
