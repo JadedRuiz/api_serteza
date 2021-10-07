@@ -193,27 +193,36 @@ class DepartamentoController extends Controller
             $departamento->usuario_creacion = $request["usuario_creacion"];
             $departamento->activo = $request["activo"];
             $departamento->save();
-            //Alta puestos del departamento
-            $puestos = $request["puestos"];
-            foreach($puestos as $puesto){
-                $id_puesto = $this->getSigId("gen_cat_puesto");
-                $puesto_clase = new Puesto;
-                $puesto_clase->id_puesto = $id_puesto;
-                $puesto_clase->id_departamento = $id_departamento;
-                $puesto_clase->puesto = strtoupper($puesto["puesto"]);
-                $puesto_clase->autorizados = $puesto["autorizados"];
-                $puesto_clase->descripcion = $puesto["descripcion"];
-                $puesto_clase->fecha_creacion = $fecha;
-                $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
-                $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
-                $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
-                $puesto_clase->usuario_creacion = $request["usuario_creacion"];
-                $puesto_clase->activo = 1;
-                $puesto_clase->save();
-            }
             //Ligar departamento con empresa
             $id_empresa_departamento = $this->getSigId("liga_empresa_departamento");
             DB::insert('insert into liga_empresa_departamento (id_empresa_departamento, id_empresa, id_departamento, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_empresa_departamento, $id_empresa, $id_departamento, $fecha, $request["usuario_creacion"], 1]);
+            //Alta puestos del departamento
+            $puestos = $request["puestos"];
+            foreach($puestos as $puesto){
+                $validar = DB::table('gen_cat_puesto as gcp')
+                ->where("gcp.puesto",strtoupper($puesto["puesto"]))
+                ->get();
+                $id_puesto = $validar[0]->id_puesto;
+                if(count($validar)==0){
+                    $id_puesto = $this->getSigId("gen_cat_puesto");
+                    $puesto_clase = new Puesto;
+                    $puesto_clase->id_puesto = $id_puesto;
+                    $puesto_clase->id_departamento = $id_departamento;
+                    $puesto_clase->puesto = strtoupper($puesto["puesto"]);
+                    $puesto_clase->autorizados = $puesto["autorizados"];
+                    $puesto_clase->descripcion = $puesto["descripcion"];
+                    $puesto_clase->fecha_creacion = $fecha;
+                    $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
+                    $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
+                    $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
+                    $puesto_clase->usuario_creacion = $request["usuario_creacion"];
+                    $puesto_clase->activo = 1;
+                    $puesto_clase->save();
+                }else{
+                    $id_departamento_puesto = $this->getSigId("liga_departamento_puesto"); 
+                    DB::insert('insert into liga_departamento_puesto (id_departamento_puesto, id_empresa_departamento, id_puesto, autorizados, contratados, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?, ?, ?)', [$id_departamento_puesto, $id_empresa_departamento, $id_puesto, $puesto["autorizados"], 0, $fecha, $request["usuario_creacion"], 1]);
+                }
+            }
             return $this->crearRespuesta(1,"Departamento registrado",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

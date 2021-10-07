@@ -42,7 +42,7 @@ class SucursalController extends Controller
     public function obtenerSucursalPorIdSucursal($id_sucursal)
     {
         $sucursal = DB::table('nom_sucursales as ns')
-        ->select("sucursal","id_cliente","id_sucursal","zona","tasaimpuestoestatal","tasaimpuestoespecial","prima_riesgotrabajo","id_estado")
+        ->select("sucursal","id_cliente","id_sucursal","zona","region","tasaimpuestoestatal","tasaimpuestoespecial","prima_riesgotrabajo","id_estado")
         ->where("id_sucursal",$id_sucursal)
         ->where("ns.activo",1)
         ->get();
@@ -64,10 +64,54 @@ class SucursalController extends Controller
             $tasa_especial = $res["tasa_especial"];
             $prima_riesgo = $res["prima_riesgo"];
             $estado = $res["estado"];
+            $region = $res["region"];
             $usuario_creacion = $res["usuario"];
             $fecha = $this->getHoraFechaActual();
-            DB::insert('insert into nom_sucursales (id_sucursal, id_empresa, id_cliente, sucursal, zona, tasaimpuestoestatal, tasaimpuestoespecial, prima_riesgotrabajo, id_estado, usuario_creacion, fecha_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?)', [$id_sucursal,$id_empresa,$id_cliente,$sucursal,$zona,$tasa_estatal,$tasa_especial,$prima_riesgo,$estado,$usuario_creacion,$fecha, 1]);
+            DB::insert('insert into nom_sucursales (id_sucursal, id_empresa, id_cliente, sucursal, zona, region, tasaimpuestoestatal, tasaimpuestoespecial, prima_riesgotrabajo, id_estado, usuario_creacion, fecha_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?,?)', [$id_sucursal,$id_empresa,$id_cliente,$sucursal,$zona,$region,$tasa_estatal,$tasa_especial,$prima_riesgo,$estado,$usuario_creacion,$fecha, 1]);
             return $this->crearRespuesta(1,"Sucursal creada",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+
+    public function modificarSucursal(Request $res)
+    {
+        try{
+            $sucursal = DB::table('nom_sucursales')
+            ->where("id_sucursal",$res["id_sucursal"])
+            ->first();
+            $sucursal_name = strtoupper($sucursal->sucursal);
+            $zona = $sucursal->zona;
+            $tasa_estatal = $sucursal->tasaimpuestoestatal;
+            $tasa_especial = $sucursal->tasaimpuestoespecial;
+            $prima_riesgo = $sucursal->prima_riesgotrabajo;
+            $estado = $sucursal->id_estado;
+            $region = $sucursal->region;
+            if($res["sucursal"] != "" && $sucursal_name != $res["sucursal"]){
+                $sucursal_name = strtoupper($res["sucursal"]);
+            }
+            if($res["zona"] != "" && $zona != $res["zona"]){
+                $zona = $res["zona"];
+            }
+            if($res["tasa_estatal"] != "" && $tasa_especial != $res["tasa_estatal"]){
+                $tasa_estatal = $res["tasa_estatal"];
+            }
+            if($res["tasa_especial"] != "" && $tasa_especial != $res["tasa_especial"]){
+                $tasa_especial = $res["tasa_especial"];
+            } 
+            if($res["prima_riesgo"] != "" && $prima_riesgo != $res["prima_riesgo"]){
+                $prima_riesgo = $res["prima_riesgo"];
+            }
+            if($res["estado"] != "" && $estado != $res["estado"]){
+                $estado = $res["estado"];
+            }
+            if($res["region"] != "" && $region != $res["region"]){
+                $region = $res["region"];
+            }
+            $usuario_creacion = $res["usuario"];
+            $fecha = $this->getHoraFechaActual();
+            DB::update('update nom_sucursales set sucursal = ?, tasaimpuestoestatal = ?, tasaimpuestoespecial = ?, prima_riesgotrabajo = ?, id_estado = ?, zona = ?, region = ? where id_sucursal = ?', [$sucursal_name,$tasa_estatal,$tasa_especial,$prima_riesgo,$estado,$zona,$region,$res["id_sucursal"]]);
+            return $this->crearRespuesta(1,"Sucursal modificada",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }

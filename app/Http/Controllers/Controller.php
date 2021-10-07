@@ -54,11 +54,43 @@ class Controller extends BaseController
             return response()->json(['ok' => true, 'data' => $obj], $http_response);
         }
         if($tipo == 2) {    //Failed
-            return response()->json(['ok' => false, 'data' => $obj], $http_response);
+            return response()->json(['ok' => false, 'message' => $obj], $http_response);
         }
     }
     public function getEnv($nombre){
         return env($nombre,"");
+    }
+    public function agregarOCambioPuesto($id_puesto, $tipo , $id_puesto_nuevo = null){
+        $vacantes_actuales = DB::table('gen_cat_puesto')
+        ->where("id_puesto",$id_puesto)
+        ->first();
+        if($tipo == 1){         //Se agregaga un puesto
+            $autorizados = intval($vacantes_actuales->autorizados);
+            $contratados = intval($vacantes_actuales->contratados);
+            if($autorizados == $contratados){
+                return ["ok" => false, "message" => "No se encontraron vacantes disponibles en el puesto '".$vacantes_actuales->puesto."'"];
+            }
+            $contratados = $contratados + 1;
+            DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [$contratados, $id_puesto]);
+            return ["ok" => true, "message" => "Se ha actualizado el puesto"];
+        }
+        if($tipo == 2){        //Se actualiza el puesto
+           $vacantes_actuales_nuevo_puesto = DB::table('gen_cat_puesto')
+           ->where("id_puesto",$id_puesto_nuevo)
+           ->first();
+           //Sumammos en 1 a la columna contratados del puesto nuevo
+           $validar = $this->agregarOCambioPuesto($vacantes_actuales_nuevo_puesto->id_puesto,1);
+           if($validar["ok"]){
+              //Restamos en 1 la columna contratados del puesto viejo
+              $contratados = intval($vacantes_actuales->contratados);
+              if($contratados > 0){
+                 $contratados = $contratados - 1;
+                 DB::update('update gen_cat_puesto set contratados = ? where id_puesto = ?', [$contratados, $id_puesto]);
+              }
+              return ["ok" => true, "message" => "Puesto modificado"];
+           }
+           return $validar;
+        }
     }
     public function getConceptoDefault(){
         $data = DB::table('con_catconceptos')
@@ -127,6 +159,14 @@ class Controller extends BaseController
         }catch(Throwable $e){
             return ["ok"=> false, "message"=>$e->getMessage()];
         }
+    }
+    public function formatearCampo($string,$char_delete)
+    {
+        if($char_delete != "" || $char_delete != ""){
+                $string = str_replace($char_delete, '', $string);
+        }
+        return str_replace(' ', '', $string);
+        
     }
     public function convertAto1($num){
         if(is_numeric($num)){

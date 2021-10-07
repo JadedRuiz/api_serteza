@@ -150,7 +150,7 @@ class EmpleadoController extends Controller
         }
         if(isset($res["id_cliente"])){
             $empleados = DB::table('nom_empleados as ne')
-            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento","ne.id_estatus")
+            ->select("ne.id_empleado as folio","ne.id_empleado", DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"cf.nombre as fotografia","gcc.cliente","ns.sucursal","gcd.departamento","ne.id_estatus","ns.id_empresa")
             ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
             ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
             ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")

@@ -43,17 +43,21 @@ class ContratoController extends Controller
     public function obtenerMoviemientosContratacionPorId($id_movimiento)
     {
         $detalle_contratacion = DB::table('rh_detalle_contratacion as dc')
-        ->select("dc.id_detalle_contratacion","cc.nombre","cc.apellido_paterno","cc.apellido_materno", "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal")
+        ->select("dc.id_detalle_contratacion",DB::raw('CONCAT(cc.apellido_paterno," ",cc.apellido_materno, " ",cc.nombre) as nombre'), "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_alta","dc.observacion","dc.id_candidato","dc.id_departamento","dc.id_puesto","ce.empresa","dc.id_empresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal","ncn.nomina")
         ->join("rh_movimientos as rm","rm.id_movimiento","=","dc.id_movimiento")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","dc.id_empresa")
         ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
         ->join("gen_cat_departamento as cd","cd.id_departamento","=","dc.id_departamento")
         ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
+        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","dc.id_nomina")
         ->join("nom_sucursales as ns","ns.id_sucursal","=","dc.id_sucursal")
         ->where("dc.id_movimiento",$id_movimiento)
         ->where("dc.activo",1)
         ->get();
         if(count($detalle_contratacion)>0){
+            foreach($detalle_contratacion as $detalle){
+                $detalle->sueldo = "$" . number_format($detalle->sueldo,2,".",",");
+            }
             return $this->crearRespuesta(1,$detalle_contratacion,200);
         }else{
             return $this->crearRespuesta(2,"No se ha encontrado el detalle de este movimiento de contratación",200);

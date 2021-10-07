@@ -123,9 +123,21 @@ class CandidatoController extends Controller
             'nombre' => 'required|string|max:150',
             'apellido_paterno' => 'required|max:150',
             'apellido_materno' => 'required|max:150',
-            'rfc' => 'unique',
-            'curp' => 'unique'
         ]);
+        $validar_rfc = DB::table('rh_cat_candidato')
+        ->where("rfc",$request["rfc"])
+        ->where("activo",1)
+        ->get();
+        if(count($validar_rfc)>0){
+            return $this->crearRespuesta(2,"El RFC ya se encuentra registrado",301);
+        }
+        $validar_curp = DB::table('rh_cat_candidato')
+        ->where("curp",$request["curp"])
+        ->where("activo",1)
+        ->get();
+        if(count($validar_curp)>0){
+            return $this->crearRespuesta(2,"El CURP ya se encuentra registrado",301);
+        }
         try{
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = $request["usuario_creacion"];
@@ -146,17 +158,17 @@ class CandidatoController extends Controller
             $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
-            $direccion->calle = $request["direccion"]["calle"];
-            $direccion->numero_interior = $request["direccion"]["numero_interior"];
-            $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
-            $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
-            $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
+            $direccion->calle =strtoupper($request["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($request["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($request["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($request["direccion"]["cruzamiento_uno"]);
+            $direccion->cruzamiento_dos = strtoupper($request["direccion"]["cruzamiento_dos"]);
             $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-            $direccion->colonia = $request["direccion"]["colonia"];
-            $direccion->localidad = $request["direccion"]["localidad"];
-            $direccion->municipio = $request["direccion"]["municipio"];
-            $direccion->estado = $request["direccion"]["estado"];
-            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->colonia = strtoupper($request["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($request["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($request["direccion"]["municipio"]);
+            $direccion->estado = strtoupper($request["direccion"]["estado"]);
+            $direccion->descripcion = strtoupper($request["direccion"]["descripcion"]);
             $direccion->fecha_creacion = $fecha;
             $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = 1;
@@ -172,8 +184,8 @@ class CandidatoController extends Controller
             $canditado->nombre = strtoupper($request["nombre"]);
             $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
             $canditado->apellido_materno = strtoupper($request["apellido_materno"]);
-            $canditado->rfc = $request["rfc"];
-            $canditado->curp = $request["curp"];
+            $canditado->rfc = strtoupper($request["rfc"]);
+            $canditado->curp = strtoupper($request["curp"]);
             $canditado->numero_seguro = $request["numero_social"];
             $canditado->fecha_nacimiento = $request["fecha_nacimiento"];
             $canditado->correo = $request["correo"];
@@ -181,7 +193,7 @@ class CandidatoController extends Controller
             $canditado->edad = $request["edad"];
             $canditado->telefono_dos =$request["telefono_dos"];
             $canditado->telefono_tres =$request["telefono_tres"];
-            $canditado->descripcion = $request["descripcion"];
+            $canditado->descripcion = strtoupper($request["descripcion"]);
             $canditado->fecha_creacion = $fecha;
             $canditado->usuario_creacion = $usuario_creacion;
             $canditado->activo = 1;

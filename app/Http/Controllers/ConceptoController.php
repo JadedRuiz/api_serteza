@@ -25,27 +25,89 @@ class ConceptoController extends Controller
             return $this->crearRespuesta(2,"No se han encontrado resultados",200);
         }
     }
-    public function obtenerConceptosPorIdEmpleado($id_empleado,$id_empresa)
+    public function obtenerConceptosPorIdEmpleado($id_empleado,$id_empresa,$id_periodo)
     {
-        $conceptos_automaticos = DB::table('nom_conceptos')
-        ->select("id_concepto","concepto")
+        $conceptos = DB::table('nom_conceptos as nomc')
+        ->select("nomc.id_concepto","nomc.concepto", "nomc.concepto as unidad", "nomc.concepto as importe", "nomc.concepto as saldo", "nomc.concepto as ajuste", "nomc.id_tipoconcepto","nomc.automatico","nomc.utiliza_unidade","nomc.utiliza_importe","nomc.utiliza_saldo","nomc.folio")
         ->where("id_empresa",$id_empresa)
-        ->where("automatico",1)
+        ->orderBy("folio","asc")
         ->get();
         $conceptos_del_empleado = DB::table('nom_movnomina as nmn')
-        ->select("id_movnomina as id_concepto","nomc.concepto","nmn.unidad","nmn.importe","nmn.saldo")
+        ->select("nmn.id_concepto","nomc.concepto","nmn.unidad","nmn.importe","nmn.saldo","nmn.ajuste","nomc.utiliza_unidade","nomc.utiliza_importe","nomc.utiliza_saldo", "nomc.folio")
         ->join("nom_conceptos as nomc","nomc.id_concepto","=","nmn.id_concepto")
         ->where("id_empleado",$id_empleado)
+        ->where("id_periodo",$id_periodo)
         ->where("nmn.activo",1)
+        ->orderBy("folio","asc")
         ->get();
-        if(count($conceptos_automaticos)==0 && count($conceptos_del_empleado)==0){
-            return $this->crearRespuesta(2,"No se tiene conceptos capturados");
+        if(count(($conceptos_del_empleado))>0){
+            foreach($conceptos_del_empleado as $concepto){
+                if($concepto->utiliza_unidade == "1"){
+                    $concepto->utiliza_unidade = false;
+                }else{
+                    $concepto->utiliza_unidade = true;
+                }
+                if($concepto->utiliza_saldo == "1"){
+                    $concepto->utiliza_saldo = false;
+                }else{
+                    $concepto->utiliza_saldo = true;
+                }
+                if($concepto->utiliza_importe == "1"){
+                    $concepto->utiliza_importe = false;
+                }else{
+                    $concepto->utiliza_importe = true;
+                }
+                $concepto->importe = $concepto->importe;
+            }
+            return $this->crearRespuesta(1,$conceptos_del_empleado,200);
+        }
+        if(count($conceptos)==0){
+            return $this->crearRespuesta(2,"No se tiene conceptos capturados",301);
         }else{
-            $respuesta = [
-                "conceptos_automaticos" => $conceptos_automaticos,
-                "conceptos_empleado" => $conceptos_del_empleado
-            ];
-            return $this->crearRespuesta(1,$respuesta,200);
+            //Recorrecomes los conceptos automaticos
+            foreach($conceptos as $concepto){
+                if($concepto->utiliza_unidade == "1"){
+                    $concepto->utiliza_unidade = false;
+                }else{
+                    $concepto->utiliza_unidade = true;
+                }
+                if($concepto->utiliza_saldo == "1"){
+                    $concepto->utiliza_saldo = false;
+                }else{
+                    $concepto->utiliza_saldo = true;
+                }
+                if($concepto->utiliza_importe == "1"){
+                    $concepto->utiliza_importe = false;
+                }else{
+                    $concepto->utiliza_importe = true;
+                }
+                if($concepto->automatico == 1){
+                    $tipo_concepto = DB::table('nom_tipoconceptos')
+                    ->select("tipo_concepto")
+                    ->where("id_tipoconceptos",$concepto->id_tipoconcepto)
+                    ->first()->tipo_concepto;
+                    if($tipo_concepto == "SUELDOS Y SALARIOS"){
+                        $datos_nomina = DB::table('nom_empleados as ne')
+                        ->select("ncn.dias_contables","ne.sueldo_complemento")
+                        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","ne.id_nomina")
+                        ->where("id_empleado",$id_empleado)
+                        ->first();
+                        $concepto->unidad = $datos_nomina->dias_contables;
+                        $concepto->importe = 0;
+                        if($datos_nomina->sueldo_complemento > 0){
+                            $concepto->importe = number_format($datos_nomina->sueldo_complemento / $datos_nomina->dias_contables,2,".",",");
+                        }
+                        $concepto->saldo = 0;
+                        $concepto->ajuste = 0;
+                    }
+                }else{
+                    $concepto->unidad = 0;
+                    $concepto->importe = 0;
+                    $concepto->saldo = 0;
+                    $concepto->ajuste = 0;
+                }
+            }
+            return $this->crearRespuesta(1,$conceptos,200);
         }
     }
     public function obtenerConcpetosPorId($id_empresa)
@@ -156,82 +218,65 @@ class ConceptoController extends Controller
     public function altaConceptoAEmpleado(Request $res)
     {
         try{
-            $id_concepto = $res["concepto"]["id_concepto"];
             $id_empleado = $res["id_empleado"];
             $id_periodo = $res["id_periodo"];
-            $unidad = $res["concepto"]["unidades"];
-            $importe = $res["concepto"]["importe"];
-            $saldo = $res["concepto"]["saldo"];
-            $ajuste = $res["concepto"]["ajuste"];
+            $conceptos = $res["conceptos"];
             $usuario = $res["usuario"];
+            $fecha = $this->getHoraFechaActual();
             //Validamos los datos requeridos
-            if($id_concepto == ""){
-                return $this->crearRespuesta(2,"No se cuenta con el concepto",200);
-            }
             if($id_empleado == ""){
                 return $this->crearRespuesta(2,"No se cuenta con el empleado",200);
             }
             if($id_periodo == ""){
                 return $this->crearRespuesta(2,"No se cuenta con el periodo",200);
             }
-            if($importe == ""){
-                $importe = "0";
-            }
-            if($saldo == ""){
-                $saldo = "0";
-            }
-            if($unidad == ""){
-                $unidad = "0";
-            }
-            if($ajuste == ""){
-                $ajuste = "0";
-            }
-            //Validamos si el empleado  ya tiene el concepto en el periodo
-            $band = false;
-            $validar = DB::table('nom_movnomina')
-            ->select("id_movnomina","activo")
-            ->where("id_concepto",$id_concepto)
-            ->where("id_periodo",$id_periodo)
-            ->where("id_empleado",$id_empleado)
-            ->get();
-            if(count($validar) > 0){
-                if($validar[0]->activo == 1){
-                    return $this->crearRespuesta(2,"El empleado ya cuenta con este concepto.",200);
+            foreach($conceptos as $concepto){
+                $id_concepto = $concepto["id_concepto"];
+                $unidad = $this->formatearCampo($concepto["unidades"],null);
+                $importe = $this->formatearCampo($concepto["importe"],"$");
+                $saldo = $this->formatearCampo($concepto["saldo"],"$");
+                $ajuste = $this->formatearCampo($concepto["ajuste"],"$");
+                if($importe == ""){
+                    $importe = "0";
+                }
+                if($saldo == ""){
+                    $saldo = "0";
+                }
+                if($unidad == ""){
+                    $unidad = "0";
+                }
+                if($ajuste == ""){
+                    $ajuste = "0";
+                }
+                //Obtener los parametros del concepto
+                $parametro_uno = "0";
+                $parametro_dos = "0";
+                $parametros = DB::table('nom_conceptos')
+                ->select("parametro1","parametro2")
+                ->where("id_concepto",$id_concepto)
+                ->get();
+                if(count($parametros)>0){
+                    if($parametros[0]->parametro1 != ""){
+                        $parametro_uno = $parametros[0]->parametro1;
+                    }
+                    if($parametros[0]->parametro2 != ""){
+                        $parametro_dos = $parametros[0]->parametro2;
+                    }
+                }
+                //Validamos si el empleado  ya tiene el concepto en el periodo
+                $validar = DB::table('nom_movnomina')
+                ->select("id_movnomina","activo")
+                ->where("id_concepto",$id_concepto)
+                ->where("id_periodo",$id_periodo)
+                ->where("id_empleado",$id_empleado)
+                ->get();
+                if(count($validar) > 0){
+                    DB::update('update nom_movnomina set activo = ?, unidad = ?, importe = ?, saldo = ?, ajuste = ?, usuario_modificacion = ?, fecha_modificacion = ? where id_movnomina = ?', [1,$unidad,$importe,$saldo,$ajuste,$usuario,$fecha,$validar[0]->id_movnomina]);
                 }else{
-                    $band = true;
+                    DB::insert('insert into nom_movnomina (id_empleado, id_periodo, id_concepto, unidad, importe, saldo, ajuste, parametro1, parametro2, usuario_creacion, fecha_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?)', [$id_empleado,$id_periodo,$id_concepto,$unidad,$importe,$saldo,$ajuste,$parametro_uno,$parametro_dos,$usuario,$fecha,1]);
                 }
             }
-            //Guardamos el concepto
-            $fecha = $this->getHoraFechaActual();
-            //Obtener los parametros del concepto
-            $parametro_uno = "0";
-            $parametro_dos = "0";
-            $parametros = DB::table('nom_conceptos')
-            ->select("parametro1","parametro2")
-            ->where("id_concepto",$id_concepto)
-            ->get();
-            if(count($parametros)>0){
-                if($parametros[0]->parametro1 != ""){
-                    $parametro_uno = $parametros[0]->parametro1;
-                }
-                if($parametros[0]->parametro2 != ""){
-                    $parametro_dos = $parametros[0]->parametro2;
-                }
-            }
-            //Insertamos el concepto al empleado
-            if(!$band){
-                DB::insert('insert into nom_movnomina (id_empleado, id_periodo, id_concepto, unidad, importe, saldo, ajuste, parametro1, parametro2, usuario_creacion, fecha_creacion, activo) values (?,?,?,?,?,?,?,?,?,?,?,?)', [$id_empleado,$id_periodo,$id_concepto,$unidad,$importe,$saldo,$ajuste,$parametro_uno,$parametro_dos,$usuario,$fecha,1]);
-            }else{
-                DB::update('update nom_movnomina set activo = ?, unidad = ?, importe = ?, saldo = ?, ajuste = ?, usuario_modificacion = ?, fecha_modificacion = ? where id_movnomina = ?', [1,$unidad,$importe,$saldo,$ajuste,$usuario,$fecha,$validar[0]->id_movnomina]);
-            }
-            $conceptos = DB::table('nom_movnomina as nmn')
-            ->select("id_movnomina as id_concepto","nomc.concepto")
-            ->join("nom_conceptos as nomc","nomc.id_concepto","=","nmn.id_concepto")
-            ->where("id_empleado",$id_empleado)
-            ->where("id_periodo",$id_periodo)
-            ->where("nmn.activo",1)
-            ->get();
-            return $this->crearRespuesta(1,["message" => "Se ha dado de alta el concepto correctamente","conceptos_actuales" => $conceptos],200);
+            return $this->crearRespuesta(1,"Se ha insertado correctamente el concepto",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }

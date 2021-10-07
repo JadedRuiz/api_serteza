@@ -152,6 +152,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('eliminarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@eliminarLigaEmpresaNomina');
         $router->get('activarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@activarLigaEmpresaNomina');
         $router->post('altaSucursal', 'NominaController@altaSucursal');
+        $router->post('aplicarSolicitudesRH', 'NominaController@aplicarSolicitudesRH');
     });
     $router->group(['prefix' => 'concepto'], function () use ($router) { 
         $router->post("autocomplete","ConceptoController@autocomplete");
@@ -162,15 +163,16 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("cambiarActivo/{id_concepto}/{activo}","ConceptoController@cambiarActivo");
         //rutas para el consumo de captura de conceptos
         $router->get("obtenerConceptoPorIdMovNomina/{id_movnomina}","ConceptoController@obtenerConceptoPorIdMovNomina");
-        $router->post("altaConceptoAEmpleado","ConceptoController@altaConceptoAEmpleado");
+        $router->post("altaConceptosAEmpleado","ConceptoController@altaConceptoAEmpleado");
         $router->post("modificarConceptoAEmpleado","ConceptoController@modificarConceptoAEmpleado");
         $router->post("eliminarConceptoAEmpleado","ConceptoController@eliminarConceptoAEmpleado");
-        $router->get("obtenerConceptosPorIdEmpleado/{id_empleado}/{id_empresa}","ConceptoController@obtenerConceptosPorIdEmpleado");
+        $router->get("obtenerConceptosPorIdEmpleado/{id_empleado}/{id_empresa}/{id_periodo}","ConceptoController@obtenerConceptosPorIdEmpleado");
     });
     $router->group(['prefix' => 'sucursal'], function () use ($router) {
         $router->post('crearSucursal', 'SucursalController@crearSucursal');
         $router->get("obtenerSucursales/{id_empresa}","SucursalController@obtenerSucursales");
         $router->get("obtenerSucursalPorIdSucursal/{id_sucursal}","SucursalController@obtenerSucursalPorIdSucursal");
+        $router->post('modificarSucursal', 'SucursalController@modificarSucursal');
     });
     $router->group(['prefix' => 'periodo'], function () use ($router) {
         $router->get("fechaFinalEjercicio/{anio}/{id_empresa}/{id_nomina}","PeriodoController@obtenerFechaFinalDelEjercicioAnt");

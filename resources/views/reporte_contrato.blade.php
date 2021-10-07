@@ -106,7 +106,7 @@
     </header>
     <p class="fuente_titulos_Heebo" style="margin-left: 380px;">REPORTE DE CONTRATACIÓN</p>
     <div class="info_general">
-        <div class="fecha_folio dib">
+        <div class="fecha_folio dib" style="font-size: 12px;">
             <div class="dib mt-5 fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_movimiento}}</div></div>
             <br>
             <div class="dib mt-5 fuente_titulos_Heebo">Fecha de impresión: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_hoy}}</div></div>
@@ -121,27 +121,27 @@
     <div class="table">
         <table class="w100">
             <thead class="bb">
-                <tr class="fuente_titulos_Heebo">
-                    <th colspan="1">NOMBRE</th>
-                    <th colspan="1">FECHA INGRESO</th>
-                    <th colspan="1">EMPRESA/SUCURSAL</th>
-                    <th colspan="1">DEPARTAMENTO/PUESTO</th>
-                    <th colspan="1">SUELDO DIARIO</th>
-                    <th colspan="1">SUELDO NETO</th>
-                    <th colspan="1">DESCRIPCIÓN</th>
+                <tr class="fuente_titulos_Heebo" style="font-size: 12px;">
+                    <th colspan="1" style="text-align: left;">Nombre</th>
+                    <th colspan="1">Fecha ingreso</th>
+                    <th colspan="1" style="text-align: left;">Empresa/Sucursal</th>
+                    <th colspan="1" style="text-align: left;">Dept/Puesto</th>
+                    <th colspan="1">Sueldo diario</th>
+                    <th colspan="1">Sueldo neto</th>
+                    <th colspan="2" style="text-align: left;">Descripción</th>
                 </tr>
             </thead>
             <tbody>
                 @if (count($reporte_contrato[0]->detalle)>0)
                     @foreach ($reporte_contrato[0]->detalle as $trabajador)
-                        <tr class="fuente_normal_Heebo text-center">
-                            <td colspan="1">{{$trabajador->nombre.' '.$trabajador->apellido_paterno.' '.$trabajador->apellido_materno}}</td>
+                        <tr class="fuente_normal_Heebo text-center" style="font-size: 10px;">
+                            <td colspan="1" style="text-align: left;">{{$trabajador->nombre.' '.$trabajador->apellido_paterno.' '.$trabajador->apellido_materno}}</td>
                             <td colspan="1">{{$trabajador->fecha_alta}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->empresa}} / {{$trabajador->sucursal}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->departamento}} / {{$trabajador->puesto}}</td>
+                            <td colspan="1" style="text-transform: uppercase;text-align: left;">{{$trabajador->empresa}}<br>{{$trabajador->sucursal}}</td>
+                            <td colspan="1" style="text-transform: uppercase;text-align: left;">{{$trabajador->departamento}}<br>{{$trabajador->puesto}}</td>
                             <td colspan="1" style="text-transform: uppercase;">${{$trabajador->sueldo}}</td>
                             <td colspan="1">${{$trabajador->sueldo_neto}}</td>
-                            <td colspan="1">{{$trabajador->observacion}}</td>
+                            <td colspan="2" style="text-align: left;">{{$trabajador->observacion}}</td>
                         </tr>
                     @endforeach
                 @else
@@ -154,14 +154,14 @@
     </div>
     <div class="firmas mt-10 text-center">
         <div class="firma_user dib">
-            <p class="fuente_titulos_Heebo">Firma</p>
+            <p class="fuente_titulos_Heebo" style="font-size: 14px;">Firma</p>
             <div class="linea_firma"></div>
-            <div class="nombre_firma fuente_textos_monospace">{{$reporte_contrato[0]->usuario}}</div>
+            <div class="nombre_firma fuente_textos_monospace" style="font-size: 12px;">{{$reporte_contrato[0]->usuario}}</div>
         </div>
         <div class="firma_rh dib text-center">
             <p class="fuente_titulos_Heebo">Firma</p>
             <div class="linea_firma"></div>
-            <div class="nombre_firma fuente_textos_monospace">RECURSOS HUMANOS</div>
+            <div class="nombre_firma fuente_textos_monospace" style="font-size: 12px;">RECURSOS HUMANOS</div>
         </div>
     </div>
 </body>
