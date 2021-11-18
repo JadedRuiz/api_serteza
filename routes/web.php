@@ -101,6 +101,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('eliminarDetalleContratacion','ContratoController@eliminarDetalle');
         $router->get('obtenerCatalogoNomina','ContratoController@obtenerCatalogoNomina');
         $router->get('aplicarContratacion/{id_movimiento}/{usuario_creacion}','ContratoController@aplicarContratacion');
+        $router->get('obtenerDocContratacion','ContratoController@obtenerDocContratacion');
     });
     $router->group(['prefix' => "modificacion"], function () use ($router){
         $router->post('solicitudDeModificacion','ModificacionController@crearSolicitudDeModif');

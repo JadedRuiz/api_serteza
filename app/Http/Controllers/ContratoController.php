@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\ContratoExport;
 
 class ContratoController extends Controller
 {
@@ -217,5 +218,10 @@ class ContratoController extends Controller
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
+    }
+    public function obtenerDocContratacion(Request $res)
+    {
+        $contrato = new ContratoExport();
+        return $contrato->obtenerContrato(-1);
     }
 }
