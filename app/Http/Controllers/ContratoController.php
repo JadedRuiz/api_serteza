@@ -219,9 +219,25 @@ class ContratoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function obtenerDocContratacion(Request $res)
+    public function obtenerDocContratacion($id_movimiento)
     {
+        $id_puesto = DB::table('rh_detalle_contratacion as dc')
+        ->select("dc.id_puesto")
+        ->where("dc.id_detalle_contratacion",$id_movimiento)
+        ->where("dc.activo",1)
+        ->first();
         $contrato = new ContratoExport();
-        return $contrato->obtenerContrato(-1);
+        $respuesta = [];
+        if($id_puesto){
+            $respuesta = $contrato->obtenerContrato(-1,$id_movimiento);
+        }else{
+            $respuesta =  $contrato->obtenerContrato(-1,$id_movimiento);
+        }
+        if($respuesta["ok"]){
+            $headers = [
+                "Content-Type: application/octet-stream",
+            ];
+            return response()->download($respuesta["data"],"Contrato.docx",$headers)->deleteFileAfterSend(true);
+        }
     }
 }

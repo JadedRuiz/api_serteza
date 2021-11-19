@@ -469,15 +469,20 @@ class UsuarioController extends Controller
                 "id_perfil" => $sistema->id_perfil
             ]);
         }
-        $respuesta = [
-            "info_usuario" => [
-                "id" => $usuario[0]->id_usuario,
-                "nombre" => $usuario[0]->nombre,
-                "url_foto" => Storage::disk('usuario')->url($usuario[0]->fotografia),
-                "usuario" => $res["usuario"],
-                "sistemas" => $sistemas_info
-            ]
-        ];
+        if(count($sistemas_info)>0){
+            $respuesta = [
+                "info_usuario" => [
+                    "id" => $usuario[0]->id_usuario,
+                    "nombre" => $usuario[0]->nombre,
+                    "url_foto" => Storage::disk('usuario')->url($usuario[0]->fotografia),
+                    "usuario" => $res["usuario"],
+                    "sistemas" => $sistemas_info
+                ]
+            ];
+        }else{
+            return $this->crearRespuesta(2,"El usuario no cuenta con sistemas asiganados",200);
+        }
+        
         return $this->crearRespuesta(1,$respuesta,200);
     }
     public function validarSesion($usuario,$password)
