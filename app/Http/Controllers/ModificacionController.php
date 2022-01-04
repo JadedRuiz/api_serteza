@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Movimiento;
 
 class ModificacionController extends Controller
 {
@@ -59,8 +60,18 @@ class ModificacionController extends Controller
             $candidatos = $res["candidatos"];
             $id_cliente = $res["id_cliente"];
             //Inserta el movimiento en estatus de Solicitud
-            $id_movimiento = $this->getSigId("rh_movimientos");
-            DB::insert("insert into rh_movimientos (id_movimiento, id_cliente, id_status, fecha_movimiento, tipo_movimiento, usuario_creacion, fecha_creacion, activo) values (?,?,?,?,?,?,?,?)",[$id_movimiento,$id_cliente,5,$fecha,"M",$usuario_creacion,$fecha,1]);
+            $movimiento = new Movimiento();
+            $id_cliente = $res["id_cliente"];
+            $movimiento->id_cliente = $id_cliente;
+            $movimiento->id_status = 5;
+            $movimiento->tipo_movimiento = "M";
+            $movimiento->fecha_movimiento = $fecha;
+            $movimiento->fecha_creacion = $fecha;
+            $movimiento->usuario_creacion = $usuario_creacion;
+            $movimiento->activo = 1;
+            $movimiento->save();
+            $id_movimiento = $movimiento->id_movimiento;
+            //DB::insert("insert into rh_movimientos (id_movimiento, id_cliente, id_status, fecha_movimiento, tipo_movimiento, usuario_creacion, fecha_creacion, activo) values (?,?,?,?,?,?,?,?)",[$id_movimiento,$id_cliente,5,$fecha,"M",$usuario_creacion,$fecha,1]);
             //Inserta el detalle
             foreach($candidatos as $candidato){
                 $id_candidato = $candidato["id_candidato"];

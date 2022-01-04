@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use GuzzleHttp\Client;
 
 class Controller extends BaseController
 {
@@ -19,6 +20,51 @@ class Controller extends BaseController
         ];
     }
 
+    public function obtenerContratados($id_puesto)
+    {
+        return DB::table('nom_empleados')
+        ->select("id_puesto")
+        ->where("id_estatus",1)
+        ->where("id_puesto",$id_puesto)
+        ->count();
+    }
+    public function estaElPuestoDisponible($id_puesto)
+    {
+        $puestos_autorizados = intval(DB::table('gen_cat_puesto')
+        ->select("autorizados")
+        ->where("id_puesto",$id_puesto)
+        ->where("activo",1)
+        ->first()->autorizados);
+        $puestos_contratados = $this->obtenerContratados($id_puesto);
+        if($puestos_contratados > $puestos_autorizados){
+                return false;
+        }
+        return true;
+    }
+    public function getSigIdEmpresa($id_empresa)
+    {
+        $id = DB::table('nom_empleados as ne')
+        ->select("folio")
+        ->join("gen_cat_puesto as gcp","ne.id_puesto","=","gcp.id_puesto")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
+        ->where("gcd.id_empresa",$id_empresa)
+        ->orderBy("folio","DESC")
+        ->first();
+        if($id){
+                return intval($id->folio);
+        }
+        return 1;
+    }
+    public function enviarCorreo($datos)
+    {
+        $baseUrl = env('API_CORREO');
+        $client = new Client();
+        $response = $client->request('POST', $baseUrl, [
+                'form_params' => $datos
+        ]);
+        return $response->getBody();
+    }
+
     public function getHoraFechaActual(){
         $mytime = Carbon::now();
         return $mytime;
@@ -26,9 +72,17 @@ class Controller extends BaseController
 
     public function obtenerPerfiles()
     {
-        return DB::table('gen_catperfiles')
+        $perfiles =  DB::table('gen_catperfiles')
+        ->select("perfil","id_perfil","activo")
         ->where("activo",1)
         ->get();
+        if(count($perfiles)>0){
+                foreach($perfiles as $perfil){
+                        $perfil->activo = true;
+                }
+                return $this->crearRespuesta(1,$perfiles,200);
+        }
+        return $this->crearRespuesta(2,"No se tiene perfiles para este sistema",200);
     }
     public function getEstatus($tipo){
             $data = '';

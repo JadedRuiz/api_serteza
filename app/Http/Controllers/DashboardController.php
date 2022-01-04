@@ -104,9 +104,9 @@ class DashboardController extends Controller
                 array_push($id_empresas,$id_empresa->id_empresa);
             }
             $movientos = DB::table("rh_movimientos as rm")
-            ->select("rm.id_movimiento","rm.tipo_movimiento as id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")
+            ->select("rm.id_movimiento","rm.tipo_movimiento as id_movimiento","rm.tipo_movimiento",DB::raw('DATE_FORMAT(rm.fecha_movimiento,"%d-%m-%Y") as fecha_movimiento'),"gcu.nombre")
             ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
-            ->where("id_cliente",$id_cliente)
+            ->where("rm.id_cliente",$id_cliente)
             ->where("rm.activo",1)
             ->where("rm.id_status",1)
             ->orderBy("rm.fecha_movimiento","DESC")
@@ -115,22 +115,22 @@ class DashboardController extends Controller
             $movientos_por_procesar = DB::table("rh_movimientos as rm")
             ->select("rm.id_movimiento","rm.tipo_movimiento","rm.fecha_movimiento","gcu.nombre")    
             ->join("gen_cat_usuario as gcu","gcu.id_usuario","=","rm.usuario_creacion")
-            ->where("id_cliente",$id_cliente)
-            ->where("rm.id_status",5)
+            ->where("rm.id_cliente",$id_cliente)
+            ->whereIn("rm.id_status",[8,9])
             ->where("rm.activo",1)
             ->orderBy("rm.fecha_movimiento","DESC")
             ->take(10)
             ->get();
-            $puestos_empresa = DB::table("liga_empresa_departamento as led")
-            ->select("gcp.puesto","gcp.autorizados","gcp.contratados")
-            ->join("gen_cat_departamento as gcd","gcd.id_departamento","led.id_departamento")
+            $puestos_empresa = DB::table("gen_cat_departamento as gcd")
+            ->select("gcp.puesto","gcp.autorizados","gcp.id_puesto","gcp.puesto as contratados")
             ->join("gen_cat_puesto as gcp","gcp.id_departamento","=","gcd.id_departamento")
-            ->whereIn("id_empresa",$id_empresas)
+            ->whereIn("gcd.id_empresa",$id_empresas)
             ->take(10)
             ->get();
             $autorizados = 0;
             $contratados = 0;
             foreach($puestos_empresa as $puesto){
+                $puesto->contratados = $this->obtenerContratados($puesto->id_puesto);
                 $puesto->vacantes = intval($puesto->autorizados) - intval($puesto->contratados);
                 if($puesto->contratados != null){
                     $contratados = $contratados + intval($puesto->contratados);

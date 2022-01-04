@@ -218,7 +218,7 @@
         </div>
     </div>
     <div class="container-body-seguido">
-        <div class="titulo_contenedor fuente_bold_monospace">DATOS DE CONTRATACIÓN <div class="fuente_bold_monospace" style="float: right;">FECHA DE CONTRATACIÓN: {{date("d-m-Y",strtotime($detalle_contratacion[0]->fecha_alta))}}</div></div>
+        <div class="titulo_contenedor fuente_bold_monospace">DATOS DE CONTRATACIÓN <div class="fuente_bold_monospace" style="float: right;">FECHA DE CONTRATACIÓN: {{date("d-m-Y",strtotime($detalle_contratacion[0]->fecha_detalle))}}</div></div>
         <div class="cuerpo_contenedor">
             <table class="table">
                 <thead style="border: 1px black solid;">

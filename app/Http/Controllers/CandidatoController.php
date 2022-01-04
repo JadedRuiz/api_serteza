@@ -11,15 +11,31 @@ use Illuminate\Support\Facades\Storage;
 class CandidatoController extends Controller
 {
     public function autoComplete(Request $res){
+        $status = $res["status"];
         $palabra = "%".strtoupper($res["nombre_candidato"])."%";
         $id_cliente = $res["id_cliente"];
-        $busqueda = Candidato::select(DB::raw('CONCAT(apellido_paterno, " ", apellido_materno, " ", nombre) AS nombre'),'id_candidato')
+        if($status == "-1"){
+            $otro = "!=";
+            $status = -1;
+        }else{
+            $otro = "=";
+            $status = intval($status);
+        }
+        $busqueda = Candidato::select(DB::raw('CONCAT(rh_cat_candidato.apellido_paterno, " ", rh_cat_candidato.apellido_materno, " ", rh_cat_candidato.nombre) as nombre_completo'),"rh_cat_candidato.id_candidato","rh_cat_candidato.id_status","rh_cat_candidato.activo","cf.nombre as fotografia", "rh_cat_candidato.apellido_paterno","rh_cat_candidato.apellido_materno", "rh_cat_candidato.nombre","rh_cat_candidato.descripcion","cs.status")
+        ->join("gen_cat_statu as cs","cs.id_statu","=","rh_cat_candidato.id_status")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rh_cat_candidato.id_fotografia")
         ->where("id_cliente",$id_cliente)
-        ->where("activo",1)
-        ->where(DB::raw('CONCAT(apellido_paterno, " ", apellido_materno, " ", nombre)'),"like",$palabra)
+        ->where("rh_cat_candidato.activo",1)
+        ->where(function($query) use ($palabra){
+            $query->where(DB::raw('CONCAT(apellido_paterno, " ", apellido_materno, " ", rh_cat_candidato.nombre)'),"like",$palabra)
+            ->orWhere('rh_cat_candidato.descripcion','LIKE',$palabra);
+        })
+        ->where("rh_cat_candidato.id_status",$otro,$status)
+        ->take(10)
         ->get();
         if(count($busqueda)>0){
             foreach ($busqueda as $canditado) {
+                $canditado->fotografia = Storage::disk('candidato')->url($canditado->fotografia);
                 $canditado->nombre = $canditado->apellido_paterno." ".$canditado->apellido_materno." ".$canditado->nombre;
             }
             return $this->crearRespuesta(1,$busqueda,200);
@@ -27,8 +43,6 @@ class CandidatoController extends Controller
         return $this->crearRespuesta(2,"No se han encontrado resultados",200);
     }
     public function obtenerCandidatos(Request $res){
-        $take = $res["taken"];
-        $pagina = $res["pagina"];
         $status = $res["status"];
         $palabra = strtoupper($res["palabra"]);
         $id_cliente = $res["id_cliente"];
@@ -51,36 +65,24 @@ class CandidatoController extends Controller
             $otro_dos = "like";
             $palabra = "%".$palabra."%";
         }
-        $incia = intval($pagina) * intval($take);
         $registros = DB::table('rh_cat_candidato as cc')
-        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre")
+        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre","cc.descripcion")
         ->join("gen_cat_statu as cs","cs.id_statu","=","cc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
         ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
-        ->skip($incia)
         ->orderBy("cc.fecha_creacion","desc")
-        ->take($take)
+        ->take(1000)
         ->get();
         if(isset($res["tipo"]) && $res["tipo"] == 1){
             foreach($registros as $registro){
                 $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
             }
         }
-        $contar = DB::table('rh_cat_candidato as cc')
-        ->where("cc.id_cliente",$id_cliente)
-        ->where("cc.activo",1)
-        ->where("cc.id_status",$otro,$status)
-        ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
-        ->get();
         if(count($registros)>0){
-            $respuesta = [
-                "total" => count($contar),
-                "registros" => $registros
-            ];
-            return $this->crearRespuesta(1,$respuesta,200);
+            return $this->crearRespuesta(1,$registros,200);
         }else{
             return $this->crearRespuesta(2,"No hay candidatos que mostrar",200);
         }

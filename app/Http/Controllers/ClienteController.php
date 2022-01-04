@@ -60,6 +60,7 @@ class ClienteController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $registros = DB::table('gen_cat_cliente')
+        ->select("id_cliente as id_entidad","cliente as entidad","activo","id_cliente","cliente",)
         ->where("activo",$otro,$status)
         ->where("cliente",$otro_dos,$palabra)
         ->skip($incia)
@@ -70,6 +71,9 @@ class ClienteController extends Controller
         ->where("cliente",$otro_dos,$palabra)
         ->get();
         if(count($registros)>0){
+            foreach($registros as $registro){
+                $registro->activo = false;
+            }
             $respuesta = [
                 "total" => count($contar),
                 "registros" => $registros
@@ -137,7 +141,7 @@ class ClienteController extends Controller
                 DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('cliente')->put($nombre_image, $file);
             }
-            //Insertar dirección
+            //Insertar direcci贸n
             $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;

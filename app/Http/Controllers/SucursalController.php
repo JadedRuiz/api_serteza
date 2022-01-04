@@ -28,7 +28,7 @@ class SucursalController extends Controller
     public function obtenerSucursales($id_empresa)
     {
         $sucursales = DB::table('nom_sucursales as ns')
-        ->select("sucursal","gcc.cliente","id_sucursal","zona")
+        ->select("sucursal","gcc.cliente","id_sucursal","zona","representante_legal as repre")
         ->join("gen_cat_cliente as gcc","gcc.id_cliente","=","ns.id_cliente")
         ->where("id_empresa",$id_empresa)
         ->where("ns.activo",1)
@@ -42,7 +42,8 @@ class SucursalController extends Controller
     public function obtenerSucursalPorIdSucursal($id_sucursal)
     {
         $sucursal = DB::table('nom_sucursales as ns')
-        ->select("sucursal","id_cliente","id_sucursal","zona","region","tasaimpuestoestatal","tasaimpuestoespecial","prima_riesgotrabajo","id_estado")
+        ->select("sucursal","id_cliente","id_sucursal","zona","region","tasaimpuestoestatal","tasaimpuestoespecial","prima_riesgotrabajo","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion")
+        ->leftJoin("gen_cat_direccion as gcd","gcd.id_direccion","=","ns.id_direccion")
         ->where("id_sucursal",$id_sucursal)
         ->where("ns.activo",1)
         ->get();

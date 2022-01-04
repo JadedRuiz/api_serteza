@@ -136,7 +136,7 @@
                     @foreach ($reporte_contrato[0]->detalle as $trabajador)
                         <tr class="fuente_normal_Heebo text-center" style="font-size: 10px;">
                             <td colspan="1" style="text-align: left;">{{$trabajador->nombre.' '.$trabajador->apellido_paterno.' '.$trabajador->apellido_materno}}</td>
-                            <td colspan="1">{{$trabajador->fecha_alta}}</td>
+                            <td colspan="1">{{$trabajador->fecha_detalle}}</td>
                             <td colspan="1" style="text-transform: uppercase;text-align: left;">{{$trabajador->empresa}}<br>{{$trabajador->sucursal}}</td>
                             <td colspan="1" style="text-transform: uppercase;text-align: left;">{{$trabajador->departamento}}<br>{{$trabajador->puesto}}</td>
                             <td colspan="1" style="text-transform: uppercase;">${{$trabajador->sueldo}}</td>

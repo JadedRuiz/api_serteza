@@ -59,6 +59,7 @@ class EmpresaController extends Controller
         }
         $incia = intval($pagina) * intval($take);
         $registros = DB::table('gen_cat_empresa')
+        ->select("empresa","id_empresa","id_empresa as id_entidad","empresa as entidad")
         ->where("id_status",$otro,$status)
         ->where("empresa",$otro_dos,$palabra)
         ->skip($incia)
@@ -80,7 +81,7 @@ class EmpresaController extends Controller
     }
     public function obtenerEmpresaPorId($id){
         $empresa = DB::table("gen_cat_empresa as gce")
-        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->where("gce.id_empresa",$id)
         ->get();
@@ -129,7 +130,7 @@ class EmpresaController extends Controller
                 DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('empresa')->put($nombre_image, $file); 
             }
-            //Insertar dirección
+            //Insertar direcci贸n
             $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
@@ -289,7 +290,7 @@ class EmpresaController extends Controller
     public function obtenerEmpresasPorIdCliente($id_cliente)     
     {
         $empresas = DB::table('liga_empresa_cliente as lec')
-        ->select("lec.id_empresa","ce.empresa")
+        ->select("lec.id_empresa",DB::raw("CONCAT('(',lec.id_empresa,')',' ',ce.empresa) as empresa"),"ce.empresa as nombre","ce.razon_social","representante_legal as repre")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
         ->where("lec.id_cliente",$id_cliente)
         ->get();

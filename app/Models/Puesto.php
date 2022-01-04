@@ -6,19 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Puesto extends Model {
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    const UPDATED_AT = null;
-    const CREATED_AT = null;
     protected $primaryKey = "id_puesto";
     protected $table = 'gen_cat_puesto';
+    public $incrementing = true;
+    protected $keyType = 'int';
+    public $timestamps = false;
     protected $fillable = [
-        'id_empresa', 
+        'id_puesto', 
+        'id_departamento',
         'puesto', 
-        'disponibilidad', 
+        'autorizados', 
         'sueldo_tipo_a',
         'sueldo_tipo_b',
         "sueldo_tipo_c",

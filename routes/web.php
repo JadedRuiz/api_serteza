@@ -10,6 +10,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post("obtenerCatalogoAutoComplete","Controller@obtenerCatalogoAutoComplete");
     $router->get("obtenerPerfiles","Controller@obtenerPerfiles");
     $router->get("decode_json/{code}","Controller@decode_json");
+    $router->get("obtenerContratados/{id_puesto}","Controller@obtenerContratados");
     
     //Rutas de Usuario
     $router->group(['prefix' => 'usuario'], function () use ($router) {
@@ -22,11 +23,15 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerSistemas', 'UsuarioController@obtenerSistemas');
         $router->get('obtenerSistemasAdmin/{id_usuario}', 'UsuarioController@obtenerSistemasAdmin');
         $router->get('obtenerUsuarioPorId/{id_usuario}', 'UsuarioController@obtenerUsuarioPorId');
+        $router->get('obtenerUsuariosReclutamiento/{id_cliente}', 'UsuarioController@obtenerUsuariosReclutamiento');
+        $router->get('obtenerUsuariosReclutamientoPorId/{id_usuario}', 'UsuarioController@obtenerUsuariosReclutamientoPorId');
         $router->post('obtenerUsuariosDeEntidad', 'UsuarioController@obtenerUsuariosDeEntidad');
         $router->post('modificarUsuario', 'UsuarioController@modificarUsuario');   
         $router->post('altaUsuarioAdmin', 'UsuarioController@altaUsuarioAdmin');
         $router->post('upload-xml', 'UsuarioController@xmlUpload');
         $router->post('tieneSistema', 'UsuarioController@tieneSistema');
+        $router->get('activarDesactivarUsuario/{id_usuario}/{activo}', 'UsuarioController@activarDesactivarUsuario');
+        $router->post("altaUsuarioSuperAdmin","UsuarioController@altaUsuarioSuperAdmin");
     });
     $router->group(['prefix' => 'contabilidad'], function () use ($router) { 
         $router->post('upload-xml', 'ContabilidadController@xmlUpload');     
@@ -88,10 +93,25 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     });
     $router->group(['prefix' => 'departamento'], function () use ($router) {
         $router->post('obtenerDepartamentos',"DepartamentoController@obtenerDepartamentos");
-        $router->get('obtenerDepartamentoPorId/{id_departamento}',"DepartamentoController@obtenerDepartamentoPorIdDepartamento");
+        $router->get('obtenerDepartamentoPorId/{id_departamento}',"DepartamentoController@obtenerDepartamentoPorId");
+        $router->get('obtenerDepartamentosPorIdEmpresa/{id_empresa}',"DepartamentoController@obtenerDepartamentosPorIdEmpresa");
+        $router->post('obtenerDepartamentosPorIdCliente',"DepartamentoController@obtenerDepartamentosPorIdCliente");
         $router->post('altaDepartamento',"DepartamentoController@altaDepartamento");
-        $router->post('actualizarDepartamento',"DepartamentoController@actualizarDepartamento");
+        $router->post('modificarDepartamento',"DepartamentoController@modificarDepartamento");
+        $router->get('eliminarPuesto/{id_puesto}',"DepartamentoController@eliminarPuesto");
         $router->post('autoCompleteDepartamento',"DepartamentoController@autoComplete");
+    });
+    $router->group(['prefix' => "movimiento"], function () use ($router){
+        $router->post('obtenerMovimientosReclutamiento','MovimientoController@obtenerMovimientosReclutamiento');
+        $router->post('altaMovimiento','MovimientoController@altaMovimiento');
+        $router->get("obtenerDetallePorId/{id_mov}","MovimientoController@obtenerDetallePorId");
+        $router->get("obtenerDetalleBaja/{id_mov}","MovimientoController@obtenerDetalleBaja");
+        $router->get("cancelarMovimiento/{id_mov}","MovimientoController@cancelarMovimiento");
+        $router->post("modificarMovimiento","MovimientoController@modificarMovimiento");
+        $router->post("modificarDetalle","MovimientoController@modificarDetalle");
+        $router->get("cancelarDetalle/{id_detalle}","MovimientoController@cancelarDetalle");
+        $router->get("cambiarStatusMov/{id_status}/{id_mov}","MovimientoController@cambiarStatusMov");
+        $router->post("aplicarMovimiento","MovimientoController@aplicarMovimiento");
     });
     $router->group(['prefix' => "contratacion"], function () use ($router){
         $router->post('altaMovContratacion','ContratoController@altaMovContrato');
@@ -129,11 +149,15 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('crearNuevoEmpleado','EmpleadoController@crearNuevoEmpleado');
         $router->post("modificarEmpleadoAnt","EmpleadoController@modificarEmpleadoAnt");
         $router->post("cargaEmpleado","EmpleadoController@cargaEmpleado");
+        $router->get("obtenerEmpleadoPorIdCandidato/{id_candidato}","EmpleadoController@obtenerEmpleadoPorIdCandidato");
     });
     $router->group(['prefix' => 'reporte'], function () use ($router) {
         $router->get('reporteContratado/{id_detalle}','ReporteController@reporteContratado');
+        $router->get('reporteModificacion/{id_detalle}','ReporteController@reporteModificacion');
+        $router->get('reporteDepartamento/{id_empresa}/{id_cliente}','ReporteController@reporteDepartamento');
         $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
         $router->get('reporteEmpleado/{id_empleado}/{id_empresa}','ReporteController@reporteEmpleado');
+        $router->post("reporteDepartamento","ReporteController@reporteDepartamento");
     });
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
@@ -186,5 +210,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'excel'], function () use ($router) {
         $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");
         $router->get("formatoEmpleados/{empresa}/{id_nomina}","ExcelController@formatoEmpleados");
+    });
+    $router->group(['prefix' => 'facturacion'], function () use ($router) {
+        $router->post("obtenerFacturas","FacturacionController@obtenerFacturas");
+        $router->post("altaFactura","FacturacionController@altaFactura");
+        $router->post("opcionesFactura","FacturacionController@opcionesFactura");
+        $router->post("descargaMasiva","FacturacionController@descargaMasiva");
+        $router->post("generarExcel","FacturacionController@generarExcel");
     });
 });

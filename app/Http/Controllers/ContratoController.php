@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ContratoExport;
+use App\Models\Movimiento;
 
 class ContratoController extends Controller
 {
@@ -70,9 +71,18 @@ class ContratoController extends Controller
             $fecha_creacion = $this->getHoraFechaActual();
             $usuario_creacion = $res["usuario_creacion"];
             //Movimiento de contratacion
-            $id_movimiento = $this->getSigId("rh_movimientos");
+            $movimiento = new Movimiento();
             $id_cliente = $res["id_cliente"];
-            DB::insert('insert into rh_movimientos (id_movimiento, id_cliente, id_status, tipo_movimiento, fecha_movimiento, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?)', [$id_movimiento, $id_cliente, 5, "A", $fecha_creacion, $fecha_creacion, $usuario_creacion, 1]);
+            $movimiento->id_cliente = $id_cliente;
+            $movimiento->id_status = 5;
+            $movimiento->tipo_movimiento = "A";
+            $movimiento->fecha_movimiento = $fecha_creacion;
+            $movimiento->fecha_creacion = $fecha_creacion;
+            $movimiento->usuario_creacion = $usuario_creacion;
+            $movimiento->activo = 1;
+            $movimiento->save();
+            $id_movimiento = $movimiento->id_movimiento;
+            //DB::insert('insert into rh_movimientos (id_cliente, id_status, tipo_movimiento, fecha_movimiento, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?)', [ $id_cliente, 5, "A", $fecha_creacion, $fecha_creacion, $usuario_creacion, 1]);
             //Detalle de contratacion
             $is_good = true;
             foreach($res["detalle_contratacion"] as $detalle){
@@ -221,9 +231,9 @@ class ContratoController extends Controller
     }
     public function obtenerDocContratacion($id_movimiento)
     {
-        $id_puesto = DB::table('rh_detalle_contratacion as dc')
+        $id_puesto = DB::table('rh_detalle_movimiento as dc')
         ->select("dc.id_puesto")
-        ->where("dc.id_detalle_contratacion",$id_movimiento)
+        ->where("dc.id_detalle",$id_movimiento)
         ->where("dc.activo",1)
         ->first();
         $contrato = new ContratoExport();
