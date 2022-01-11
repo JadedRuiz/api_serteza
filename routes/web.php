@@ -21,6 +21,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('login', 'UsuarioController@login');                                       //Login del usuario
         $router->post('usuarios', 'UsuarioController@obtenerUsuarios');                           //Obtener todos los usuarios
         $router->get('obtenerSistemas', 'UsuarioController@obtenerSistemas');
+        $router->get('obtenerSistemasPorIdUsuario/{id_usuario}', 'UsuarioController@obtenerSistemasPorIdUsuario');
         $router->get('obtenerSistemasAdmin/{id_usuario}', 'UsuarioController@obtenerSistemasAdmin');
         $router->get('obtenerUsuarioPorId/{id_usuario}', 'UsuarioController@obtenerUsuarioPorId');
         $router->get('obtenerUsuariosReclutamiento/{id_cliente}', 'UsuarioController@obtenerUsuariosReclutamiento');
@@ -112,6 +113,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("cancelarDetalle/{id_detalle}","MovimientoController@cancelarDetalle");
         $router->get("cambiarStatusMov/{id_status}/{id_mov}","MovimientoController@cambiarStatusMov");
         $router->post("aplicarMovimiento","MovimientoController@aplicarMovimiento");
+        $router->post("altaMovimientoPorExcel","MovimientoController@altaMovimientoPorExcel");
     });
     $router->group(['prefix' => "contratacion"], function () use ($router){
         $router->post('altaMovContratacion','ContratoController@altaMovContrato');
@@ -122,6 +124,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerCatalogoNomina','ContratoController@obtenerCatalogoNomina');
         $router->get('aplicarContratacion/{id_movimiento}/{usuario_creacion}','ContratoController@aplicarContratacion');
         $router->get('obtenerDocContratacion/{id_movimiento}','ContratoController@obtenerDocContratacion');
+        $router->get('obtenerDocContratacionPorCandidato/{id_candidato}','ContratoController@obtenerDocContratacionPorCandidato');
     });
     $router->group(['prefix' => "modificacion"], function () use ($router){
         $router->post('solicitudDeModificacion','ModificacionController@crearSolicitudDeModif');
@@ -210,6 +213,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'excel'], function () use ($router) {
         $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");
         $router->get("formatoEmpleados/{empresa}/{id_nomina}","ExcelController@formatoEmpleados");
+        $router->post("formatoAltaEmpleados","ExcelController@formatoAltaEmpleados");
     });
     $router->group(['prefix' => 'facturacion'], function () use ($router) {
         $router->post("obtenerFacturas","FacturacionController@obtenerFacturas");

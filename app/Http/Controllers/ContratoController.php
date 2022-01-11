@@ -250,4 +250,17 @@ class ContratoController extends Controller
             return response()->download($respuesta["data"],"Contrato.docx",$headers)->deleteFileAfterSend(true);
         }
     }
+    public function obtenerDocContratacionPorCandidato($id_candidato)
+    {
+        $contrato = new ContratoExport();
+        if($id_candidato != "0"){
+            $respuesta = $contrato->contratoCandidato($id_candidato);
+        }
+        if($respuesta["ok"]){
+            $headers = [
+                "Content-Type: application/octet-stream",
+            ];
+            return response()->download($respuesta["data"],"Contrato.docx",$headers)->deleteFileAfterSend(true);
+        }
+    }
 }

@@ -118,6 +118,20 @@ class UsuarioController extends Controller
             return $this->crearRespuesta(2,"No hay usuario que mostrar",200);
         }
     }
+    public function obtenerSistemasPorIdUsuario($id_usuario)
+    {
+        $sistemas = DB::table("liga_usuario_sistema as lus")
+        ->select("gce.id_sistema","gce.sistema","lus.id_perfil")
+        ->join("gen_cat_sistemas as gce","gce.id_sistema","=","lus.id_sistema")
+        ->where("lus.id_usuario",$id_usuario)
+        ->where("lus.activo",1)
+        ->orderBy("gce.sistema","ASC")
+        ->get();
+        if(count($sistemas)>1){
+            return $this->crearRespuesta(1,$sistemas,200);
+        }
+        return $this->crearRespuesta(2,"No se más de un sistema",200);
+    }
     public function obtenerUsuariosReclutamiento($id_cliente)
     {
         $usuarios = DB::table('gen_cat_usuario as gcu')
@@ -143,9 +157,11 @@ class UsuarioController extends Controller
     public function obtenerUsuariosReclutamientoPorId($id_usuario)
     {
         $usuario = DB::table('gen_cat_usuario as gcu')
-        ->select("gcu.id_usuario","gcf.id_fotografia","gcf.nombre as fotografia","usuario","gcu.nombre","gcu.password",)
+        ->select("gcu.id_usuario","gcf.id_fotografia","gcf.nombre as fotografia","usuario","gcu.nombre","gcu.password","lus.id_perfil")
         ->leftJoin("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gcu.id_fotografia")
+        ->leftJoin("liga_usuario_sistema as lus","lus.id_usuario","=","gcu.id_usuario")
         ->where("gcu.id_usuario",$id_usuario)
+        ->where("lus.id_sistema",2)
         ->first();
         if($usuario){
             $usuario->password = $this->decode_json($usuario->password);
@@ -229,8 +245,10 @@ class UsuarioController extends Controller
             $validar[0]->password = $this->decode_json($validar[0]->password);
             $validar[0]->fotografia = Storage::disk('usuario')->url($validar[0]->fotografia);
             $sistemas = DB::table('liga_usuario_sistema as lus')
-            ->select("lus.id_sistema")
+            ->join("gen_cat_usuario as gcu","lus.id_usuario","=","gcu.id_usuario")
+            ->select("lus.id_sistema","lus.id_perfil")
             ->where("lus.activo",1)
+            ->where("gcu.id_usuario",$id_usuario)
             ->distinct()
             ->get();
             $clientes = DB::table('liga_usuario_cliente as luc')
@@ -246,8 +264,8 @@ class UsuarioController extends Controller
             $validar[0]->sistemas = [];
             $validar[0]->empresas = [];
             $validar[0]->clientes = [];
-            foreach($sistemas as $sistema){
-                array_push($validar[0]->sistemas,$sistema->id_sistema);
+            if(count($sistemas) > 0){
+                $validar[0]->sistemas = $sistemas;
             }
             foreach($empresas as $empresa){
                 array_push($validar[0]->empresas,$empresa->id_empresa);
@@ -262,13 +280,22 @@ class UsuarioController extends Controller
     }
     public function obtenerSistemas(){
         $sistemas =  DB::table('gen_cat_sistemas')
-        ->select("id_sistema","sistema","activo")
+        ->select("id_sistema","sistema","activo","activo as perfiles", "activo as perfil")
         ->where("activo",1)
         ->where("id_sistema","!=",5)
         ->get();
         if(count($sistemas)>0){
             foreach($sistemas as $sistema){ 
-                $sistema->activo = true;
+                $sistema->perfiles = [];
+                $get_perfiles = DB::table('gen_catperfiles as gcp')
+                ->select("id_perfil","perfil")
+                ->where("id_sistema",$sistema->id_sistema)
+                ->get();
+                if(count($get_perfiles)>0){
+                    $sistema->perfiles = $get_perfiles;
+                }
+                $sistema->perfil = 0;
+                $sistema->activo = false;
             }
             return $this->crearRespuesta(1,$sistemas,200);
         }
@@ -375,7 +402,7 @@ class UsuarioController extends Controller
             $usuario = new Usuario();
             $usuario->id_fotografia = $id_fotografia;
             $usuario->nombre = $res["nombre"];
-            $usuario->password = $res["password"];
+            $usuario->password = $this->encode_json($res["password"]);
             $usuario->usuario = $res["usuario"];
             $usuario->fecha_creacion = $fecha;
             $usuario->usuario_creacion = 1;
@@ -383,7 +410,7 @@ class UsuarioController extends Controller
             $usuario->save();
             $id_usuario = $usuario->id_usuario;
             foreach($res["sistemas"] as $sistema){
-                $this->ligarUsuarioSistema($sistema,$id_usuario,1,1,$res["id_perfil"]);
+                $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,1,1,$sistema["id_perfil"]);
             }
             foreach($res["empresas"] as $empresa){
                 $id_liga_empresa = $this->getSigId("liga_usuario_empresa");
@@ -438,7 +465,7 @@ class UsuarioController extends Controller
 
             $sistemas = $request->input("sistemas");
             foreach($sistemas as $sistema){
-                return $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,$request->input("usuario_creacion"),$activo,"");
+                return $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,$request->input("usuario_creacion"),$activo,$sistema["id_perfil"]);
             }
             //Insertar liga usuario_cliente
             $id_usuario_cliente = $this->getSigId("liga_usuario_cliente");
@@ -487,9 +514,37 @@ class UsuarioController extends Controller
             //Resetear sistemas
             DB::update('update liga_usuario_sistema set activo = 0, fecha_modificacion = ?, usuario_modificacion = ? where id_usuario = ?', [$fecha,$request->input('usuario_creacion'),$id_usuario]);
             foreach($sistemas as $sistema){
-                $validar = $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,$request->input("usuario_creacion"),$activo, "");   //inserta los inexistentes 
+                $validar = $this->ligarUsuarioSistema($sistema["id_sistema"],$id_usuario,$request->input("usuario_creacion"),$activo, $sistema["id_perfil"]);   //inserta los inexistentes 
                 if(!$validar["ok"]){ ///Actualiza los existentes
-                    DB::update('update liga_usuario_sistema set activo = ? where id_usuario_sistema = ?', [$activo, $validar["message"]]);
+                    DB::update('update liga_usuario_sistema set activo = ?, id_perfil = ? where id_usuario_sistema = ?', [$activo, $sistema["id_perfil"], $validar["message"]]);
+                }
+            }
+            //Resetear empresas
+            DB::update('update liga_usuario_empresa set activo = 0, fecha_modificacion = ?, usuario_modificacion = ? where id_usuario = ?', [$fecha,$request->input('usuario_creacion'),$id_usuario]);
+            foreach($request["empresas"] as $empresa){
+                $validar_existencia = DB::table('liga_usuario_empresa')
+                ->where("id_empresa",$empresa)
+                ->where("id_usuario",$id_usuario)
+                ->get();
+                if(count($validar_existencia)>0){
+                    DB::update('update liga_usuario_empresa set activo = 1, fecha_modificacion = ?, usuario_modificacion = ? where id_empresa = ? and id_usuario = ?', [$fecha,$request->input('usuario_creacion'),$empresa, $id_usuario]);
+                }else{
+                    $id_liga_empresa = $this->getSigId("liga_usuario_empresa");
+                    DB::insert('insert into liga_usuario_empresa (id_usuario_empresa, id_usuario, id_empresa, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga_empresa, $id_usuario, $empresa, $fecha, 1, 1]);
+                }
+            }
+            //Resetear clientes
+            DB::update('update liga_usuario_cliente set activo = 0, fecha_modificacion = ?, usuario_modificacion = ? where id_usuario = ?', [$fecha,$request->input('usuario_creacion'),$id_usuario]);
+            foreach($request["clientes"] as $cliente){
+                $validar_existencia = DB::table('liga_usuario_cliente')
+                ->where("id_cliente",$cliente)
+                ->where("id_usuario",$id_usuario)
+                ->get();
+                if(count($validar_existencia)>0){
+                    DB::update('update liga_usuario_cliente set activo = 1, fecha_modificacion = ?, usuario_modificacion = ? where id_cliente = ? and id_usuario = ?', [$fecha,$request->input('usuario_creacion'),$cliente, $id_usuario]);
+                }else{
+                    $id_liga_empresa = $this->getSigId("liga_usuario_cliente");
+                    DB::insert('insert into liga_usuario_cliente (id_usuario_empresa, id_usuario, id_cliente, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga_empresa, $id_usuario, $cliente, $fecha, 1, 1]);
                 }
             }
             //return successful response
@@ -510,7 +565,7 @@ class UsuarioController extends Controller
             ->where("id_usuario",$id_usuario)
             ->get();
             if(count($validar)==0){
-                DB::insert('insert into liga_usuario_sistema (id_usuario_sistema, id_usuario, id_perfil, id_sistema, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?)', [$id_liga,$id_usuario,0, $id_sistema, $fecha, $usuario, $activo]);
+                DB::insert('insert into liga_usuario_sistema (id_usuario_sistema, id_usuario, id_perfil, id_sistema, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?)', [$id_liga,$id_usuario,$id_perfil, $id_sistema, $fecha, $usuario, $activo]);
                 return ["ok" => true];
             }else{
                 return ["ok" => false,"message" => $validar[0]->id_usuario_sistema];

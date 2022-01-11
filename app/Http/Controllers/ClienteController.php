@@ -59,9 +59,9 @@ class ClienteController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('gen_cat_cliente')
-        ->select("id_cliente as id_entidad","cliente as entidad","activo","id_cliente","cliente",)
-        ->where("activo",$otro,$status)
+        $registros = DB::table('gen_cat_cliente as gcc')
+        ->select("id_cliente as id_entidad","cliente as entidad","gcc.activo as status","id_cliente","cliente")
+        ->where("gcc.activo",$otro,$status)
         ->where("cliente",$otro_dos,$palabra)
         ->skip($incia)
         ->take($take)
@@ -72,7 +72,11 @@ class ClienteController extends Controller
         ->get();
         if(count($registros)>0){
             foreach($registros as $registro){
-                $registro->activo = false;
+                if($registro->status){
+                    $registro->status = "Activo";
+                }else{
+                    $registro->status = "Desactivado";
+                }
             }
             $respuesta = [
                 "total" => count($contar),

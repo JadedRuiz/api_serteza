@@ -81,8 +81,9 @@ class EmpresaController extends Controller
     }
     public function obtenerEmpresaPorId($id){
         $empresa = DB::table("gen_cat_empresa as gce")
-        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
+        ->leftJoin("gen_cat_estados as gced","gced.id_estado","=","gcd.estado")
         ->where("gce.id_empresa",$id)
         ->get();
         if(count($empresa)>0){
@@ -130,21 +131,21 @@ class EmpresaController extends Controller
                 DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('empresa')->put($nombre_image, $file); 
             }
-            //Insertar direcci贸n
+            //Insertar dirección
             $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
-            $direccion->calle = $request["direccion"]["calle"];
-            $direccion->numero_interior = $request["direccion"]["numero_interior"];
-            $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
-            $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
-            $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
+            $direccion->calle = strtoupper($request["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($request["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($request["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($request["direccion"]["cruzamiento_uno"]);
+            $direccion->cruzamiento_dos = strtoupper($request["direccion"]["cruzamiento_dos"]);
             $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-            $direccion->colonia = $request["direccion"]["colonia"];
-            $direccion->localidad = $request["direccion"]["localidad"];
-            $direccion->municipio = $request["direccion"]["municipio"];
+            $direccion->colonia = strtoupper($request["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($request["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($request["direccion"]["municipio"]);
             $direccion->estado = $request["direccion"]["estado"];
-            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->descripcion = strtoupper($request["direccion"]["descripcion"]);
             $direccion->fecha_creacion = $fecha;
             $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = $request["activo"];
@@ -153,18 +154,27 @@ class EmpresaController extends Controller
             $id_empresa = $this->getSigId("gen_cat_empresa");
             $empresa = new Empresa();
             $empresa->id_empresa = $id_empresa;
-            $empresa->id_status = $request["id_statu"];
+            $empresa->id_status = 1;
             $empresa->id_direccion = $id_direccion;
             $empresa->id_fotografia = $id_fotografia;
-            $empresa->empresa = $request["empresa"];
-            $empresa->razon_social = $request["razon_social"];
-            $empresa->rfc = $request["rfc"];
-            $empresa->descripcion = $request["descripcion"];
+            $empresa->empresa = strtoupper($request["empresa"]);
+            $empresa->razon_social = strtoupper($request["razon_social"]);
+            $empresa->rfc = strtoupper($request["rfc"]);
+            $empresa->descripcion = strtoupper($request["descripcion"]);
+            if(isset($request["representante"]["nombre"])){
+                $empresa->representante_legal = strtoupper($request["representante"]["nombre"]);
+            }
+            if(isset($request["representante"]["rfc"])){
+                $empresa->rfc_repre = strtoupper($request["representante"]["rfc"]);
+            }
+            if(isset($request["representante"]["curp"])){
+                $empresa->curp = strtoupper($request["representante"]["curp"]);
+            }
             $empresa->fecha_creacion = $fecha;
             $empresa->usuario_creacion = $usuario_creacion;
             $empresa->activo = $request["activo"];
             $empresa->save();
-            return $this->crearRespuesta(1,"El candidato ha sido registrado correctamente",200);
+            return $this->crearRespuesta(1,"La empresa ha sido registrada correctamente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
@@ -197,26 +207,35 @@ class EmpresaController extends Controller
             }
             //Actualizar empresa
             $empresa = Empresa::find($request["id_empresa"]);
-            $empresa->empresa = $request["empresa"];
-            $empresa->razon_social = $request["razon_social"];
-            $empresa->rfc = $request["rfc"];
-            $empresa->descripcion = $request["descripcion"];
+            $empresa->empresa = strtoupper($request["empresa"]);
+            $empresa->razon_social = strtoupper($request["razon_social"]);
+            $empresa->rfc = strtoupper($request["rfc"]);
+            $empresa->descripcion = strtoupper($request["descripcion"]);
+            if(isset($request["representante"]["nombre"])){
+                $empresa->representante_legal = strtoupper($request["representante"]["nombre"]);
+            }
+            if(isset($request["representante"]["rfc"])){
+                $empresa->rfc_repre = strtoupper($request["representante"]["rfc"]);
+            }
+            if(isset($request["representante"]["curp"])){
+                $empresa->curp = strtoupper($request["representante"]["curp"]);
+            }
             $empresa->fecha_modificacion = $fecha;
             $empresa->usuario_modificacion = $usuario_modificacion;
             $empresa->save();
             //Actualizar direccion
             $direccion = Direccion::find($request["direccion"]["id_direccion"]);
-            $direccion->calle = $request["direccion"]["calle"];
+            $direccion->calle = strtoupper($request["direccion"]["calle"]);
             $direccion->numero_interior = $request["direccion"]["numero_interior"];
             $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
             $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
             $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
             $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-            $direccion->colonia = $request["direccion"]["colonia"];
-            $direccion->localidad = $request["direccion"]["localidad"];
-            $direccion->municipio = $request["direccion"]["municipio"];
+            $direccion->colonia = strtoupper($request["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($request["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($request["direccion"]["municipio"]);
             $direccion->estado = $request["direccion"]["estado"];
-            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->descripcion = strtoupper($request["direccion"]["descripcion"]);
             $direccion->fecha_modificacion = $fecha;
             $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();

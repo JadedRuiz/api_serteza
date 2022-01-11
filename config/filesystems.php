@@ -62,10 +62,10 @@ return [
             'visibility' => 'public',
         ],
 
-        'usuario' => [
+        'excel' => [
             'driver' => 'local',
-            'root' => storage_path('usuario'),
-            'url' => env('APP_URL').'/storage/usuario',
+            'root' => storage_path('excel'),
+            'url' => env('APP_URL').'/storage/excel',
             'visibility' => 'public',
         ],
 

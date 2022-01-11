@@ -8,6 +8,13 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use App\Models\Direccion;
+use App\Models\Empresa;
+use App\Models\Sucursal;
+use App\Models\Departamento;
+use App\Models\Puesto;
+use App\Models\Candidato;
+use Illuminate\Support\Facades\Storage;
 
 class Controller extends BaseController
 {
@@ -19,7 +26,6 @@ class Controller extends BaseController
             'expires_in' => Auth::factory()->getTTL() * 60
         ];
     }
-
     public function obtenerContratados($id_puesto)
     {
         return DB::table('nom_empleados')
@@ -30,16 +36,19 @@ class Controller extends BaseController
     }
     public function estaElPuestoDisponible($id_puesto)
     {
-        $puestos_autorizados = intval(DB::table('gen_cat_puesto')
+        $puestos_autorizados = DB::table('gen_cat_puesto')
         ->select("autorizados")
         ->where("id_puesto",$id_puesto)
         ->where("activo",1)
-        ->first()->autorizados);
-        $puestos_contratados = $this->obtenerContratados($id_puesto);
-        if($puestos_contratados > $puestos_autorizados){
-                return false;
+        ->first();
+        if($puestos_autorizados){
+                $puestos_contratados = $this->obtenerContratados($id_puesto);
+                if($puestos_contratados > intval($puestos_autorizados->autorizados)){
+                        return false;
+                }
+                return true;
         }
-        return true;
+        return false;
     }
     public function getSigIdEmpresa($id_empresa)
     {
@@ -64,12 +73,10 @@ class Controller extends BaseController
         ]);
         return $response->getBody();
     }
-
     public function getHoraFechaActual(){
         $mytime = Carbon::now();
         return $mytime;
     }
-
     public function obtenerPerfiles()
     {
         $perfiles =  DB::table('gen_catperfiles')
@@ -102,7 +109,6 @@ class Controller extends BaseController
         }
         return $data;
     }
-
     public function crearRespuesta($tipo,$obj,$http_response){
         if($tipo == 1){ //Success
             return response()->json(['ok' => true, 'data' => $obj], $http_response);
@@ -429,5 +435,198 @@ class Controller extends BaseController
         );
         
         return strtoupper($cadena);
+    }
+    //Validaciones
+    public function getIdEmpresa($datos)
+    {
+        $validacion = Empresa::select("id_empresa")
+        ->where("rfc",$datos["rfc"])
+        ->first();
+        if($validacion){
+           return $validacion->id_empresa;
+        }
+        $fecha = $this->getHoraFechaActual();
+        //New direccion
+        $direccion = new Direccion();
+        $direccion->calle ="";
+        $direccion->numero_interior = "";
+        $direccion->numero_exterior = "";
+        $direccion->cruzamiento_uno = "";
+        $direccion->codigo_postal = 0;
+        $direccion->colonia = "";
+        $direccion->localidad = "";
+        $direccion->municipio = "";
+        $direccion->estado = "";
+        $direccion->descripcion = "";
+        $direccion->fecha_creacion = $fecha;
+        $direccion->activo = 1;
+        $direccion->save();
+        $id_direccion = $direccion->id_direccion;
+        //New foto
+        $id_fotografia = $this->getSigId("gen_cat_fotografia");
+        DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, activo) values (?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,1]);
+        //New empresa
+        $empresa = new Empresa();
+        $empresa->id_status = 1;
+        $empresa->id_direccion = $id_direccion;
+        $empresa->id_fotografia = $id_fotografia;
+        $empresa->empresa = strtoupper($datos["empresa"]);
+        $empresa->razon_social = "";
+        $empresa->rfc = strtoupper($datos["rfc"]);
+        $empresa->descripcion = "";
+        $empresa->representante_legal = "";
+        $empresa->rfc_repre = "";
+        $empresa->curp = "";
+        $empresa->fecha_creacion = $fecha;
+        $empresa->activo = 1;
+        $empresa->save();
+        return $empresa->id_empresa;
+    }
+    public function getIdSucursal($datos)
+    {
+        $validacion = Sucursal::select("id_sucursal")
+        ->where("sucursal",$datos["sucursal"])
+        ->where("id_empresa",$datos["id_empresa"])
+        ->first();
+        if($validacion){
+           return $validacion->id_sucursal;
+        }
+        $fecha = $this->getHoraFechaActual();
+        //New direccion
+        $direccion = new Direccion();
+        $direccion->calle ="";
+        $direccion->numero_interior = "";
+        $direccion->numero_exterior = "";
+        $direccion->cruzamiento_uno = "";
+        $direccion->codigo_postal = 0;
+        $direccion->colonia = "";
+        $direccion->localidad = "";
+        $direccion->municipio = "";
+        $direccion->estado = "";
+        $direccion->descripcion = "";
+        $direccion->fecha_creacion = $fecha;
+        $direccion->activo = 1;
+        $direccion->save();
+        $id_direccion = $direccion->id_direccion;
+        //New Sucursal
+        $sucursal = new Sucursal();
+        $sucursal->sucursal = strtoupper($datos["sucursal"]);
+        $sucursal->id_direccion = $id_direccion;
+        $sucursal->id_empresa = $datos["id_empresa"];
+        $sucursal->id_cliente = $datos["id_cliente"];
+        $sucursal->region = "";
+        $sucursal->zona = "";
+        $sucursal->representante_legal = "";
+        $sucursal->rfc = "";
+        $sucursal->curp = "";
+        $sucursal->fecha_creacion = $fecha;
+        $sucursal->activo = 1;
+        $sucursal->save();
+        return $sucursal->id_sucursal;
+    }
+    public function getIdCandidato($datos)
+    {
+        $validacion = Candidato::select("id_candidato")
+        ->where("rfc",$datos["rfc"])
+        ->orWhere("curp",$datos["curp"])
+        ->first();
+        if($validacion){
+           return $validacion->id_candidato;
+        }
+        $fecha = $this->getHoraFechaActual();
+        //New direccion
+        $direccion = new Direccion();
+        $direccion->calle ="";
+        $direccion->numero_interior = "";
+        $direccion->numero_exterior = "";
+        $direccion->cruzamiento_uno = "";
+        $direccion->codigo_postal = 0;
+        $direccion->colonia = "";
+        $direccion->localidad = "";
+        $direccion->municipio = "";
+        $direccion->estado = "";
+        $direccion->descripcion = "";
+        $direccion->fecha_creacion = $fecha;
+        $direccion->activo = 1;
+        $direccion->save();
+        $id_direccion = $direccion->id_direccion;
+        //New foto
+        $id_fotografia = $this->getSigId("gen_cat_fotografia");
+        DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, activo) values (?,?,?,?)', [$id_fotografia,"candidato_default.png",$fecha,1]);
+        //New candidato
+        $canditado = new Candidato;
+        $canditado->id_status = 6;  //En reclutamiento
+        $canditado->id_cliente = $datos["id_cliente"];
+        $canditado->id_fotografia = $id_fotografia;
+        $canditado->id_direccion = $id_direccion;
+        $canditado->nombre = strtoupper($datos["nombre"]);
+        $canditado->apellido_paterno = strtoupper($datos["apellido_paterno"]);
+        $canditado->apellido_materno = strtoupper($datos["apellido_materno"]);
+        $canditado->rfc = strtoupper($datos["rfc"]);
+        $canditado->curp = strtoupper($datos["curp"]);
+        $canditado->numero_seguro = $datos["imss"];
+        $canditado->fecha_nacimiento = $datos["fecha_nacimiento"];
+        $canditado->correo = "";
+        $canditado->telefono = $datos["telefono"];
+        $canditado->fecha_creacion = $fecha;
+        $canditado->usuario_creacion = $datos["usuario_creacion"];
+        $canditado->activo = 1;
+        $canditado->save();
+        return $canditado->id_candidato;
+    }
+    public function getIdDepartamento($datos)
+    {
+        $validacion = Departamento::select("id_departamento")
+        ->where("departamento",$datos["departamento"])
+        ->where("id_empresa", $datos["id_empresa"])
+        ->first();
+        if($validacion){
+           return $validacion->id_departamento;
+        }
+        $fecha = $this->getHoraFechaActual();
+        $departamento = new Departamento;
+        $departamento->id_empresa = $datos["id_empresa"];
+        $departamento->departamento = strtoupper($datos["departamento"]);
+        $departamento->descripcion = "";
+        $departamento->fecha_creacion = $fecha;
+        $departamento->usuario_creacion = $datos["usuario_creacion"];
+        $departamento->activo = 1;
+        $departamento->save();
+        return $departamento->id_departamento;
+    }
+    public function getIdPuesto($datos)
+    {
+        $validacion = Puesto::select("id_puesto")
+        ->where("puesto",$datos["puesto"])
+        ->where("id_departamento", $datos["id_departamento"])
+        ->first();
+        if($validacion){
+           return $validacion->id_puesto;
+        }
+        $fecha = $this->getHoraFechaActual();
+        $puesto_clase = new Puesto;
+        $puesto_clase->id_departamento = $datos["id_departamento"];
+        $puesto_clase->puesto = strtoupper($datos["puesto"]);
+        $puesto_clase->autorizados = 10;
+        $puesto_clase->descripcion = "";
+        $puesto_clase->fecha_creacion = $fecha;
+        $puesto_clase->usuario_creacion = $datos["usuario_creacion"];
+        $puesto_clase->activo = 1;
+        $puesto_clase->save(); 
+        return $puesto_clase->id_puesto;
+    }
+    public function getIdNomina($datos)
+    {
+        $validacion = DB::table('nom_cat_nomina')
+        ->select("id_nomina")
+        ->where("nomina",$datos["nomina"])
+        ->first();
+        if($validacion){
+           return $validacion->id_nomina;
+        }
+        $fecha = $this->getHoraFechaActual();
+        $id_nomina = $this->getSigId("nom_cat_nomina");
+        DB::insert('insert into nom_cat_nomina (id_nomina, nomina, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_nomina, $datos["nomina"], $fecha, $datos["usuario_creacion"],1]);
+        return $id_nomina;
     }
 }

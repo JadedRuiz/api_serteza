@@ -26,8 +26,11 @@ class Empresa extends Model {
         'razon_social', 
         'fecha_creacion', 
         'fecha_modificacion', 
-        'cat_usuario_c_id', 
-        'cat_usuario_m_id', 
+        'usuario_creacion', 
+        'usuario_modificacion', 
+        'representante_legal',
+        'rfc_repre',
+        'cupr',
         'activo'
     ];
 

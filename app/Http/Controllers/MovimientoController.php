@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 use App\Models\Movimiento;
 use App\Models\DetalleMov;
 use App\Models\Empleado;
+use App\Models\Candidato;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class MovimientoController extends Controller
 {
@@ -52,8 +54,8 @@ class MovimientoController extends Controller
         ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","rcc.id_fotografia")
         ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdm.id_puesto")
         ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
-        ->join("gen_cat_empresa as gce","gce.id_empresa","=","gcd.id_empresa")
         ->join("nom_sucursales as ncs","ncs.id_sucursal","=","rdm.id_sucursal")
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","ncs.id_empresa")
         ->where("rm.id_movimiento",$id_mov)
         ->where("rdm.activo",1)
         ->get();
@@ -169,6 +171,237 @@ class MovimientoController extends Controller
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
+    }
+    public function altaMovimientoPorExcel(Request $res)
+    {
+        try{
+            $file = base64_decode($res["file"]);
+            $usuario_creacion = $res["usuario_creacion"];
+            $fecha = $this->getHoraFechaActual();
+            $date = strtotime(date('d-m-Y h:i:s'));
+            $url_file = "FormatoAltaTemp(".$date.").xlsx";
+            Storage::disk('excel')->put($url_file, $file);
+            $spreadsheet = IOFactory::load(storage_path("excel")."/".$url_file);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $hoja_main = $spreadsheet->getSheet(0);
+            $total_rows = $hoja_main->getHighestRow();
+            $errores = [];
+            if($total_rows > 4){
+                //Agregar movimiento
+                $movimiento = new Movimiento();
+                $movimiento->id_status = 8;
+                $movimiento->id_cliente = $res["id_cliente"];
+                $movimiento->fecha_movimiento = $fecha;
+                $movimiento->tipo_movimiento = "A";
+                $movimiento->usuario_creacion = $usuario_creacion;
+                $movimiento->fecha_creacion = $fecha;
+                $movimiento->activo = 1;
+                $movimiento->save();
+                $id_mov = $movimiento->id_movimiento;
+            }else{
+                return $this->crearRespuesta(2,"La plantilla no cuenta con empleados que registrar",200);
+            }
+            for($i=4;$i<=$total_rows;$i++){
+                foreach(range('A','Z') as $columnID) {
+                    switch($columnID){
+                        case 'A' :
+                            //Empresa
+                            $empresa = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'B' :
+                            //RFC Empresa 
+                            $rfc_empresa = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'C' :
+                            //Sucursal
+                            $sucursal = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'D' :
+                            //Apellido paterno
+                            $apellido_p = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'E' :
+                            //Apellido materno
+                            $apellido_m = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'F' :
+                            //Nombre
+                            $nombre = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'G' :
+                            //Rfc
+                            $rfc = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'H' :
+                            //Curp
+                            $curp = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'I' :
+                            //Imss
+                            $imss = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'J' :
+                            //Fecha nacimiento
+                            $fecha_nacimiento = $hoja_main->getCell($columnID.$i);
+                            $fecha_nacimiento = date('Y-m-d', strtotime($fecha_nacimiento->getFormattedValue()));
+                            break;
+                        case 'K' :
+                            //Calle
+                            $calle = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'L' :
+                            //Num exterior
+                            $num_exterior = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'M' :
+                            //Num. interior
+                            $num_interior = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'N' :
+                            //Cruzamientos
+                            $cruzamientos = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'O' :
+                            //Colonia
+                            $colonia = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'P' :
+                            //Municipio
+                            $municipio = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'Q' :
+                            //Estado
+                            $estado = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'R' :
+                            //C.P
+                            $codigo_postal = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'S' :
+                            //Telefono
+                            $telefono = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'T' :
+                            //Departamento
+                            $departamento = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'U' :
+                            //Puesto
+                            $puesto = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'V' :
+                            //Sueldo
+                            $sueldo = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'W' :
+                            //Sueldo integrado
+                            $sueldo_integrado = $hoja_main->getCell($columnID.$i);
+                            break;
+                        case 'X' :
+                            //Fecha ingreso
+                            $fecha_ingreso = $hoja_main->getCell($columnID.$i);
+                            $fecha_ingreso = date('Y-m-d', strtotime($fecha_ingreso->getFormattedValue()));
+                            break;
+                        case 'Y' :
+                            //Fecha antiguedad
+                            $fecha_antiguedad = $hoja_main->getCell($columnID.$i);
+                            $fecha_antiguedad = date('Y-m-d', strtotime($fecha_antiguedad->getFormattedValue()));
+                            break;
+                        case 'Z' :
+                            //Tipo nomina
+                            $tipo_nomina = $hoja_main->getCell($columnID.$i);
+                            break;
+                    }
+                }
+                $id_empresa = "";
+                if($rfc_empresa != "" && $empresa != "" && $puesto != ""){
+                    $id_empresa = $this->getIdEmpresa(["rfc" => $rfc_empresa, "empresa" => $empresa]);
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que no cuenta con el nombre de la Empresa o RFC");
+                }
+                $id_sucursal = "";
+                if($sucursal != "" && $id_empresa != "" && $puesto != ""){
+                    $id_sucursal = $this->getIdSucursal(["sucursal" => $sucursal, "id_cliente" => $res["id_cliente"], "id_empresa" => $id_empresa]);
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que no cuenta con el nombre de la Sucursal");
+                }
+                $id_candidato = "";
+                if($rfc != "" && $curp != "" && $nombre != "" && $puesto != "" && $id_empresa != ""){
+                    $id_candidato = $this->getIdCandidato([
+                        "id_cliente" => $res["id_cliente"], 
+                        "nombre" => $nombre,
+                        "apellido_paterno" => $apellido_p,
+                        "apellido_materno" => $apellido_m,
+                        "rfc" => $rfc,
+                        "curp" => $curp,
+                        "imss" => $imss,
+                        "fecha_nacimiento" => $fecha_nacimiento,
+                        "telefono" => $telefono,
+                        "usuario_creacion" => $usuario_creacion
+                    ]);
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que no cuenta con el nombre del Empleado o RFC o CURP");
+                }
+                $id_departamento = "";
+                if($departamento != "" && $id_empresa != "" && $puesto != ""){
+                    $id_departamento = $this->getIdDepartamento([
+                        "id_empresa" => $id_empresa, 
+                        "departamento" => $departamento,
+                        "usuario_creacion" => $usuario_creacion
+                    ]);
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que no cuenta con el nombre del Deparmento");
+                }
+                $id_puesto = "";
+                if($puesto != "" && $id_departamento != ""){
+                    $id_puesto = $this->getIdPuesto([
+                        "id_departamento" => $id_departamento, 
+                        "puesto" => $puesto,
+                        "usuario_creacion" => $usuario_creacion
+                    ]);
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que no cuenta con el nombre del Puesto");
+                }
+                $id_nomina = "";
+                if($tipo_nomina != ""){
+                    $id_nomina = $this->getIdNomina([
+                        "nomina" => $tipo_nomina,
+                        "usuario_creacion" => $usuario_creacion
+                    ]);
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que no cuenta con el tipo de nomina");
+                }
+                if($this->estaElPuestoDisponible($id_puesto)){
+                    if($id_candidato != "" && $id_sucursal != "" && $id_puesto != "" && $id_nomina){
+                        $detalle = new DetalleMov();
+                        $detalle->id_movimiento = $id_mov;
+                        $detalle->id_status = "5";
+                        $detalle->id_candidato = $id_candidato;
+                        $detalle->id_sucursal = $id_sucursal;
+                        $detalle->id_puesto = $id_puesto;
+                        $detalle->id_nomina = $id_nomina;
+                        $detalle->sueldo = $sueldo;
+                        $detalle->sueldo_neto = $sueldo_integrado;
+                        $detalle->observacion = "";
+                        $detalle->fecha_detalle = date('Y-m-d',strtotime($fecha_ingreso));
+                        $detalle->fecha_creacion = $fecha;
+                        $detalle->activo = 1;
+                        $detalle->save();
+                        $this->cambiarDeEstatus($id_candidato,5);
+                    }
+                }else{
+                    array_push($errores,"La fila ".$i." no se ha podido dar de alta por que el puesto no cuenta con disponibilidad");
+                }
+            }
+            unlink(storage_path("excel")."/".$url_file);
+            return $this->crearRespuesta(1,[
+                "data" => "Se ha importado correctamente",
+                "errores" => $errores
+            ],200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),200);
+        }
+           
     }
     public function modificarDetalle(Request $res)
     {

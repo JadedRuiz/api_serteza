@@ -66,7 +66,7 @@ class CandidatoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $registros = DB::table('rh_cat_candidato as cc')
-        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre","cc.descripcion")
+        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre","cc.descripcion","cs.id_statu")
         ->join("gen_cat_statu as cs","cs.id_statu","=","cc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->where("cc.id_cliente",$id_cliente)
