@@ -149,7 +149,7 @@ class CandidatoController extends Controller
         //Insertar fotografia
         if($request["fotografia"]["docB64"] == ""){
             //Guardar foto default
-            DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$fecha,$usuario_creacion,1]);
+            DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.png",$fecha,$usuario_creacion,1]);
         }else{
             $file = base64_decode($request["fotografia"]["docB64"]);
             $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];

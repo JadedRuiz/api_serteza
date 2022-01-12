@@ -175,6 +175,7 @@ class MovimientoController extends Controller
     public function altaMovimientoPorExcel(Request $res)
     {
         try{
+            $band = true;
             $file = base64_decode($res["file"]);
             $usuario_creacion = $res["usuario_creacion"];
             $fecha = $this->getHoraFechaActual();
@@ -186,19 +187,7 @@ class MovimientoController extends Controller
             $hoja_main = $spreadsheet->getSheet(0);
             $total_rows = $hoja_main->getHighestRow();
             $errores = [];
-            if($total_rows > 4){
-                //Agregar movimiento
-                $movimiento = new Movimiento();
-                $movimiento->id_status = 8;
-                $movimiento->id_cliente = $res["id_cliente"];
-                $movimiento->fecha_movimiento = $fecha;
-                $movimiento->tipo_movimiento = "A";
-                $movimiento->usuario_creacion = $usuario_creacion;
-                $movimiento->fecha_creacion = $fecha;
-                $movimiento->activo = 1;
-                $movimiento->save();
-                $id_mov = $movimiento->id_movimiento;
-            }else{
+            if(4 > $total_rows){
                 return $this->crearRespuesta(2,"La plantilla no cuenta con empleados que registrar",200);
             }
             for($i=4;$i<=$total_rows;$i++){
@@ -373,6 +362,20 @@ class MovimientoController extends Controller
                 }
                 if($this->estaElPuestoDisponible($id_puesto)){
                     if($id_candidato != "" && $id_sucursal != "" && $id_puesto != "" && $id_nomina){
+                        if($band){
+                            //Agregar movimiento
+                            $movimiento = new Movimiento();
+                            $movimiento->id_status = 8;
+                            $movimiento->id_cliente = $res["id_cliente"];
+                            $movimiento->fecha_movimiento = $fecha;
+                            $movimiento->tipo_movimiento = "A";
+                            $movimiento->usuario_creacion = $usuario_creacion;
+                            $movimiento->fecha_creacion = $fecha;
+                            $movimiento->activo = 1;
+                            $movimiento->save();
+                            $id_mov = $movimiento->id_movimiento;
+                            $band = false;
+                        }
                         $detalle = new DetalleMov();
                         $detalle->id_movimiento = $id_mov;
                         $detalle->id_status = "5";

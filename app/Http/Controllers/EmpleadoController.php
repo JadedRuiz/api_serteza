@@ -295,7 +295,7 @@ class EmpleadoController extends Controller
             //Insertar fotografia
             if($request["candidato"]["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["candidato"]["fotografia"]["docB64"]);
                 $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["candidato"]["fotografia"]["extension"];
@@ -552,7 +552,7 @@ class EmpleadoController extends Controller
                         $id_cliente = $this->obtenerIdPorNombre("gen_cat_cliente","cliente",$this->trataPalabra($res["cliente"]),"id_cliente");
                         //Insertar fotografia
                         $id_fotografia = $this->getSigId("gen_cat_fotografia");
-                        DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.svg",$this->getHoraFechaActual(),$res["usuario"],1]);
+                        DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.png",$this->getHoraFechaActual(),$res["usuario"],1]);
                         //Insertar dirección
                         $id_direccion = $this->getSigId("gen_cat_direccion");
                         $direccion = new Direccion;
