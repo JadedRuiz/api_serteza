@@ -485,4 +485,8 @@ class FacturacionController extends Controller
             }
         }
     }
+    public function altaUbicacion(Request $res)
+    {
+        
+    }
 }
