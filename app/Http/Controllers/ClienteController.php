@@ -15,9 +15,75 @@ class ClienteController extends Controller
      *
      * @return void
      */
-    public function __construct()
+    public function facObtenerClientes()
     {
-        //
+        $clientes = DB::table('fac_catclientes as fcc')
+        ->select("fcc.id_catclientes",DB::raw("CONCAT(fcc.rfc,'-',fcc.razon_social) as nombre"))
+        ->limit(1000)
+        ->get();
+        if(count($clientes)>0){
+            return $this->crearRespuesta(1,$clientes,200);
+        }
+        return $this->crearRespuesta(2,"No se tiene clientes aún",200);
+    }
+    public function facObtenerClientesPorId($id_cliente)
+    {
+        $cliente = DB::table('fac_catclientes as fcc')
+        ->select("fcc.id_catclientes","fcc.rfc","fcc.razon_social","fcc.curp","fcc.email","fcc.telefono","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion","gce.estado","gcd.estado as id_estado")
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","fcc.id_direccion")
+        ->join("gen_cat_estados as gce","gce.id_estado","=","gcd.estado")
+        ->where("fcc.id_catclientes",$id_cliente)
+        ->first();
+        if($cliente){
+            return $this->crearRespuesta(1,$cliente,200);
+        }
+        return $this->crearRespuesta(2,"No se ha encontrado el cliente",200);
+    }
+    public function facAltaCliente(Request $res)
+    {
+        $fecha = $this->getHoraFechaActual();
+        $usuario_creacion = 1;
+        if($res["rfc"] == ""){
+            return $this->crearRespuesta(2,"El campo RFC es obligatorio",200);
+        }
+        if($res["mail"] == ""){
+            return $this->crearRespuesta(2,"El campo Email es obligatorio",200);
+        }
+        if($res["razon_social"] == ""){ 
+            return $this->crearRespuesta(2,"El campo Razon social es obligatorio",200);
+        }
+        if($res["direccion"]["codigo_postal"] == ""){ 
+            return $this->crearRespuesta(2,"El campo C.P es obligatorio",200);
+        }
+        $validar_rfc = DB::table('sat_CodigoPostal as scp')
+        ->where("c_CodigoPostal",$res["direccion"]["codigo_postal"])
+        ->first();
+        if(!$validar_rfc){
+            return $this->crearRespuesta(2,"El Codigo Postal ingresado no se ha encontrado en el catálogo del sat, intente con otro.",200);
+        }
+        try{
+            $direccion = new Direccion;
+            $direccion->calle = $res["direccion"]["calle"];
+            $direccion->numero_interior = $res["direccion"]["numero_interior"];
+            $direccion->numero_exterior = $res["direccion"]["numero_exterior"];
+            $direccion->cruzamiento_uno = $res["direccion"]["cruzamiento_uno"];
+            $direccion->cruzamiento_dos = $res["direccion"]["cruzamiento_dos"];
+            $direccion->codigo_postal = $res["direccion"]["codigo_postal"];
+            $direccion->colonia = $res["direccion"]["colonia"];
+            $direccion->localidad = $res["direccion"]["localidad"];
+            $direccion->municipio = $res["direccion"]["municipio"];
+            $direccion->estado = $res["direccion"]["estado"];
+            $direccion->descripcion = $res["direccion"]["descripcion"];
+            $direccion->fecha_creacion = $fecha;
+            $direccion->usuario_creacion = $usuario_creacion;
+            $direccion->activo = 1;
+            $direccion->save();
+            $id_direccion = $direccion->id_direccion;
+            DB::insert('insert into fac_catclientes (id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?)', [$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1]);
+            return $this->crearRespuesta(1,"Se ha creado el cliente",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
     }
     public function autoComplete(Request $res){
         $palabra = strtoupper($res["nombre_cliente"]);

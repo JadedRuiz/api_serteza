@@ -73,6 +73,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("elimiminarLiga","ClienteController@elimiminarLiga");
         $router->get("obtenerClientesPorIdEmpresa/{id_empresa}","ClienteController@obtenerClientesPorIdEmpresa");
         $router->post("autoCompleteCliente","ClienteController@autoComplete");
+        $router->get('facObtenerClientes','ClienteController@facObtenerClientes');
+        $router->get('facObtenerClientesPorId/{id_cliente}','ClienteController@facObtenerClientesPorId');
+        $router->post('facAltaCliente','ClienteController@facAltaCliente');
     });
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
@@ -165,6 +168,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
         $router->get('obtenerDashboardRh/{id_cliente}','DashboardController@obtenerDashboardRh');
+        $router->post("obtenerDasboardFacturacion","DashboardController@obtenerDasboardFacturacion");
+        $router->post("obtenerDatosEmpresaFacturacion","DashboardController@obtenerDatosEmpresaFacturacion");
     });
     $router->group(['prefix' => 'bancos'], function () use ($router) {
         $router->get('index', 'BancoController@index');
@@ -183,18 +188,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('aplicarSolicitudesRH', 'NominaController@aplicarSolicitudesRH');
     });
     $router->group(['prefix' => 'concepto'], function () use ($router) { 
-        $router->post("autocomplete","ConceptoController@autocomplete");
-        $router->get('obtenerConcpetosPorId/{id_empresa}', 'ConceptoController@obtenerConcpetosPorId');
-        $router->get('obtenerConcpetosPorIdConcepto/{id_concepto}', 'ConceptoController@obtenerConcpetosPorIdConcepto');
-        $router->post("crearConcepto","ConceptoController@crearConcepto");
-        $router->post("modificarConcepto","ConceptoController@modificarConcepto");
-        $router->get("cambiarActivo/{id_concepto}/{activo}","ConceptoController@cambiarActivo");
-        //rutas para el consumo de captura de conceptos
-        $router->get("obtenerConceptoPorIdMovNomina/{id_movnomina}","ConceptoController@obtenerConceptoPorIdMovNomina");
-        $router->post("altaConceptosAEmpleado","ConceptoController@altaConceptoAEmpleado");
-        $router->post("modificarConceptoAEmpleado","ConceptoController@modificarConceptoAEmpleado");
-        $router->post("eliminarConceptoAEmpleado","ConceptoController@eliminarConceptoAEmpleado");
-        $router->get("obtenerConceptosPorIdEmpleado/{id_empleado}/{id_empresa}/{id_periodo}","ConceptoController@obtenerConceptosPorIdEmpleado");
+        $router->get('facObtenerConceptosEmpresa/{id_empresa}', 'ConceptoController@facObtenerConceptosEmpresa');
+        $router->post("facServiciosAutocomplete","ConceptoController@facServiciosAutocomplete");
+        $router->post("facUnidadesAutocomplete","ConceptoController@facUnidadesAutocomplete");
+        $router->get('facObtenerConceptosPorId/{id_concepto}', 'ConceptoController@facObtenerConceptosPorId');
+        $router->post("facAltaConcepto","ConceptoController@facAltaConcepto");
+        $router->post('facModificarConcepto','ConceptoController@facModificarConcepto');
     });
     $router->group(['prefix' => 'sucursal'], function () use ($router) {
         $router->post('crearSucursal', 'SucursalController@crearSucursal');
@@ -221,5 +220,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("opcionesFactura","FacturacionController@opcionesFactura");
         $router->post("descargaMasiva","FacturacionController@descargaMasiva");
         $router->post("generarExcel","FacturacionController@generarExcel");
+        $router->get("facObtenerFolio/{id_empresa}","FacturacionController@facObtenerFolio");
+        $router->post("facAltaFactura","FacturacionController@facAltaFactura");
+    });
+    $router->group(['prefix' => 'serie'], function () use ($router) {
+        $router->get("obtenerSeries/{id_empresa}","SerieController@obtenerSeries");
+        $router->get("obtenerSeriePorId/{id_serie}","SerieController@obtenerSeriePorId");
+        $router->post("altaSerie","SerieController@altaSerie");
+        $router->post("modificarSerie","SerieController@modificarSerie");
     });
 });

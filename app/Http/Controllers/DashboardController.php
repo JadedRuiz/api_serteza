@@ -170,4 +170,82 @@ class DashboardController extends Controller
         //     "pero"
         // ]
     }
+    public function obtenerDasboardFacturacion(Request $res)
+    {
+        $id_cliente = $res["id_cliente"];
+        $anio = $res["anio"];
+        $empresas = DB::table('liga_empresa_cliente as lec')
+        ->select("lec.id_empresa","ce.empresa as nombre","ce.razon_social","representante_legal as repre")
+        ->join("gen_cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
+        ->where("lec.id_cliente",$id_cliente)
+        ->get();
+        if(count($empresas)>0){
+            $respuesta = [
+                "empresas_t" => count($empresas),
+                "total" => 0,
+                "pagadas_t" => 0,
+                "por_pagar_t" => 0,
+                "empresas" => ""
+            ];
+            $empresas_array = [];
+            foreach($empresas as $empresa){
+                $facturas = DB::table('fac_factura')
+                ->select(DB::raw('YEAR(fecha_creacion) as anio'),"pagado")
+                ->where("id_empresa",$empresa->id_empresa)
+                ->where(DB::raw('YEAR(fecha_creacion)'),$anio)
+                ->get();
+                $respuesta["total"] += count($facturas);
+                $pagadas = 0;
+                $por_pagar = 0;
+                foreach($facturas as $factura){
+                    if($factura->pagado == 0){
+                        $respuesta["por_pagar_t"]++;
+                        $por_pagar++;
+                    }else{
+                        $respuesta["pagadas_t"]++;
+                        $pagadas++;
+                    }
+                }
+                array_push($empresas_array,[
+                    "id_empresa" => $empresa->id_empresa,
+                    "empresa" => $empresa->nombre,
+                    "facturas" => count($facturas),
+                    "pagadas" => $pagadas,
+                    "por_pagar" => $por_pagar
+                ]);
+            }
+            
+            $respuesta["empresas"] = $empresas_array;
+            return $this->crearRespuesta(1,$respuesta,200);
+        }
+    }
+    public function obtenerDatosEmpresaFacturacion(Request $res)
+    {
+        $id_empresa = $res["id_empresa"];
+        $anio = $res["anio"];
+        $respuesta = [];
+        for($i=1;$i<=12;$i++){
+            $facturas = DB::table('fac_factura')
+            ->where("id_empresa",$id_empresa)
+            ->where(DB::raw("YEAR(fecha_creacion)"),$anio)
+            ->where(DB::raw("MONTH(fecha_creacion)"),$i)
+            ->get();
+            $pagadas = 0;
+            $por_pagar = 0;
+            foreach($facturas as $factura){
+                if($factura->pagado == 0){
+                    $por_pagar++;
+                }else{
+                    $pagadas++;
+                }
+            }
+            array_push($respuesta,[
+                "mes" => $i,
+                "facturas" => count($facturas),
+                "pagadas" => $pagadas,
+                "por_pagar" => $por_pagar
+            ]);
+        }
+        return $this->crearRespuesta(1,$respuesta,200);
+    }
 }

@@ -104,10 +104,11 @@ class CandidatoController extends Controller
     }
     public function obtenerCandidatoPorId($id){
         $respuesta = DB::table("rh_cat_candidato as rcc")
-        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia","rcc.id_cliente")
+        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado as id_estado", "ge.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia","rcc.id_cliente")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
         ->join("gen_cat_statu as gce","gce.id_statu","=","rcc.id_status")
         ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
+        ->leftJoin("gen_cat_estados as ge","ge.id_estado","=","gcd.estado")
         ->where("rcc.id_candidato",$id)
         ->where("rcc.activo",1)
         ->get();
@@ -309,46 +310,35 @@ class CandidatoController extends Controller
             ->where("rdb.id_candidato",$id_candidato)
             ->get();
         }
-        $informacion_contrato = DB::table('rh_movimientos as rm')
-        ->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina","rdc.sueldo",DB::raw('DATE_FORMAT(rdc.fecha_alta, "%Y-%m-%d") as fecha_alta'),"rm.fecha_movimiento")
-        ->join("rh_detalle_contratacion as rdc","rdc.id_movimiento","=","rm.id_movimiento")
-        ->join("gen_cat_empresa as gce","gce.id_empresa","=","rdc.id_empresa")
-        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdc.id_departamento")
-        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdc.id_puesto")
-        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdc.id_nomina")
+        
+        $informacion_movimientos = DB::table('rh_movimientos as rm')
+        ->select("rm.tipo_movimiento",DB::raw('DATE_FORMAT(rm.fecha_movimiento, "%d-%m-%Y") as fecha_movimiento'),"rdc.observacion")
+        ->join("rh_detalle_movimiento as rdc","rdc.id_movimiento","=","rm.id_movimiento")
         ->where("rm.id_status",1)
         ->where("rdc.id_candidato",$id_candidato)
-        ->get();
-        $informacion_contrato_actual = DB::table('rh_movimientos as rm')->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina","rdm.sueldo",DB::raw('DATE_FORMAT(rdm.fecha_de_modificacion, "%Y-%m-%d") as fecha_alta'),"rm.fecha_movimiento")
-        ->join("rh_detalle_modificacion as rdm","rdm.id_movimiento","=","rm.id_movimiento")
-        ->join("gen_cat_empresa as gce","gce.id_empresa","=","rdm.id_empresa")
-        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdm.id_departamento")
-        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdm.id_puesto")
-        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdm.id_nomina")
-        ->where("rm.id_status",1)
-        ->where("rdm.id_candidato",$id_candidato)
-        ->where("rm.activo",1)
         ->orderBy("rm.fecha_movimiento","DESC")
         ->get();
-        if(count($informacion_contrato_actual)>0){  //El candidato tiene modificaciones
+        $informacion_contrato_actual = DB::table('nom_empleados as ne')
+        ->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina","ne.sueldo_diario","ne.sueldo_integrado",'ne.fecha_ingreso as fecha_alta','ne.fecha_antiguedad')
+        ->leftJoin("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
+        ->leftJoin("nom_cat_nomina as ncn","ncn.id_nomina","=","ne.id_nomina")
+        ->leftJoin("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
+        ->leftJoin("nom_sucursales as ns","ns.id_sucursal","=","ne.id_sucursal")
+        ->leftJoin("gen_cat_empresa as gce","gce.id_empresa","=","ns.id_empresa")
+        ->leftJoin("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
+        ->where("ne.id_candidato",$id_candidato)
+        ->first();
+        if($informacion_contrato_actual){  //El candidato tiene modificaciones
+            $informacion_contrato_actual->fecha_alta = date('Y-m-d',strtotime($informacion_contrato_actual->fecha_alta."+ 1 days"));
+            $informacion_contrato_actual->fecha_antiguedad = date('Y-m-d',strtotime($informacion_contrato_actual->fecha_antiguedad."+ 1 days"));
+            $informacion_contrato_actual->sueldo_diario ='$ '. number_format(floatval($informacion_contrato_actual->sueldo_diario),2,'.',',');
+            $informacion_contrato_actual->sueldo_integrado ='$ '. number_format(floatval($informacion_contrato_actual->sueldo_integrado),2,'.',',');
             $respuesta = [
-                "informacion_contrato" => $informacion_contrato_actual[0],
-                "movimientos" => [
-                    "alta" => $informacion_contrato,
-                    "modificaciones" => $informacion_contrato_actual,
-                    "baja" => $informacion_contrato_baja
-                ]
+                "informacion_contrato" => $informacion_contrato_actual,
+                "movimientos" => $informacion_movimientos
             ];
-        }else{
-            $respuesta = [
-                "informacion_contrato" => $informacion_contrato,
-                "movimientos" => [
-                    "alta" => $informacion_contrato,
-                    "modificaciones" => $informacion_contrato_actual,
-                    "baja" => $informacion_contrato_baja
-                ]
-            ];
+            return $this->crearRespuesta(1,$respuesta,200);
         }
-        return $this->crearRespuesta(1,$respuesta,200);
+        return $this->crearRespuesta(2,"Este candidado no tiene datos de contratación",200);
     }
 }

@@ -10,14 +10,15 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Illuminate\Support\Facades\Storage;
 
+require_once(storage_path("lib")."/java/Java.inc.php");
+
 class FacturaExport {
 
     public function generarReporteFactura($datos)
     {
-        $id_cliente = DB::table('liga_empresa_cliente as lec')
-        ->select("gcc.id_cliente","gcf.nombre as foto")
-        ->join("gen_cat_cliente as gcc","gcc.id_cliente","=","lec.id_cliente")
-        ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gcc.id_fotografia")
+        $id_cliente = DB::table('gen_cat_empresa as gce')
+        ->select("gce.empresa","gcf.nombre as foto")
+        ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gce.id_fotografia")
         ->where("id_empresa",$datos["id_empresa"])
         ->first();
         if(!isset($datos["tipo"])){
@@ -104,9 +105,9 @@ class FacturaExport {
         $pdf->SetFillColor(213, 216, 220);
         $pdf->SetDrawColor(213, 216, 220);
         if($id_cliente->foto != ""){
-            if(file_exists(Storage::disk('cliente')->path($id_cliente->foto))){
+            if(file_exists(Storage::disk('empresa')->path($id_cliente->foto))){
                 $extension = strtoupper(explode(".",$id_cliente->foto)[1]);
-                $pdf->Image(Storage::disk('cliente')->path($id_cliente->foto),13,14,40,25,$extension,'');
+                $pdf->Image(Storage::disk('empresa')->path($id_cliente->foto),13,14,40,25,$extension,'');
             }
         }
         $pdf->Cell(110,5,"Recibo de nomina",0,0,"L");
@@ -220,17 +221,22 @@ class FacturaExport {
         $no_ite = 0;
         $suma_per = 0;
         $suma_de = 0;
-        if($tamaño_per > $tipo_contrato){
+        if($tamaño_per > $tamaño_de){
             $no_ite = $tamaño_per;
         }else{
             $no_ite = $tamaño_de;
         }
         for($i=0;$i<=$no_ite;$i++){
             $pdf->Ln(3);
-            if($tamaño_per >= $i){
+            if($tamaño_per >= $i){  
                 $pdf->Cell(70,5,$xml->xpath('//n:Percepciones/n:Percepcion')[$i]["Concepto"],0,0,"L");
-                $pdf->Cell(20,5,'$'.number_format(floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteGravado"].""),2,".",","),0,0,"R");
-                $suma_per += floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteGravado"]."");
+                if($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteExento"] != "0.00"){
+                    $pdf->Cell(20,5,'$'.number_format(floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteExento"].""),2,".",","),0,0,"R");
+                    $suma_per += floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteExento"]."");
+                }else{
+                    $pdf->Cell(20,5,'$'.number_format(floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteGravado"].""),2,".",","),0,0,"R");
+                    $suma_per += floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteGravado"]."");
+                }
             }else{
                 $pdf->Cell(70,5,"",0,0,"L");
                 $pdf->Cell(20,5,"",0,0,"R");
@@ -345,6 +351,7 @@ class FacturaExport {
         //     $pdf->Image($pic,80,5,35,35,'JPG');
         // }
         return [
+            "ok" => true,
             "pdf" => base64_encode($pdf->Output("S","ReciboFactura.pdf"))
         ];
     }
@@ -397,5 +404,11 @@ class FacturaExport {
         $writer->save(storage_path('excel')."/temp_excel.xlsx");
         $content = base64_encode(file_get_contents(storage_path('excel')."/temp_excel.xlsx"));
         return $content;
+    }
+    public function generarTimbrado($datos)
+    {
+        $fachada = new \Java("mx.emcor.uslibphp.bridges.cfdi33.FachadaCFD33");
+        $fachada->crearFachada();
+        return "entro";
     }
 }

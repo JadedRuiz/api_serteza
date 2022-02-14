@@ -131,7 +131,7 @@ class EmpleadoController extends Controller
     public function obtenerEmpleadoPorIdCandidato($id_candidato)
     {
         $empleado = DB::table('nom_empleados as ne')
-        ->select("ne.id_empleado",DB::raw("CONCAT('(',gce.id_empresa,')',' ',gce.empresa) as empresa"),DB::raw("CONCAT('(',gcd.id_departamento,')',' ',gcd.departamento) as departamento"),"gcp.puesto","ne.sueldo_diario","ne.sueldo_integrado","ne.id_nomina","sucursal","ne.fecha_ingreso","ne.descripcion","gcf.nombre as url_foto","ncs.id_sucursal","gcd.id_empresa","gcd.id_departamento","gcp.id_puesto","ncn.nomina")
+        ->select("ne.id_empleado",DB::raw("CONCAT('(',gce.id_empresa,')',' ',gce.empresa) as empresa"),DB::raw("CONCAT('(',gcd.id_departamento,')',' ',gcd.departamento) as departamento"),"gcp.puesto","ne.sueldo_diario","ne.sueldo_integrado","ne.id_nomina","sucursal","ne.fecha_ingreso","ne.fecha_antiguedad","ne.descripcion","gcf.nombre as url_foto","ncs.id_sucursal","gcd.id_empresa","gcd.id_departamento","gcp.id_puesto","ncn.nomina")
         ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
         ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","rcc.id_fotografia")
         ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
@@ -144,6 +144,8 @@ class EmpleadoController extends Controller
         ->first();
         
         if($empleado){
+            $empleado->fecha_ingreso = date('Y-m-d',strtotime($empleado->fecha_ingreso."+ 1 days"));
+            $empleado->fecha_antiguedad = date('Y-m-d',strtotime($empleado->fecha_antiguedad."+ 1 days"));
             $empleado->url_foto = Storage::disk('candidato')->url($empleado->url_foto);
             $empleado->sueldo_diario = "$".number_format($empleado->sueldo_diario,2,'.',',');
             $empleado->sueldo_integrado = "$".number_format($empleado->sueldo_integrado,2,'.',',');

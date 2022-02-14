@@ -48,7 +48,7 @@ class MovimientoController extends Controller
     public function obtenerDetallePorId($id_mov)
     {
         $detalles = DB::table('rh_movimientos as rm')
-        ->select("rm.id_movimiento as id_registro","rdm.id_detalle","rdm.id_candidato","rdm.id_puesto","gcp.puesto","rdm.id_nomina","gcp.id_departamento","gcd.id_empresa","rdm.sueldo","rdm.sueldo_neto","rdm.fecha_detalle","rdm.observacion as descripcion",DB::raw("CONCAT('(',gce.id_empresa,') ',gce.empresa) as empresa"),DB::raw("CONCAT('(',gcd.id_departamento,') ',gcd.departamento) as departamento"),DB::raw("CONCAT(rcc.apellido_paterno,' ',rcc.apellido_materno,' ', rcc.nombre, ' (',rcc.descripcion,')') as candidato_uno"),DB::raw("CONCAT(rcc.apellido_paterno,' ',rcc.apellido_materno,' ', rcc.nombre) as candidato"),"ncs.sucursal","ncs.id_sucursal","gcp.puesto","gcf.nombre as url_foto")
+        ->select("rm.id_movimiento as id_registro","rdm.id_detalle","rdm.id_candidato","rdm.id_puesto","gcp.puesto","rdm.id_nomina","gcp.id_departamento","gcd.id_empresa","rdm.sueldo","rdm.sueldo_neto","rdm.fecha_detalle","rdm.fecha_antiguedad","rdm.observacion as descripcion",DB::raw("CONCAT('(',gce.id_empresa,') ',gce.empresa) as empresa"),DB::raw("CONCAT('(',gcd.id_departamento,') ',gcd.departamento) as departamento"),DB::raw("CONCAT(rcc.apellido_paterno,' ',rcc.apellido_materno,' ', rcc.nombre, ' (',rcc.descripcion,')') as candidato_uno"),DB::raw("CONCAT(rcc.apellido_paterno,' ',rcc.apellido_materno,' ', rcc.nombre) as candidato"),"ncs.sucursal","ncs.id_sucursal","gcp.puesto","gcf.nombre as url_foto")
         ->join("rh_detalle_movimiento as rdm","rdm.id_movimiento","=","rm.id_movimiento")
         ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","rdm.id_candidato")
         ->join("gen_cat_fotografia as gcf","gcf.id_fotografia","=","rcc.id_fotografia")
@@ -62,6 +62,8 @@ class MovimientoController extends Controller
         if(count($detalles)>0){
             $id_registro = 0;   
             foreach($detalles as $detalle){
+                $detalle->fecha_detalle = date('Y-m-d',strtotime($detalle->fecha_detalle."+ 1 days"));
+                $detalle->fecha_antiguedad = date('Y-m-d',strtotime($detalle->fecha_antiguedad."+ 1 days"));
                 $detalle->url_foto = Storage::disk('candidato')->url($detalle->url_foto);
                 $detalle->id_registro = $id_registro;
                 $id_registro++;
@@ -130,6 +132,7 @@ class MovimientoController extends Controller
                     $detalle->sueldo_neto = $movimiento_row["sueldo_neto"];
                     $detalle->observacion = strtoupper($movimiento_row["descripcion"]);
                     $detalle->fecha_detalle = date('Y-m-d',strtotime($movimiento_row["fecha_detalle"]));
+                    $detalle->fecha_antiguedad = date('Y-m-d',strtotime($movimiento_row["fecha_antiguedad"]));
                     $detalle->fecha_creacion = $fecha;
                     $detalle->activo = 1;
                     $detalle->save();
@@ -150,6 +153,7 @@ class MovimientoController extends Controller
                     $detalle->sueldo_neto = $movimiento_row["sueldo_neto"];
                     $detalle->observacion = strtoupper($movimiento_row["descripcion"]);
                     $detalle->fecha_detalle = date('Y-m-d',strtotime($movimiento_row["fecha_detalle"]));
+                    $detalle->fecha_antiguedad = date('Y-m-d',strtotime($movimiento_row["fecha_antiguedad"]));
                     $detalle->fecha_creacion = $fecha;
                     $detalle->activo = 1;
                     $detalle->save();
@@ -362,35 +366,43 @@ class MovimientoController extends Controller
                 }
                 if($this->estaElPuestoDisponible($id_puesto)){
                     if($id_candidato != "" && $id_sucursal != "" && $id_puesto != "" && $id_nomina){
-                        if($band){
-                            //Agregar movimiento
-                            $movimiento = new Movimiento();
-                            $movimiento->id_status = 8;
-                            $movimiento->id_cliente = $res["id_cliente"];
-                            $movimiento->fecha_movimiento = $fecha;
-                            $movimiento->tipo_movimiento = "A";
-                            $movimiento->usuario_creacion = $usuario_creacion;
-                            $movimiento->fecha_creacion = $fecha;
-                            $movimiento->activo = 1;
-                            $movimiento->save();
-                            $id_mov = $movimiento->id_movimiento;
-                            $band = false;
+                        $validar_candidato = DB::table("rh_cat_candidato")
+                        ->select("id_status")
+                        ->where("id_candidato",$id_candidato)
+                        ->first();
+                        if($validar_candidato->id_status == "6" || $validar_candidato->id_status == "2"){
+                            if($band){
+                                //Agregar movimiento
+                                $movimiento = new Movimiento();
+                                $movimiento->id_status = 8;
+                                $movimiento->id_cliente = $res["id_cliente"];
+                                $movimiento->fecha_movimiento = $fecha;
+                                $movimiento->tipo_movimiento = "A";
+                                $movimiento->usuario_creacion = $usuario_creacion;
+                                $movimiento->fecha_creacion = $fecha;
+                                $movimiento->activo = 1;
+                                $movimiento->save();
+                                $id_mov = $movimiento->id_movimiento;
+                                $band = false;
+                            }
+                            $detalle = new DetalleMov();
+                            $detalle->id_movimiento = $id_mov;
+                            $detalle->id_status = "5";
+                            $detalle->id_candidato = $id_candidato;
+                            $detalle->id_sucursal = $id_sucursal;
+                            $detalle->id_puesto = $id_puesto;
+                            $detalle->id_nomina = $id_nomina;
+                            $detalle->sueldo = $sueldo;
+                            $detalle->sueldo_neto = $sueldo_integrado;
+                            $detalle->observacion = "";
+                            $detalle->fecha_detalle = date('Y-m-d',strtotime($fecha_ingreso));
+                            $detalle->fecha_creacion = $fecha;
+                            $detalle->activo = 1;
+                            $detalle->save();
+                            $this->cambiarDeEstatus($id_candidato,5);
+                        }else{
+                            array_push($errores,"La fila ".$i." no se ha podido dar de alta por que el empleado ya se encuentra activo o se encuentra en una solicitud pendiente en confirmar");
                         }
-                        $detalle = new DetalleMov();
-                        $detalle->id_movimiento = $id_mov;
-                        $detalle->id_status = "5";
-                        $detalle->id_candidato = $id_candidato;
-                        $detalle->id_sucursal = $id_sucursal;
-                        $detalle->id_puesto = $id_puesto;
-                        $detalle->id_nomina = $id_nomina;
-                        $detalle->sueldo = $sueldo;
-                        $detalle->sueldo_neto = $sueldo_integrado;
-                        $detalle->observacion = "";
-                        $detalle->fecha_detalle = date('Y-m-d',strtotime($fecha_ingreso));
-                        $detalle->fecha_creacion = $fecha;
-                        $detalle->activo = 1;
-                        $detalle->save();
-                        $this->cambiarDeEstatus($id_candidato,5);
                     }
                 }else{
                     array_push($errores,"La fila ".$i." no se ha podido dar de alta por que el puesto no cuenta con disponibilidad");
@@ -424,6 +436,7 @@ class MovimientoController extends Controller
                 $detalle->sueldo_neto = $sueldo_neto;
                 $detalle->observacion = strtoupper($res["detalle"]["descripcion"]);
                 $detalle->fecha_detalle = date('Y-m-d',strtotime($res["detalle"]["fecha_detalle"]));
+                $detalle->fecha_antiguedad = date('Y-m-d',strtotime($res["detalle"]["fecha_antiguedad"]));
                 $detalle->fecha_creacion = $fecha;
                 $detalle->activo = 1;
                 $detalle->save();
@@ -442,6 +455,7 @@ class MovimientoController extends Controller
                 $detalle->sueldo_neto = $movimiento_row["sueldo_neto"];
                 $detalle->observacion = strtoupper($movimiento_row["descripcion"]);
                 $detalle->fecha_detalle = date('Y-m-d',strtotime($movimiento_row["fecha_detalle"]));
+                $detalle->fecha_antiguedad = date('Y-m-d',strtotime($res["detalle"]["fecha_antiguedad"]));
                 $detalle->fecha_creacion = $fecha;
                 $detalle->activo = 1;
                 $detalle->save();
@@ -494,6 +508,7 @@ class MovimientoController extends Controller
                     $detalle->sueldo_neto = $movimiento_row["sueldo_neto"];
                     $detalle->observacion = strtoupper($movimiento_row["descripcion"]);
                     $detalle->fecha_detalle = date('Y-m-d',strtotime($movimiento_row["fecha_detalle"]));
+                    $detalle->fecha_antiguedad = date('Y-m-d',strtotime($movimiento_row["fecha_antiguedad"]));
                     $detalle->activo = 1;
                 }
                 if($res["tipo_mov"] == "B"){
@@ -579,7 +594,7 @@ class MovimientoController extends Controller
         $id_movimiento = $res["id_movimiento"];
         $fecha = $this->getHoraFechaActual();
         $detalles = DB::table('rh_detalle_movimiento as rdm')
-        ->select("id_detalle","id_nomina","rdm.id_puesto","rdm.id_candidato","sueldo","sueldo_neto","id_sucursal","fecha_detalle","gcp.puesto", DB::raw("CONCAT(rcc.nombre, ' ', rcc.apellido_paterno, ' ', rcc.apellido_materno) as candidato"),"gcd.id_empresa","observacion")
+        ->select("id_detalle","id_nomina","rdm.id_puesto","rdm.id_candidato","sueldo","sueldo_neto","id_sucursal","fecha_detalle","fecha_antiguedad", "gcp.puesto", DB::raw("CONCAT(rcc.nombre, ' ', rcc.apellido_paterno, ' ', rcc.apellido_materno) as candidato"),"gcd.id_empresa","observacion")
         ->leftJoin("gen_cat_puesto as gcp","gcp.id_puesto","=","rdm.id_puesto")
         ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","rdm.id_candidato")
         ->leftJoin("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
@@ -621,7 +636,6 @@ class MovimientoController extends Controller
                         $empleado->id_catbanco = 0;
                         $empleado->id_contratosat = 0;
                         $empleado->folio = $this->getSigIdEmpresa($detalle->id_empresa);
-                        $empleado->fecha_antiguedad = date('Y-m-d',strtotime($detalle->fecha_detalle));
                         $empleado->cuenta = "";
                         $empleado->tarjeta = "";
                         $empleado->clabe = "";
@@ -654,6 +668,7 @@ class MovimientoController extends Controller
                         $empleado->id_sucursal = $detalle->id_sucursal;
                         $empleado->sueldo_diario = $detalle->sueldo;
                         $empleado->sueldo_integrado = $detalle->sueldo_neto;
+                        $empleado->fecha_antiguedad = date('Y-m-d',strtotime($detalle->fecha_antiguedad));
                         $empleado->fecha_ingreso = date('Y-m-d',strtotime($detalle->fecha_detalle));
                         $empleado->descripcion = $detalle->observacion;
                         $empleado->save();

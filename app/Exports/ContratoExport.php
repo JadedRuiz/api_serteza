@@ -24,7 +24,7 @@ class ContratoExport
     {
         try{
             $detalle_contratacion = DB::table('rh_detalle_movimiento as dc')
-            ->select("dc.id_detalle",DB::raw('CONCAT(cc.apellido_paterno," ",cc.apellido_materno, " ",cc.nombre) as nombre'), "cc.curp", "cc.rfc", "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_detalle","dc.observacion","cc.id_candidato","cd.id_departamento","dc.id_puesto","ce.empresa","ce.rfc as rfcempresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal","ncn.nomina",DB::raw("CONCAT(gcd.calle,' #',gcd.numero_exterior, ' ,', gcd.cruzamiento_uno, ' ', gcd.cruzamiento_dos) as calleempresa"),DB::raw("CONCAT(gcd_dos.calle,' #',gcd_dos.numero_exterior, ' ,', gcd_dos.cruzamiento_uno, ' ', gcd_dos.cruzamiento_dos) as calle"))
+            ->select("ns.representante_legal as represuc","dc.id_detalle",DB::raw('CONCAT(cc.apellido_paterno," ",cc.apellido_materno, " ",cc.nombre) as nombre'), "cc.curp", "cc.rfc", "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_detalle","dc.observacion","cc.id_candidato","cd.id_departamento","dc.id_puesto","ce.empresa","ce.rfc as rfcempresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal","ncn.nomina",DB::raw("CONCAT('Calle ',gcd.calle,' #',gcd.numero_exterior, ' ,', gcd.cruzamiento_uno, ' ', gcd.cruzamiento_dos) as calleempresa"),DB::raw("CONCAT('Calle ',gcdd.calle, ' ', gcdd.numero_exterior, ' ', gcdd.cruzamiento_uno, ' Col. ', gcdd.colonia, ' ',gcdd.localidad) as dir_empleado"),DB::raw("CONCAT('Calle', gcd_tres.calle,' #',gcd_tres.numero_exterior, ' ,', gcd_tres.cruzamiento_uno, ' y', gcd_tres.cruzamiento_dos) as callesucursal"),"cp.descripcion as descripcionPuesto","ns.representante_legal")
             ->join("rh_movimientos as rm","rm.id_movimiento","=","dc.id_movimiento")
             ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
             ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
@@ -33,24 +33,28 @@ class ContratoExport
             ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","dc.id_nomina")
             ->join("nom_sucursales as ns","ns.id_sucursal","=","dc.id_sucursal")
             ->leftJoin("gen_cat_direccion as gcd","ce.id_direccion","=","gcd.id_direccion")
-            ->leftJoin("gen_cat_direccion as gcd_dos","cc.id_direccion","=","gcd_dos.id_direccion")
+            ->leftJoin("gen_cat_direccion as gcdd","gcdd.id_direccion","=","cc.id_direccion")
+            ->leftJoin("gen_cat_direccion as gcd_tres","ns.id_direccion","=","gcd_tres.id_direccion")
             ->where("dc.id_detalle",$id_mov)
             ->where("dc.activo",1)
             ->first();
             $file = storage_path('contratos');
-            $phpword = new TemplateProcessor($file."\CONTRATO GENERICO.docx");
-            $phpword->setValue('REPRESENTANTE','');
+            $phpword = new TemplateProcessor($file."/CONTRATO GENERICO.docx");
+            $phpword->setValue('REPRESENTANTESUC',$detalle_contratacion->represuc);
+            $phpword->setValue('REPRESENTANTE',$detalle_contratacion->representante_legal);
             $phpword->setValue('EMPRESA',$detalle_contratacion->empresa);
             $phpword->setValue('EMPLEADO', $detalle_contratacion->nombre);
             $phpword->setValue('DOMICILIOEMPRESA',$detalle_contratacion->calleempresa);
             $phpword->setValue('RFCEMPRESA',strtoupper($detalle_contratacion->rfcempresa));
             $phpword->setValue('CURP',strtoupper($detalle_contratacion->curp));
             $phpword->setValue('RFC',strtoupper($detalle_contratacion->rfc));
-            $phpword->setValue('DOMICILIO',strtoupper($detalle_contratacion->calle));
+            $phpword->setValue('DOMICILIO',strtoupper($detalle_contratacion->dir_empleado));
             $phpword->setValue('FECHAINGRESO',date('d-m-Y',strtotime($detalle_contratacion->fecha_detalle)));
             $phpword->setValue('FECHAANTIGUEDAD',date('d-m-Y',strtotime($detalle_contratacion->fecha_detalle)));
             $phpword->setValue('PUESTO',$detalle_contratacion->puesto);
-            $phpword->setValue('DOMICILIOSUCURSAL','');
+            $phpword->setValue('DESCRIPCIONPUESTO',$detalle_contratacion->descripcionPuesto);
+            $phpword->setValue('SUCURSAL',$detalle_contratacion->sucursal);
+            $phpword->setValue('DOMICILIOSUCURSAL',$detalle_contratacion->callesucursal);
             $phpword->setValue('SUELDODIARO',$detalle_contratacion->sueldo);
             $sueldo_letras = NumerosEnLetras::convertir(floatval($detalle_contratacion->sueldo), 'pesos', false, 'Centavos');
             $phpword->setValue('SUELDODIARIOLETRAS',strtoupper($sueldo_letras));
@@ -64,7 +68,7 @@ class ContratoExport
     {
         try{
             $empleado_dato = DB::table('nom_empleados as ne')
-            ->select(DB::raw("CONCAT(rcc.nombre, ' ', rcc.apellido_paterno, ' ', rcc.apellido_materno) as nombre"),DB::raw("CONCAT('Calle ',gcd.calle, ' ', gcd.numero_exterior, ' ', gcd.cruzamiento_uno, ' Col. ', gcd.colonia, ' ',gcd.localidad) as dir_empleado"),DB::raw("CONCAT('Calle ',gcdd.calle, ' ', gcdd.numero_exterior, ' ', gcdd.cruzamiento_uno, ' Col. ', gcdd.colonia, ' ',gcdd.localidad) as dir_empresa"),DB::raw("CONCAT('Calle ',gcdt.calle, ' ', gcdt.numero_exterior, ' ', gcdt.cruzamiento_uno, ' Col. ', gcdt.colonia, ' ',gcdt.localidad) as dir_sucursal"),'gcp.puesto',"gce.empresa","gce.rfc as rfcempresa","gce.representante_legal","rcc.curp","rcc.rfc","ne.fecha_ingreso","ne.fecha_antiguedad","ne.sueldo_diario")
+            ->select("ns.representante_legal as represuc","gcp.descripcion as descripcionPuesto","ns.sucursal",DB::raw("CONCAT(rcc.nombre, ' ', rcc.apellido_paterno, ' ', rcc.apellido_materno) as nombre"),DB::raw("CONCAT('Calle ',gcd.calle, ' ', gcd.numero_exterior, ' ', gcd.cruzamiento_uno, ' Col. ', gcd.colonia, ' ',gcd.localidad) as dir_empleado"),DB::raw("CONCAT('Calle ',gcdd.calle, ' ', gcdd.numero_exterior, ' ', gcdd.cruzamiento_uno, ' Col. ', gcdd.colonia, ' ',gcdd.localidad) as dir_empresa"),DB::raw("CONCAT(gcdt.calle, ' ', gcdt.numero_exterior, ' ', gcdt.cruzamiento_uno, ' Col. ', gcdt.colonia, ' ',gcdt.localidad) as dir_sucursal"),'gcp.puesto',"gce.empresa","gce.rfc as rfcempresa","gce.representante_legal","rcc.curp","rcc.rfc","ne.fecha_ingreso","ne.fecha_antiguedad","ne.sueldo_diario")
             ->leftJoin("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
             ->leftJoin("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
             ->leftJoin("nom_sucursales as ns","ns.id_sucursal","=","ne.id_sucursal")
@@ -75,10 +79,12 @@ class ContratoExport
             ->where("ne.id_candidato",$id_candidato)
             ->first();
             $file = storage_path('contratos');
-            $phpword = new TemplateProcessor($file."\CONTRATO GENERICO.docx");
+            $phpword = new TemplateProcessor($file."/CONTRATO GENERICO.docx");
+            $phpword->setValue('REPRESENTANTESUC',$empleado_dato->represuc);
             $phpword->setValue('REPRESENTANTE',$empleado_dato->representante_legal);
             $phpword->setValue('EMPRESA',$empleado_dato->empresa);
             $phpword->setValue('EMPLEADO', $empleado_dato->nombre);
+            $phpword->setValue('DESCRIPCIONPUESTO',$empleado_dato->descripcionPuesto);
             $phpword->setValue('DOMICILIOEMPRESA',$empleado_dato->dir_empresa);
             $phpword->setValue('RFCEMPRESA',strtoupper($empleado_dato->rfcempresa));
             $phpword->setValue('CURP',strtoupper($empleado_dato->curp));
@@ -87,6 +93,7 @@ class ContratoExport
             $phpword->setValue('FECHAINGRESO',date('d-m-Y',strtotime($empleado_dato->fecha_ingreso)));
             $phpword->setValue('FECHAANTIGUEDAD',date('d-m-Y',strtotime($empleado_dato->fecha_antiguedad)));
             $phpword->setValue('PUESTO',$empleado_dato->puesto);
+            $phpword->setValue('SUCURSAL',$empleado_dato->sucursal);
             $phpword->setValue('DOMICILIOSUCURSAL',$empleado_dato->dir_sucursal);
             $phpword->setValue('SUELDODIARO',$empleado_dato->sueldo_diario);
             $sueldo_letras = NumerosEnLetras::convertir(floatval($empleado_dato->sueldo_diario), 'pesos', false, 'Centavos');

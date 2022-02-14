@@ -5,25 +5,104 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Exports\FacturaExport;
 use ZipArchive;
+use App\Models\Factura;
+use App\Models\DetFactura;
 
 class FacturacionController extends Controller
 {
+    public function facObtenerFolio($id_empresa)
+    {
+        $folio = Factura::select("folio")
+        ->where("id_empresa",$id_empresa)
+        ->orderBy("folio","desc")
+        ->first();
+        if($folio){
+            return $this->crearRespuesta(1,$folio,200);
+        }
+        return $this->crearRespuesta(2,"Aun no se tiene facturas de esta empresa",200);
+    }
+    public function facAltaFactura(Request $res)
+    {
+        $facturador = new FacturaExport();
+        return $facturador->generarTimbrado([]);
+        //Validaciones
+        // try{
+        //     $fecha = $this->getHoraFechaActual();
+        //     $usuario_creacion = $res["usuario_creacion"];
+        //     $factura = new Factura();
+        //     $factura->id_empresa = $res["id_empresa"];
+        //     $factura->id_catclientes = $res["id_cliente"];
+        //     $factura->id_serie = $res["id_serie"];
+        //     $factura->folio = $res["folio"];
+        //     $factura->id_formapago = $res["id_formapago"];
+        //     $factura->id_metodopago = $res["id_metodopago"];
+        //     $factura->numero_cuenta = $res["numero_cuenta"];
+        //     $factura->id_tipomoneda = $res["id_tipomoneda"];
+        //     $factura->id_usocfdi = $res["id_usocfdi"];
+        //     $factura->id_tipocomprobante = $res["tipo_comprobante"];
+        //     $factura->condicion_pago = $res["condiciones"];
+        //     $factura->tipo_cambio = $res["tipo_cambio"];
+        //     $factura->observaciones = $res["observaciones"];
+        //     $factura->usa_ine = $res["usa_ine"];
+        //     $factura->usa_cataporte = $res["usa_cataporte"];
+        //     $factura->subtotal = $res["subtotal"];
+        //     $factura->descuento = $res["descuento_t"];
+        //     $factura->iva = $res["iva_t"];
+        //     $factura->ieps = $res["ieps_t"];
+        //     $factura->otros = $res["otros_t"];
+        //     $factura->total = $res["total"];
+        //     $factura->fecha_creacion = $fecha;
+        //     $factura->usuario_creacion = $usuario_creacion;
+        //     $factura->activo = 1;
+        //     $factura->save();
+        //     $id_factura = $factura->id_factura;
+        //     $conceptos = $res["conceptos"];
+        //     foreach($conceptos as $concepto){
+        //         $detfactura = new DetFactura();
+        //         $detfactura->id_factura = $id_factura;
+        //         $detfactura->id_concepto = $concepto["id_concepto"];
+        //         $detfactura->descripcion = $concepto["descripcion"];
+        //         $detfactura->cantidad = $concepto["cantidad"];
+        //         $detfactura->importe = $concepto["precio"];
+        //         $detfactura->descuento = $concepto["descuento"];
+        //         $detfactura->iva = $concepto["iva"];
+        //         $detfactura->ieps = $concepto["ieps"];
+        //         $detfactura->otros_imp = $concepto["otros"];
+        //         $detfactura->subtotal = $concepto["neto"];
+        //         $detfactura->total = $concepto["importe"];
+        //         $detfactura->fecha_creacion = $fecha;
+        //         $detfactura->usuario_creacion = $usuario_creacion;
+        //         $detfactura->activo = 1;
+        //         $detfactura->save();
+        //     }
+        //     return $this->crearRespuesta(1,"Factura dado de alta",200);
+        // }catch(Throwable $e){
+        //     return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        // }
+    }
     public function obtenerFacturas(Request $res)
     {
         $id_cliente = $res["id_cliente"];
         $filtros = $res["filtros"];
-        $empresas = DB::table('liga_empresa_cliente as lec')
-        ->select("id_empresa")
-        ->where("id_cliente",$id_cliente)
-        ->get();
-        if(count($empresas)>0){
-            $id_empresas = [];
+        $id_empresas = [];
+        if($id_cliente != "0"){
+            $empresas = DB::table('liga_empresa_cliente as lec')
+            ->select("id_empresa")
+            ->where("id_cliente",$id_cliente)
+            ->get();
             foreach($empresas as $empresa){
                 array_push($id_empresas,$empresa->id_empresa);
             }
+        }else{
+           array_push($id_empresas,$res["id_empresa"]);
+        }
+        
+        if(count($id_empresas)>0){
+            
             //Consultas
             $facturas = DB::table('fact_cattimbrado as fct')
-            ->select("id_timbrado","empleado as nombre","rfc","codigo_empleado","uuid",DB::raw('DATE_FORMAT(fecha_pago,"%d-%m-%Y") as fecha_pago'),DB::raw('DATE_FORMAT(fecha_timbrado,"%d-%m-%Y") as fecha_timbrado'))
+            ->select("id_timbrado","empleado as nombre","rfc","codigo_empleado","uuid",
+            DB::raw('DATE_FORMAT(fecha_pago,"%d-%m-%Y") as fecha_pago'),DB::raw('DATE_FORMAT(fecha_timbrado,"%d-%m-%Y") as fecha_timbrado'),'periodo','codigo_nomina','ejercicio')
             ->where("activo",1)
             ->where(function ($query) use ($filtros, $id_empresas){
                 if($filtros["id_empresa"] != 0){
@@ -150,6 +229,20 @@ class FacturacionController extends Controller
                     "tipo" => true
                 ]);
                 //Enviar correo
+                $recuperar_logo = DB::table('gen_cat_empresa as gce')
+                ->select("gcf.nombre as logo")
+                ->leftJoin("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gce.id_fotografia")
+                ->where("gce.id_empresa",$res["id_empresa"])
+                ->first();
+                if($recuperar_logo){
+                    $path = storage_path('empresa')."/".$recuperar_logo->logo;
+                    $extension_logo = pathinfo($path, PATHINFO_EXTENSION);
+                    $logo_empresa = base64_encode(file_get_contents($path));
+                }else{
+                    $path = storage_path('empresa')."/empresa_default.png";
+                    $extension_logo = "png";
+                    $logo_empresa = base64_encode(file_get_contents($path));
+                }
                 $this->enviarCorreo([
                     "rfc" => getenv("RFC_CORREO"),
                     "tipo" => 1,
@@ -172,7 +265,9 @@ class FacturacionController extends Controller
                             "nombre" => "FORMTAO_XML",
                             "data" => base64_encode($res["xml"])
                         ]
-                    ]
+                        ],
+                    "logo" => $logo_empresa,
+                    "extension_logo" => $extension_logo
                 ]);
             }
             $xml = base64_encode($res["xml"]);
@@ -187,8 +282,10 @@ class FacturacionController extends Controller
     public function opcionesFactura(Request $res){
         $id_timbrado = $res["id_timbrado"];
         $tipo = $res["tipo"];
-        $xml = DB::table('fact_cattimbrado')
-        ->select("uuid","xml","id_empresa","empleado")
+        $xml = DB::table('fact_cattimbrado as fc')
+        ->select("uuid","xml","fc.id_empresa","empleado","gcf.nombre as logo","gce.empresa")
+        ->leftJoin("gen_cat_empresa as gce","gce.id_empresa","=","fc.id_empresa")
+        ->leftJoin("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gce.id_fotografia")
         ->where("id_timbrado",$id_timbrado)
         ->first();
         if($xml){
@@ -213,8 +310,18 @@ class FacturacionController extends Controller
                     "xml" => $xml->xml,
                     "tipo" => true
                 ]);
+                if($xml->logo != ""){
+                    $path = storage_path('empresa')."/".$xml->logo;
+                    $extension_logo = pathinfo($path, PATHINFO_EXTENSION);
+                    $logo_empresa = base64_encode(file_get_contents($path));
+                }else{
+                    $path = storage_path('empresa')."/empresa_default.png";
+                    $extension_logo = "png";
+                    $logo_empresa = base64_encode(file_get_contents($path));
+                }
                 $this->enviarCorreo([
                     "rfc" => getenv("RFC_CORREO"),
+                    "titulo" => $xml->empresa,
                     "tipo" => 1,
                     "dirigidos" => [
                         [
@@ -235,7 +342,9 @@ class FacturacionController extends Controller
                             "nombre" => "FORMTAO_XML",
                             "data" => base64_encode($xml->xml)
                         ]
-                    ]
+                    ],
+                    "logo" => $logo_empresa,
+                    "extension_logo" => $extension_logo
                 ]);
                 return $this->crearRespuesta(1,"Correo enviado con éxito",200);
             }
