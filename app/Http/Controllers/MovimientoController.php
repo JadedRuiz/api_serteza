@@ -667,7 +667,11 @@ class MovimientoController extends Controller
                         $empleado->id_puesto = $detalle->id_puesto;
                         $empleado->id_sucursal = $detalle->id_sucursal;
                         $empleado->sueldo_diario = $detalle->sueldo;
-                        $empleado->sueldo_integrado = $detalle->sueldo_neto;
+                        if($detalle->sueldo_neto != ""){
+                            $empleado->sueldo_integrado = $detalle->sueldo_neto;
+                        }else{
+                            $empleado->sueldo_integrado = 0.00;
+                        }
                         $empleado->fecha_antiguedad = date('Y-m-d',strtotime($detalle->fecha_antiguedad));
                         $empleado->fecha_ingreso = date('Y-m-d',strtotime($detalle->fecha_detalle));
                         $empleado->descripcion = $detalle->observacion;
