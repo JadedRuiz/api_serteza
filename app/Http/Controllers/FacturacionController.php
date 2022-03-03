@@ -7,6 +7,8 @@ use App\Exports\FacturaExport;
 use ZipArchive;
 use App\Models\Factura;
 use App\Models\DetFactura;
+use App\Models\Direccion;
+use App\Models\Cataporte;
 
 class FacturacionController extends Controller
 {
@@ -23,62 +25,96 @@ class FacturacionController extends Controller
     }
     public function facAltaFactura(Request $res)
     {
-        $facturador = new FacturaExport();
-        return $facturador->generarTimbrado([]);
         //Validaciones
-        // try{
-        //     $fecha = $this->getHoraFechaActual();
-        //     $usuario_creacion = $res["usuario_creacion"];
-        //     $factura = new Factura();
-        //     $factura->id_empresa = $res["id_empresa"];
-        //     $factura->id_catclientes = $res["id_cliente"];
-        //     $factura->id_serie = $res["id_serie"];
-        //     $factura->folio = $res["folio"];
-        //     $factura->id_formapago = $res["id_formapago"];
-        //     $factura->id_metodopago = $res["id_metodopago"];
-        //     $factura->numero_cuenta = $res["numero_cuenta"];
-        //     $factura->id_tipomoneda = $res["id_tipomoneda"];
-        //     $factura->id_usocfdi = $res["id_usocfdi"];
-        //     $factura->id_tipocomprobante = $res["tipo_comprobante"];
-        //     $factura->condicion_pago = $res["condiciones"];
-        //     $factura->tipo_cambio = $res["tipo_cambio"];
-        //     $factura->observaciones = $res["observaciones"];
-        //     $factura->usa_ine = $res["usa_ine"];
-        //     $factura->usa_cataporte = $res["usa_cataporte"];
-        //     $factura->subtotal = $res["subtotal"];
-        //     $factura->descuento = $res["descuento_t"];
-        //     $factura->iva = $res["iva_t"];
-        //     $factura->ieps = $res["ieps_t"];
-        //     $factura->otros = $res["otros_t"];
-        //     $factura->total = $res["total"];
-        //     $factura->fecha_creacion = $fecha;
-        //     $factura->usuario_creacion = $usuario_creacion;
-        //     $factura->activo = 1;
-        //     $factura->save();
-        //     $id_factura = $factura->id_factura;
-        //     $conceptos = $res["conceptos"];
-        //     foreach($conceptos as $concepto){
-        //         $detfactura = new DetFactura();
-        //         $detfactura->id_factura = $id_factura;
-        //         $detfactura->id_concepto = $concepto["id_concepto"];
-        //         $detfactura->descripcion = $concepto["descripcion"];
-        //         $detfactura->cantidad = $concepto["cantidad"];
-        //         $detfactura->importe = $concepto["precio"];
-        //         $detfactura->descuento = $concepto["descuento"];
-        //         $detfactura->iva = $concepto["iva"];
-        //         $detfactura->ieps = $concepto["ieps"];
-        //         $detfactura->otros_imp = $concepto["otros"];
-        //         $detfactura->subtotal = $concepto["neto"];
-        //         $detfactura->total = $concepto["importe"];
-        //         $detfactura->fecha_creacion = $fecha;
-        //         $detfactura->usuario_creacion = $usuario_creacion;
-        //         $detfactura->activo = 1;
-        //         $detfactura->save();
-        //     }
-        //     return $this->crearRespuesta(1,"Factura dado de alta",200);
-        // }catch(Throwable $e){
-        //     return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
-        // }
+        try{
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $res["usuario_creacion"];
+            $factura = new Factura();
+            $factura->id_empresa = $res["id_empresa"];
+            $factura->id_catclientes = $res["id_cliente"];
+            $factura->id_serie = $res["id_serie"];
+            $factura->folio = $res["folio"];
+            $factura->id_formapago = $res["id_formapago"];
+            $factura->id_metodopago = $res["id_metodopago"];
+            $factura->numero_cuenta = $res["numero_cuenta"];
+            $factura->id_tipomoneda = $res["id_tipomoneda"];
+            $factura->id_usocfdi = $res["id_usocfdi"];
+            $factura->id_tipocomprobante = $res["tipo_comprobante"];
+            $factura->condicion_pago = $res["condiciones"];
+            $factura->tipo_cambio = $res["tipo_cambio"];
+            $factura->observaciones = $res["observaciones"];
+            $factura->usa_ine = $res["usa_ine"];
+            $factura->usa_cataporte = $res["usa_cataporte"];
+            $factura->subtotal = $res["subtotal"];
+            $factura->descuento = $res["descuento_t"];
+            $factura->iva = $res["iva_t"];
+            $factura->ieps = $res["ieps_t"];
+            $factura->otros = $res["otros_t"];
+            $factura->total = $res["total"];
+            $factura->fecha_creacion = $fecha;
+            $factura->usuario_creacion = $usuario_creacion;
+            $factura->activo = 1;
+            $factura->save();
+            $id_factura = $factura->id_factura;
+            $conceptos = $res["conceptos"];
+            foreach($conceptos as $concepto){
+                $detfactura = new DetFactura();
+                $detfactura->id_factura = $id_factura;
+                $detfactura->id_concepto = $concepto["id_concepto"];
+                $detfactura->descripcion = $concepto["descripcion"];
+                $detfactura->cantidad = $concepto["cantidad"];
+                $detfactura->importe = $concepto["precio"];
+                $detfactura->descuento = $concepto["descuento"];
+                $detfactura->iva = $concepto["iva"];
+                $detfactura->ieps = $concepto["ieps"];
+                $detfactura->otros_imp = $concepto["otros"];
+                $detfactura->subtotal = $concepto["neto"];
+                $detfactura->total = $concepto["importe"];
+                $detfactura->fecha_creacion = $fecha;
+                $detfactura->usuario_creacion = $usuario_creacion;
+                $detfactura->activo = 1;
+                $detfactura->save();
+            }
+            $cataporte = new Cataporte();
+            $cataporte->id_factura = $id_factura;
+            $cataporte->id_operador = $res["cataporte"]["transporte"]["id_operador"];
+            $cataporte->id_vehiculo = $res["cataporte"]["transporte"]["id_vehiculo"];
+            $cataporte->id_remolque = $res["cataporte"]["transporte"]["id_remolque"];
+            $cataporte->id_propietario = $res["cataporte"]["transporte"]["id_propietario"];
+            $cataporte->save();
+            $id_cataporte = $cataporte->id_cataporte;
+            foreach($res["cataporte"]["ubicaciones"] as $ubicacion){
+                DB::insert('insert into fac_ubicaciones (id_cataporte, id_catubicacion, distancia_recorrida, fecha) values (?,?,?,?)', [
+                    $id_cataporte,
+                    $ubicacion["id_lugar"],
+                    $ubicacion["distancia_recorrida"],
+                    date('Y-m-d h:i:s',strtotime($ubicacion["fecha_hora"]))
+                ]);
+            }
+            foreach($res["cataporte"]["mercancias"] as $mercancia ){
+                DB::insert('insert into fac_mercancias (id_cataporte, bienes_trasportados, clave_producto, descripcion, cantidad, id_ClaveUnidad, unidad, meterial_peligroso, dimensiones, id_TipoEmbajale, desc_embalaje, peso, valor, id_Moneda, fraccion_arancelaria, uuid_comercio) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+                    $id_cataporte,
+                    $mercancia["bienes_trans"],
+                    $mercancia["clave_prod"],
+                    $mercancia["descripcion"],
+                    $mercancia["cantidad"],
+                    $mercancia["clave_uni"],
+                    $mercancia["unidad"],
+                    $mercancia["meterial_pel"],
+                    $mercancia["dimensiones"],
+                    $mercancia["embalaje"],
+                    $mercancia["desc_embalaje"],
+                    $mercancia["peso"],
+                    $mercancia["valor"],
+                    $mercancia["moneda"],
+                    $mercancia["fraccion_aran"],
+                    $mercancia["uuid_ext"]
+                ]);
+            }
+            return $this->crearRespuesta(1,"Factura dado de alta",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
     }
     public function obtenerFacturas(Request $res)
     {
@@ -410,7 +446,7 @@ class FacturacionController extends Controller
             return $this->crearRespuesta(2,"No se han encontrado facturas",200);
         }
     }
-     public function descargaMasiva(Request $res)
+    public function descargaMasiva(Request $res)
     {
         $id_cliente = $res["id_cliente"];
         $filtros = $res["filtros"];
@@ -425,7 +461,7 @@ class FacturacionController extends Controller
             }
             //Consultas
             $facturas = DB::table('fact_cattimbrado as fct')
-            ->select("empleado as nombre","uuid",DB::raw('DATE_FORMAT(fecha_pago,"%d-%m-%Y") as fecha_pago'),DB::raw('DATE_FORMAT(fecha_timbrado,"%d-%m-%Y") as fecha_timbrado'), "xml","id_empresa")
+            ->select("empleado as pdf", "xml","uuid","id_empresa")
             ->where("activo",1)
             ->where(function ($query) use ($filtros, $id_empresas){
                 if($filtros["id_empresa"] != 0){
@@ -460,33 +496,265 @@ class FacturacionController extends Controller
             ->get();
             if(count($facturas)>0){
                 try{
-                    // Creamos un instancia de la clase ZipArchive
-                    $zip = new ZipArchive();
-                    $archivo = storage_path('factura') ."/masiva_temp.zip";
-                    // Creamos y abrimos un archivo zip temporal
-                    if($zip->open($archivo,ZipArchive::CREATE) == true){
-                        foreach($facturas as $factura){
-                            $reporte = new FacturaExport();
-                            $respuesta =  $reporte->generarReporteFactura([
-                                "id_empresa" => $factura->id_empresa,
-                                "xml" => $factura->xml,
-                                "tipo" => true
-                            ]);
-                            $zip->addFromString($factura->uuid.".xml",$factura->xml);
-                            $zip->addFromString($factura->uuid.".pdf",base64_decode($respuesta["pdf"]));
-                        }
-                        $zip->close();
-                        $base_64 = base64_encode(file_get_contents($archivo));
-                        return $this->crearRespuesta(1,$base_64,200);
+                    foreach($facturas as $factura){
+                        $reporte = new FacturaExport();
+                        $respuesta =  $reporte->generarReporteFactura([
+                            "id_empresa" => $factura->id_empresa,
+                            "xml" => $factura->xml,
+                            "tipo" => true
+                        ]);
+                        $factura->pdf = $respuesta["pdf"];
+                        $factura->xml = base64_encode($factura->xml);
                     }
+                    return $this->crearRespuesta(1,$facturas,200);
                 }catch(Throwable $e){
                     return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
                 }
             }
         }
     }
-    public function altaUbicacion(Request $res)
+    public function facObtenerOperadores($id_empresa)
     {
-        
+        $operadores = DB::table('fac_catoperador')
+        ->where("id_empresa",$id_empresa)
+        ->get();
+        if(count($operadores)>0){
+            return $this->crearRespuesta(1,$operadores,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado los operadores",200);
+    }
+    public function facAltaOperador(Request $res)
+    {
+        //validaciones
+        if(!isset($res["id_empresa"])){
+            return $this->crearRespuesta(2,"Es necesario pasar el id_empresa",200);
+        }
+        if(!isset($res["rfc"])){
+            return $this->crearRespuesta(2,"El campo 'RFC' del operador es obligatorio",200);
+        }
+        if(!isset($res["nom_operador"])){
+            return $this->crearRespuesta(2,"El campo 'Nombre' del operador es obligatorio",200);
+        }
+        if(!isset($res["num_licencia"])){
+            return $this->crearRespuesta(2,"El campo 'Número de licencia' del operador es obligatorio",200);
+        }
+        $validar_rfc = DB::table('sat_CodigoPostal as scp')
+        ->where("c_CodigoPostal",$res["direccion"]["codigo_postal"])
+        ->first();
+        if(!$validar_rfc){
+            return $this->crearRespuesta(2,"El Codigo Postal ingresado no se ha encontrado en el catálogo del sat, intente con otro.",200);
+        }
+        try{
+            $fecha = $this->getHoraFechaActual();
+            $direccion = new Direccion;
+            $direccion->calle = strtoupper($res["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($res["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($res["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($res["direccion"]["cruzamiento_uno"]);
+            $direccion->codigo_postal = $res["direccion"]["codigo_postal"];
+            $direccion->colonia = strtoupper($res["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($res["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($res["direccion"]["municipio"]);
+            $direccion->estado = $res["direccion"]["estado"];
+            $direccion->descripcion = strtoupper($res["direccion"]["descripcion"]);
+            $direccion->fecha_creacion = $fecha;
+            $direccion->activo = 1;
+            $direccion->save();
+            $id_direccion = $direccion->id_direccion;
+            $nombre = strtoupper($res["nom_operador"]);
+            $rfc = strtoupper($res["rfc"]);
+            DB::insert('insert into fac_catoperador (id_empresa, id_direccion, rfc, nombre_operador, num_licencia) values (?,?,?,?,?)', [$res["id_empresa"],$id_direccion,$rfc,$nombre,$res["num_licencia"]]);
+            return $this->crearRespuesta(1,"Se ha registrado el operador a la empresa",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function facObtenerTransporte($id_empresa,$tipo)
+    {
+        if($tipo == 1){
+            $tipo = "T";
+        }else{
+            $tipo = "R";
+        }
+        $vehiculos = DB::table('fac_catvehiculo')
+        ->where("tipo_vehiculo",$tipo)
+        ->get();
+        if(count($vehiculos)>0){
+            return $this->crearRespuesta(1,$vehiculos,200);
+        }
+        return $this->crearRespuesta(2,"No se tiene remolques o vehiculos",200);
+    }
+    public function facAltaVehiculo(Request $res)
+    {
+        //Validaciones
+        $tipo_vehiculo = "T";
+        if(!isset($res["id_empresa"])){
+            return $this->crearRespuesta(2,"Es necesario especificar el id_empresa",200);
+        }
+        if(!isset($res["tipo_vehiculo"])){
+            return $this->crearRespuesta(2,"Es necesario especificar el tipo de vehiculo",200);
+        }
+        if(!isset($res["num_economico"])){
+            return $this->crearRespuesta(2,"El campo 'PLACA' es obligario",200);
+        }
+        if(!isset($res["placa"])){
+            return $this->crearRespuesta(2,"El campo 'PLACA' es obligario",200);
+        }
+        if($res["tipo_vehiculo"] == 2){
+            $tipo_vehiculo = "R";
+            if(!isset($res["tipo_permiso"])){
+                return $this->crearRespuesta(2,"El campo 'Subtipo Remolque' es obligario",200);
+            }
+        }
+        if($res["tipo_vehiculo"] == 1){
+            if(!isset($res["anio"])){
+                return $this->crearRespuesta(2,"El campo 'Año' es obligario",200);
+            }
+            if(!isset($res["configuracion"])){
+                return $this->crearRespuesta(2,"El campo 'Configuración' es obligario",200);
+            }
+            if(!isset($res["num_permiso"])){
+                return $this->crearRespuesta(2,"El campo 'Número de permiso' es obligario",200);
+            }
+            if(!isset($res["tipo_permiso"])){
+                return $this->crearRespuesta(2,"El campo 'Tipo permiso' es obligario",200);
+            }
+            if(!isset($res["aseguradora_resp_civil"])){
+                return $this->crearRespuesta(2,"El campo 'Nombre aseguradora' es obligario",200);
+            }
+            if(!isset($res["poliza_resp_civil"])){
+                return $this->crearRespuesta(2,"El campo 'Poliza' es obligario",200);
+            }
+        }
+        try{
+            DB::insert('insert into fac_catvehiculo (id_empresa, tipo_vehiculo, num_economico, placa, anio, tipo_permiso, num_permiso, configuracion, aseguradora_resp_civil, poliza_resp_civil, asegurador_ambiente, poliza_ambiente, asegurador_carga, poliza_carga, prima_seguro) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [$res["id_empresa"],$tipo_vehiculo,$res["num_economico"],$res["placa"],$res["anio"],$res["tipo_permiso"],$res["num_permiso"],$res["configuracion"],$res["aseguradora_resp_civil"],$res["poliza_resp_civil"],$res["asegurador_ambiente"],$res["poliza_ambiente"],$res["asegurador_carga"],$res["poliza_carga"],$res["prima_seguro"]]);
+            return $this->crearRespuesta(1,"Se ha registrado el vehiculo",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function facObtenerPersona($id_empresa)
+    {
+        $personas = DB::table('fac_catpersona')
+        ->where("id_empresa",$id_empresa)
+        ->get();
+        if(count($personas)>0){
+            return $this->crearRespuesta(1,$personas,200);
+        }
+        return $this->crearRespuesta(2,"No se encontro",200);
+
+    }
+    public function facAltaPersona(Request $res)
+    {
+        //validaciones
+        if(!isset($res["id_empresa"])){
+            return $this->crearRespuesta(2,"Es necesario pasar el id_empresa",200);
+        }
+        if(!isset($res["rfc"])){
+            return $this->crearRespuesta(2,"El campo 'RFC' es obligatorio",200);
+        }
+        if(!isset($res["nom_operador"])){
+            return $this->crearRespuesta(2,"El campo 'Nombre' es obligatorio",200);
+        }
+        if(!isset($res["tipo_persona"])){
+            return $this->crearRespuesta(2,"El campo 'Tipo' es obligatorio",200);
+        }
+        $validar_rfc = DB::table('sat_CodigoPostal as scp')
+        ->where("c_CodigoPostal",$res["direccion"]["codigo_postal"])
+        ->first();
+        if(!$validar_rfc){
+            return $this->crearRespuesta(2,"El Codigo Postal ingresado no se ha encontrado en el catálogo del sat, intente con otro.",200);
+        }
+        try{
+            $fecha = $this->getHoraFechaActual();
+            $direccion = new Direccion;
+            $direccion->calle = strtoupper($res["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($res["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($res["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($res["direccion"]["cruzamiento_uno"]);
+            $direccion->codigo_postal = $res["direccion"]["codigo_postal"];
+            $direccion->colonia = strtoupper($res["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($res["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($res["direccion"]["municipio"]);
+            $direccion->estado = $res["direccion"]["estado"];
+            $direccion->descripcion = strtoupper($res["direccion"]["descripcion"]);
+            $direccion->fecha_creacion = $fecha;
+            $direccion->activo = 1;
+            $direccion->save();
+            $id_direccion = $direccion->id_direccion;
+            $nombre = strtoupper($res["nom_operador"]);
+            $rfc = strtoupper($res["rfc"]);
+            DB::insert('insert into fac_catpersona (id_empresa, id_direccion, rfc, nombre, tipo_persona) values (?,?,?,?,?)', [$res["id_empresa"],$id_direccion,$rfc,$nombre,$res["tipo_persona"]]);
+            return $this->crearRespuesta(1,"Se ha registrado correctamente",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+    }
+    public function facObtenerUbicacion(Request $res)
+    {
+        $id_cliente = $res["id_cliente"];
+        $busqueda = $res["busqueda"];
+        $ubicaciones = DB::table('fac_catubicacion')
+        ->select("nombre","lugar","id_ubicacion","folio_sat","tipo")
+        ->where(function($query) use ($busqueda) {
+            if($busqueda != ""){
+                $busqueda = "%".$busqueda."%";
+                $query->where("nombre","like",$busqueda)
+                ->orWhere("lugar","like",$busqueda);
+            }
+        })
+        ->get();
+        if(count($ubicaciones)>0){
+            return $this->crearRespuesta(1,$ubicaciones,200);
+        }
+        return $this->crearRespuesta(2,"No se encontraron ubicaciones",200);
+    }
+    public function facAltaUbicacion(Request $res)
+    {
+        //Validaciones
+        if(!isset($res["id_cliente"])){
+            return $this->crearRespuesta(2,"El 'id_cliente' es obligatorio",200);
+        }
+        if(!isset($res["lugar"])){
+            return $this->crearRespuesta(2,"El 'lugar' es obligatorio",200);
+        }
+        if(!isset($res["tipo"])){
+            return $this->crearRespuesta(2,"El 'tipo' es obligatorio",200);
+        }
+        if(!isset($res["rfc"])){
+            return $this->crearRespuesta(2,"El 'rfc' es obligatorio",200);
+        }
+        try{
+            $fecha_hoy = $this->getHoraFechaActual();
+            $direccion = new Direccion;
+            $direccion->calle = strtoupper($res["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($res["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($res["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($res["direccion"]["cruzamiento_uno"]);
+            $direccion->codigo_postal = $res["direccion"]["codigo_postal"];
+            $direccion->colonia = strtoupper($res["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($res["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($res["direccion"]["municipio"]);
+            $direccion->estado = $res["direccion"]["estado"];
+            $direccion->descripcion = strtoupper($res["direccion"]["descripcion"]);
+            $direccion->fecha_creacion = $fecha_hoy;
+            $direccion->activo = 1;
+            $direccion->save();
+            $id_direccion = $direccion->id_direccion;
+            $fecha = date('Y-m-d',strtotime($res["Fecha"]));
+            DB::insert('insert into fac_catubicacion (id_cliente, id_direccion, tipo, lugar, folio_sat, rfc, nombre, nombre_estacion, activo) values (?,?,?,?,?,?,?,?,?)', [$res["id_cliente"],$id_direccion,$res["tipo"],$res["lugar"],$res["folio_sat"],$res["rfc"],$res["nombre"],$res["nombre_estacion"],1]);
+            return $this->crearRespuesta(1,"La ubicacion se ha agregado con éxito",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        } 
+    }
+    public function getImportMercancias()
+    {
+        $fatura_exp = new FacturaExport();
+        try{
+            return $this->crearRespuesta(1,$fatura_exp->generarMercanciaImport(),200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
     }
 }

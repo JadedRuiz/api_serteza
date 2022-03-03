@@ -222,6 +222,16 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("generarExcel","FacturacionController@generarExcel");
         $router->get("facObtenerFolio/{id_empresa}","FacturacionController@facObtenerFolio");
         $router->post("facAltaFactura","FacturacionController@facAltaFactura");
+        //Routes cataporte
+        $router->post("facAltaOperador","FacturacionController@facAltaOperador");
+        $router->post("facAltaPersona","FacturacionController@facAltaPersona");
+        $router->get("facObtenerOperadores/{id_empresa}","FacturacionController@facObtenerOperadores");
+        $router->post("facAltaVehiculo","FacturacionController@facAltaVehiculo");
+        $router->get("facObtenerTransporte/{id_empresa}/{tipo}","FacturacionController@facObtenerTransporte");
+        $router->get("facObtenerPersona/{id_empresa}","FacturacionController@facObtenerPersona");
+        $router->post("facAltaUbicacion","FacturacionController@facAltaUbicacion");
+        $router->post("facObtenerUbicacion","FacturacionController@facObtenerUbicacion");
+        $router->get("getImportMercancias","FacturacionController@getImportMercancias");
     });
     $router->group(['prefix' => 'serie'], function () use ($router) {
         $router->get("obtenerSeries/{id_empresa}","SerieController@obtenerSeries");

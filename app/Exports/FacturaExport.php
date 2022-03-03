@@ -405,6 +405,54 @@ class FacturaExport {
         $content = base64_encode(file_get_contents(storage_path('excel')."/temp_excel.xlsx"));
         return $content;
     }
+    public function generarMercanciaImport()
+    {
+        //PINTAR EXCEL
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getProperties()
+        ->setCreator("Serteza")
+        ->setLastModifiedBy("Serteza")
+        ->setTitle("Facturas")
+        ->setSubject("Jaded Enrique Ruiz Pech")
+        ->setDescription("Documento generado por Serteza")
+        ->setKeywords("Serteza")
+        ->setCategory("Sistema de Facturación");
+        $i=1;
+        $objRichText = new RichText();
+        $objBold = $objRichText->createTextRun('SISTEMA DE FACTURACIÓN');
+        $objBold->getFont()->setBold(true);
+
+        $spreadsheet->getActiveSheet()->getCell('E1')->setValue($objRichText);
+        $i++;
+        foreach(range('A','N') as $columnID) {
+            $spreadsheet->getActiveSheet()->getColumnDimension($columnID)
+                ->setAutoSize(true);
+        }
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('A'.$i, "Bienes transportados");
+        $spreadsheet->getActiveSheet()->getStyle('A2:N2')
+        ->getFill()->setFillType(Fill::FILL_SOLID);
+        $spreadsheet->getActiveSheet()->getStyle('A2:N2')
+        ->getFill()->getStartColor()->setRGB('A8DF16');
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('B'.$i, "Clave STCC");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('C'.$i, "Descripcion");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('D'.$i, "Cantidad");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('E'.$i, "Clave Unidad");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('F'.$i, "Dimensiones");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('G'.$i, "Material Peligroso");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('G'.$i, "Cve Material Peligroso");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('H'.$i, "Embalaje");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('I'.$i, "Desc. Embalaje");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('J'.$i, "Peso (Kg)");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('K'.$i, "Valor");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('L'.$i, "Moneda");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('M'.$i, "Fraccion arancelaria");
+        $spreadsheet->setActiveSheetIndex(0)->setCellValue('N'.$i, "UUID Comercio ext");
+        $i++;
+        $writer = new Xlsx($spreadsheet);
+        $writer->save(storage_path('excel')."/temp_import_excel.xlsx");
+        $content = base64_encode(file_get_contents(storage_path('excel')."/temp_import_excel.xlsx"));
+        return $content;
+    }
     public function generarTimbrado($datos)
     {
         $fachada = new \Java("mx.emcor.uslibphp.bridges.cfdi33.FachadaCFD33");
