@@ -69,6 +69,13 @@ return [
             'visibility' => 'public',
         ],
 
+        'contratos' => [
+            'driver' => 'local',
+            'root' => storage_path('contratos'),
+            'url' => env('APP_URL').'/storage/contratos',
+            'visibility' => 'public',
+        ],
+
         'cliente' => [
             'driver' => 'local',
             'root' => storage_path('cliente'),
