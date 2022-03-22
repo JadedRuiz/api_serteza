@@ -29,8 +29,9 @@ class Empresa extends Model {
         'usuario_creacion', 
         'usuario_modificacion', 
         'representante_legal',
+        'cargo_repre',
         'rfc_repre',
-        'cupr',
+        'curp',
         'activo'
     ];
 

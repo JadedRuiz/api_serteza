@@ -271,6 +271,7 @@ class ContratoController extends Controller
         }
         return $this->crearRespuesta(2,"No se ha encontrado contrados",301);
     }
+
     public function obtenerContratos($id_empresa)
     {
         $contratos = [
