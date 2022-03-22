@@ -81,7 +81,7 @@ class EmpresaController extends Controller
     }
     public function obtenerEmpresaPorId($id){
         $empresa = DB::table("gen_cat_empresa as gce")
-        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp","gce.cargo_repre")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->leftJoin("gen_cat_estados as gced","gced.id_estado","=","gcd.estado")
         ->where("gce.id_empresa",$id)
@@ -170,6 +170,9 @@ class EmpresaController extends Controller
             if(isset($request["representante"]["curp"])){
                 $empresa->curp = strtoupper($request["representante"]["curp"]);
             }
+            if(isset($request["representante"]["cargo"])){
+                $empresa->cargo_repre = strtoupper($request["representante"]["cargo"]);
+            }
             $empresa->fecha_creacion = $fecha;
             $empresa->usuario_creacion = $usuario_creacion;
             $empresa->activo = $request["activo"];
@@ -219,6 +222,9 @@ class EmpresaController extends Controller
             }
             if(isset($request["representante"]["curp"])){
                 $empresa->curp = strtoupper($request["representante"]["curp"]);
+            }
+            if(isset($request["representante"]["cargo"])){
+                $empresa->cargo_repre = strtoupper($request["representante"]["cargo"]);
             }
             $empresa->fecha_modificacion = $fecha;
             $empresa->usuario_modificacion = $usuario_modificacion;

@@ -18,7 +18,7 @@ class ContratoExport
     public function obtenerContrato($id_contrato, $id_mov)
     {
         $detalle_contratacion = DB::table('rh_detalle_movimiento as dc')
-        ->select("ns.representante_legal as represuc","dc.id_detalle",DB::raw('CONCAT(cc.apellido_paterno," ",cc.apellido_materno, " ",cc.nombre) as nombre'), "cc.curp", "cc.rfc", "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_detalle","dc.observacion","cc.id_candidato","cd.id_departamento","dc.id_puesto","ce.empresa","ce.rfc as rfcempresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal","ncn.nomina",DB::raw("CONCAT('Calle ',gcd.calle,' #',gcd.numero_exterior, ' ,', gcd.cruzamiento_uno, ' ', gcd.cruzamiento_dos) as calleempresa"),DB::raw("CONCAT('Calle ',gcdd.calle, ' ', gcdd.numero_exterior, ' ', gcdd.cruzamiento_uno, ' Col. ', gcdd.colonia, ' ',gcdd.localidad) as dir_empleado"),DB::raw("CONCAT('Calle', gcd_tres.calle,' #',gcd_tres.numero_exterior, ' ,', gcd_tres.cruzamiento_uno, ' y', gcd_tres.cruzamiento_dos) as callesucursal"),"cp.descripcion as descripcionPuesto","ns.representante_legal")
+        ->select("ns.representante_legal as represuc","dc.id_detalle",DB::raw('CONCAT(cc.apellido_paterno," ",cc.apellido_materno, " ",cc.nombre) as nombre'), "cc.curp", "cc.rfc", "cd.departamento","cp.puesto","dc.sueldo", "dc.sueldo_neto", "dc.fecha_detalle","dc.observacion","cc.id_candidato","cd.id_departamento","dc.id_puesto","ce.empresa","ce.rfc as rfcempresa","dc.id_nomina","rm.id_status","dc.id_sucursal", "ns.sucursal","ncn.nomina",DB::raw("CONCAT('Calle ',gcd.calle,' #',gcd.numero_exterior, ' ,', gcd.cruzamiento_uno, ' ', gcd.cruzamiento_dos) as calleempresa"),DB::raw("CONCAT('Calle ',gcdd.calle, ' ', gcdd.numero_exterior, ' ', gcdd.cruzamiento_uno, ' Col. ', gcdd.colonia, ' ',gcdd.localidad) as dir_empleado"),DB::raw("CONCAT('Calle', gcd_tres.calle,' #',gcd_tres.numero_exterior, ' ,', gcd_tres.cruzamiento_uno, ' y', gcd_tres.cruzamiento_dos) as callesucursal"),"cp.descripcion as descripcionPuesto","ce.representante_legal","ce.cargo_repre")
         ->join("rh_movimientos as rm","rm.id_movimiento","=","dc.id_movimiento")
         ->join("rh_cat_candidato as cc","cc.id_candidato","=","dc.id_candidato")
         ->join("gen_cat_puesto as cp","cp.id_puesto","=","dc.id_puesto")
@@ -50,6 +50,7 @@ class ContratoExport
                 }
                 $phpword->setValue('REPRESENTANTESUC',$detalle_contratacion->represuc);
                 $phpword->setValue('REPRESENTANTE',$detalle_contratacion->representante_legal);
+                $phpword->setValue('CARGOREPRE',$detalle_contratacion->cargo_repre);
                 $phpword->setValue('EMPRESA',$detalle_contratacion->empresa);
                 $phpword->setValue('EMPLEADO', $detalle_contratacion->nombre);
                 $phpword->setValue('DOMICILIOEMPRESA',$detalle_contratacion->calleempresa);
