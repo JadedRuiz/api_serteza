@@ -45,6 +45,27 @@ class MovimientoController extends Controller
         }
         return $this->crearRespuesta(2,"No se ha encontrado movimientos con este cliente",200);
     }
+    public function busquedaAltas(Request $res)
+    {
+        $palabra = "%".$res["busqueda"]."%";
+        $altas = DB::table("rh_movimientos as rm")
+        ->select("rdm.id_detalle", "rm.id_cliente", DB::raw("CONCAT(rcc.apellido_paterno,' ',rcc.apellido_materno,' ', rcc.nombre) as candidato"),"gce.id_empresa","gce.empresa")
+        ->join("rh_detalle_movimiento as rdm","rdm.id_movimiento","=","rm.id_movimiento")
+        ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","rdm.id_candidato")
+        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdm.id_puesto")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","gcd.id_empresa")
+        ->where(function($query) use ($palabra){
+            $query->where(DB::raw("CONCAT(rcc.apellido_paterno,' ',rcc.apellido_materno,' ', rcc.nombre)"),"like",$palabra)
+            ->orWhere("rcc.id_candidato","like",$palabra);
+        })
+        ->where("rm.tipo_movimiento","A")
+        ->get();
+        if(count($altas)>0){
+            return $this->crearRespuesta(1,$altas,200);
+        }
+        return $this->crearRespuesta(2,"No se ha econtrado altas",200);
+    }
     public function obtenerDetallePorId($id_mov)
     {
         $detalles = DB::table('rh_movimientos as rm')

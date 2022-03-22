@@ -20,7 +20,10 @@ class PuestoController extends Controller
 
     public function getPuestosPorIdEmpresa($id_empresa)
     {
-        $puestos = Puesto::where("id_empresa",$id_empresa)->get();
+        $puestos = Puesto::select("id_puesto","puesto")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","gen_cat_puesto.id_departamento")
+        ->where("gcd.id_empresa",$id_empresa)
+        ->get();
         if(count($puestos)>0){
             return $this->crearRespuesta(1,$puestos,200);
         }else{

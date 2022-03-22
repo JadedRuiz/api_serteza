@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ContratoExport;
 use App\Models\Movimiento;
+use App\Models\Contrato;
+use Illuminate\Support\Facades\Storage;
 
 class ContratoController extends Controller
 {
@@ -229,20 +231,10 @@ class ContratoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function obtenerDocContratacion($id_movimiento)
+    public function obtenerDocContratacion($id_movimiento,$id_contrato)
     {
-        $id_puesto = DB::table('rh_detalle_movimiento as dc')
-        ->select("dc.id_puesto")
-        ->where("dc.id_detalle",$id_movimiento)
-        ->where("dc.activo",1)
-        ->first();
         $contrato = new ContratoExport();
-        $respuesta = [];
-        if($id_puesto){
-            $respuesta = $contrato->obtenerContrato(-1,$id_movimiento);
-        }else{
-            $respuesta =  $contrato->obtenerContrato(-1,$id_movimiento);
-        }
+        $respuesta = $contrato->obtenerContrato($id_contrato,$id_movimiento);
         if($respuesta["ok"]){
             $headers = [
                 "Content-Type: application/octet-stream",
@@ -261,6 +253,71 @@ class ContratoController extends Controller
                 "Content-Type: application/octet-stream",
             ];
             return response()->download($respuesta["data"],"Contrato.docx",$headers)->deleteFileAfterSend(true);
+        }
+    }
+    public function busquedaContrato(Request $res)
+    {
+        $palabra = "%".$res["busqueda"]."%";
+        $contratos = Contrato::select("id_contrato","gce.id_empresa","nombre")
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","rh_contratos.id_empresa")
+        ->where(function($query) use ($palabra){
+            $query->where("gce.empresa","like",$palabra)
+            ->orWhere('gce.id_empresa','like',$palabra)
+            ->orWhere('nombre','like',$palabra);
+        })
+        ->get();
+        if(count($contratos)>0){
+            return $this->crearRespuesta(1,$contratos,200);
+        }
+        return $this->crearRespuesta(2,"No se ha encontrado contrados",301);
+    }
+    public function obtenerContratos($id_empresa)
+    {
+        $contratos = [
+            [
+                "id_contrato" => 0, 
+                "nombre" => "CONTRATO GENERICO",
+                "primero" => true
+            ]
+        ];
+        $contratos_cliente = Contrato::select("id_contrato","nombre")
+        ->where("id_empresa",$id_empresa)
+        ->where("activo",1)
+        ->get();
+        if(count($contratos_cliente)>0){
+            foreach($contratos_cliente as $contrato){
+                $contrato->primero = false;
+                array_push($contratos,$contrato);
+            }
+        }
+        return $this->crearRespuesta(1,$contratos,200);
+    }
+    public function altaContrato(Request $res)
+    {
+        //Validaciones
+        if(isset($res["id_empresa"]) && $res["id_empresa"] == 0){
+            return $this->crearRespuesta(2,"Es necesario el id_empresa",200);
+        }
+        if(isset($res["nombre"]) && strlen($res["nombre"]) == 0){
+            return $this->crearRespuesta(2,"No se puedo agregar un contrato sin la descripción",200);
+        }
+        if(isset($res["documento"]) && strlen($res["documento"]) == 0){
+            return $this->crearRespuesta(2,"No se puedo agregar un contrato sin un documento .docx importado",200);
+        }
+        try{
+            $id_contrato = $this->getSigId("rh_contratos");
+            $path = $res["id_empresa"]."_Empresa/".$id_contrato."_CONTRATO.docx";
+            $contrato = new Contrato();
+            $contrato->id_empresa = $res["id_empresa"];
+            $contrato->nombre = strtoupper($res["nombre"]); 
+            $contrato->url_contrato = $path;
+            $contrato->activo = 1;
+            $contrato->save();
+            //Almacenamos contrato
+            Storage::disk("contratos")->put($path,base64_decode($res["documento"]));
+            return $this->crearRespuesta(1,"El contrato ha sido subido con éxito",200);
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
 }
