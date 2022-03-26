@@ -32,6 +32,9 @@ class Empresa extends Model {
         'cargo_repre',
         'rfc_repre',
         'curp',
+        'no_certificado',
+        'key',
+        'certificado',
         'activo'
     ];
 

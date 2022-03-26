@@ -226,6 +226,21 @@ class EmpresaController extends Controller
             if(isset($request["representante"]["cargo"])){
                 $empresa->cargo_repre = strtoupper($request["representante"]["cargo"]);
             }
+            if(isset($request["no_cer"])){
+                $empresa->no_certificado = $request["no_cer"];
+            }
+            if(isset($request["cer"])){
+                $path = "credenciales/CER_EMPRESA_ID_".$request["id_empresa"].".cer";
+                if(Storage::disk('empresa')->has($path)){
+                    Storage::disk('empresa')->delete($nombre_image);
+                }
+                Storage::disk('empresa')->put($nombre_image, $file);
+                $empresa->certificado = $request["cer"];
+            }
+            if(isset($request["key"])){
+                $nombre_image = "credenciales/KEY_EMPRESA_ID_".$request["id_empresa"].".key";
+                $empresa->key = $request["key"];
+            }
             $empresa->fecha_modificacion = $fecha;
             $empresa->usuario_modificacion = $usuario_modificacion;
             $empresa->save();

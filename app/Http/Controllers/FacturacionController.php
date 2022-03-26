@@ -9,6 +9,7 @@ use App\Models\Factura;
 use App\Models\DetFactura;
 use App\Models\Direccion;
 use App\Models\Cataporte;
+use App\Lib\Timbrado;
 
 class FacturacionController extends Controller
 {
@@ -756,5 +757,10 @@ class FacturacionController extends Controller
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
+    }
+    public function timbrado(Request $res)
+    {
+        $timbrado = new Timbrado();
+        return $timbrado->timbrar($res["dato"]);
     }
 }

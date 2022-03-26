@@ -236,6 +236,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("facAltaUbicacion","FacturacionController@facAltaUbicacion");
         $router->post("facObtenerUbicacion","FacturacionController@facObtenerUbicacion");
         $router->get("getImportMercancias","FacturacionController@getImportMercancias");
+        //Timbrado
+        $router->post("timbrado","FacturacionController@timbrado");
     });
     $router->group(['prefix' => 'serie'], function () use ($router) {
         $router->get("obtenerSeries/{id_empresa}","SerieController@obtenerSeries");

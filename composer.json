@@ -8,6 +8,7 @@
         "php": "^7.3|^8.0",
         "barryvdh/laravel-dompdf": "^0.9.0",
         "codedge/laravel-fpdf": "^1.8",
+        "econea/nusoap": "^0.9.11",
         "guzzlehttp/guzzle": "^7.4",
         "laravel/lumen-framework": "^8.0",
         "laravel/ui": "^3.2",
