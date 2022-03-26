@@ -5,9 +5,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Serie;
 use App\Models\Direccion;
+use App\Models\Factura;
 
 class SerieController extends Controller
 {
+    public function facObtenerFolioSig($id_serie)
+    {
+        $folio = Factura::select("folio")
+        ->where("id_serie",$id_serie)
+        ->orderBy("folio","desc")
+        ->first();
+        if($folio){
+            return $this->crearRespuesta(1,intval($folio->folio)+1,200);
+        }else{
+            return $this->crearRespuesta(1,1,200);
+        }
+    }
     public function obtenerSeries($id_empresa)
     {
         $series = Serie::select("id_serie","serie",DB::raw("CONCAT('CALLE ',gcd.calle,' # ',gcd.numero_exterior,' x ', gcd.cruzamiento_uno, ' COL. ',gcd.colonia) as direccion"))

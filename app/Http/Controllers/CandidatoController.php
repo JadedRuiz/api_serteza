@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Candidato;
+use App\Models\Fotografia;
 use App\Models\Direccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -145,19 +146,30 @@ class CandidatoController extends Controller
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = $request["usuario_creacion"];
         $id_cliente = $request["id_cliente"];
-        //insertar fotografia
-        $id_fotografia = $this->getSigId("gen_cat_fotografia");
+        //crear fotografia
+        $fotografia = new Fotografia();
         //Insertar fotografia
         if($request["fotografia"]["docB64"] == ""){
             //Guardar foto default
-            DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.png",$fecha,$usuario_creacion,1]);
+            $fotografia->nombre = "candidato_default.png";
+            $fotografia->fecha_creacion = $fecha;
+            $fotografia->usuario_creacion = $usuario_creacion;
+            $fotografia->activo = 1;
+            // DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.png",$fecha,$usuario_creacion,1]);
         }else{
+            
             $file = base64_decode($request["fotografia"]["docB64"]);
             $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-            DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+            $fotografia->nombre = $nombre_image;
+            $fotografia->fecha_creacion = $fecha;
+            $fotografia->usuario_creacion = $usuario_creacion;
+            $fotografia->activo = 1;
+            // DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
             Storage::disk('candidato')->put($nombre_image, $file);
         }
-        //Insertar dirección
+        $fotografia->save();
+        $id_fotografia = $fotografia->id_fotografia;
+        //Insertar direcci贸n
             $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
@@ -267,7 +279,7 @@ class CandidatoController extends Controller
             $direccion->fecha_modificacion = $fecha;
             $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();
-            return $this->crearRespuesta(1,"El candidato se ha editado con éxito",200);
+            return $this->crearRespuesta(1,"El candidato se ha editado con 茅xito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
@@ -339,6 +351,6 @@ class CandidatoController extends Controller
             ];
             return $this->crearRespuesta(1,$respuesta,200);
         }
-        return $this->crearRespuesta(2,"Este candidado no tiene datos de contratación",200);
+        return $this->crearRespuesta(2,"Este candidado no tiene datos de contrataci贸n",200);
     }
 }
