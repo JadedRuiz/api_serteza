@@ -255,6 +255,22 @@ class ContratoController extends Controller
             return response()->download($respuesta["data"],"Contrato.docx",$headers)->deleteFileAfterSend(true);
         }
     }
+    public function busquedaContrato(Request $res)
+    {
+        $palabra = "%".$res["busqueda"]."%";
+        $contratos = Contrato::select("id_contrato","gce.id_empresa","nombre")
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","rh_contratos.id_empresa")
+        ->where(function($query) use ($palabra){
+            $query->where("gce.empresa","like",$palabra)
+            ->orWhere('gce.id_empresa','like',$palabra)
+            ->orWhere('nombre','like',$palabra);
+        })
+        ->get();
+        if(count($contratos)>0){
+            return $this->crearRespuesta(1,$contratos,200);
+        }
+        return $this->crearRespuesta(2,"No se ha encontrado contrados",301);
+    }
 
     public function obtenerContratos($id_empresa)
     {

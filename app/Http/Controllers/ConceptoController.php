@@ -7,6 +7,7 @@ use App\Models\Concepto;
 
 class ConceptoController extends Controller
 {
+
    public function facServiciosAutocomplete(Request $res)
    {
        $conceptos_sat = DB::table('sat_ClaveProdServ')
@@ -15,7 +16,8 @@ class ConceptoController extends Controller
             if($res["palabra"] != ""){
                 $palabra = "%".$res["palabra"]."%";
                 $query->where("Descripcion","like",$palabra)
-                ->orWhere("Coincidencias","like",$palabra);
+                ->orWhere("Coincidencias","like",$palabra)
+                ->orWhere("ClaveProdServ","like",$palabra);
             }
         })
         ->orderBy("Descripcion","ASC")
@@ -32,7 +34,8 @@ class ConceptoController extends Controller
        ->where(function ($query) use ($res){
             if($res["palabra"] != ""){
                 $palabra = "%".$res["palabra"]."%";
-                $query->where("Descripcion","like",$palabra);
+                $query->where("Descripcion","like",$palabra)
+                ->orWhere("ClaveUnidad","like",$palabra);
             }
         })
         ->orderBy("Descripcion","ASC")
@@ -138,6 +141,23 @@ class ConceptoController extends Controller
             $concepto->save();
             return $this->crearRespuesta(1,"Concepto modificado",200);
         }
+        return $this->crearRespuesta(2,"Este concepto no existe o no le pertenece a esta empresa",200);
+   }
+   public function buscarConceptos(Request $res)
+   {
+       $palabra = "%".$res["busqueda"]."%";
+       $conceptos = DB::table("fac_catconceptos as fcc")
+       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.tipo_iva', 'fcc.ieps', 'fcc.tipo_ieps', 'fcc.otros_imp', 'fcc.tipo_otros')
+       ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
+       ->where("fcc.id_empresa",$res["id_empresa"])
+       ->where(function ($query) use ($palabra){
+           $query->where("fcc.descripcion","like",$palabra)
+           ->orWhere("satC.ClaveProdServ","like",$palabra);
+       })
+       ->get();
+       if(count($conceptos)>0){
+        return $this->crearRespuesta(1,$conceptos,200);
+       }
         return $this->crearRespuesta(2,"Este concepto no existe o no le pertenece a esta empresa",200);
    }
 }

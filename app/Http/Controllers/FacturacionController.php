@@ -13,17 +13,6 @@ use App\Lib\Timbrado;
 
 class FacturacionController extends Controller
 {
-    public function facObtenerFolio($id_empresa)
-    {
-        $folio = Factura::select("folio")
-        ->where("id_empresa",$id_empresa)
-        ->orderBy("folio","desc")
-        ->first();
-        if($folio){
-            return $this->crearRespuesta(1,$folio,200);
-        }
-        return $this->crearRespuesta(2,"Aun no se tiene facturas de esta empresa",200);
-    }
     public function facAltaFactura(Request $res)
     {
         //Validaciones
