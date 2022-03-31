@@ -170,6 +170,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
         $router->get('reporteEmpleado/{id_empleado}/{id_empresa}','ReporteController@reporteEmpleado');
         $router->post("reporteDepartamento","ReporteController@reporteDepartamento");
+        $router->get('generarFactura/{id_factura}','FacturacionController@generarFactura');
     });
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
@@ -240,6 +241,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get("getImportMercancias","FacturacionController@getImportMercancias");
         //Timbrado
         $router->post("timbrado","FacturacionController@timbrado");
+        $router->post("getPDFPreview","FacturacionController@generaFacturaPreview");
     });
     $router->group(['prefix' => 'serie'], function () use ($router) {
         $router->get("obtenerSeries/{id_empresa}","SerieController@obtenerSeries");

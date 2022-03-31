@@ -1,9 +1,9 @@
 <?php
-namespace App\Lib;
 
-use App\Models\Empresa;
+namespace App\Lib;
 use App\Lib\Sello;
 use nusoap_client;
+use DOMDocument;
 
 class Timbrado {
     private $user;
@@ -11,20 +11,7 @@ class Timbrado {
 
     public function timbrar($datos)
     {
-        $id_empresa = 1;
-       //Recuperar datos empresa
-       $datos_empresa = Empresa::select("no_certificado","certificado","key")
-       ->where("id_empresa",$id_empresa)
-       ->first();
-       //Validar existencia de empresa
-       if(!$datos_empresa){
-        return $this->crearRespuesta(2,"No se ha podido recuperar la información de la empresa emisora",200);
-       }
-
        //Variables globales del método
-       $key = $datos_empresa->key;                                  //.Key de la empresa emisora
-       $cer = $datos_empresa->certificado;                          //.Cer de la empresa emisora
-       $numcer = $datos_empresa->no_certificado;                    //No_cer de la empresa emisora
        $user = env("USER_NAME");                                    //Usuario de acceso del proveedor de timbres
        $key  = env("USER_PASS");                                    //Llave de acceso del proveedor de timbres
        $gIDUsu = 1;                                                 //idusuario global.
@@ -36,21 +23,80 @@ class Timbrado {
            $client->soap_defencoding = "UTF-8";
            $client->decode_utf8 = false;
        }catch(Throwable $e){
-           return $this->crearRespuesta(2,"Error de conexion al proveedor : ".$client->getError(),200);
+           return ["ok" => false, "message" => "Error de conexion al proveedor : ".$client->getError()];
        }
-       
+       $mynamespace = "http://mycommerce.mx";
+
        //Sellar
-       $data = [
-           "datos" => $datos,
-           "credenciales" => [
-               "key" => $key,
-               "cer" => $cer,
-               "no_cer" => $numcer
-           ]
-        ];
        $sello = new Sello();
-       $resultado = $sello->sellar($data);
-       return $resultado;
+       $resultado = $sello->sellar($datos);
+    //    return ["ok" => true, "data" => $resultado["data"]];
+
+       if($resultado["ok"]){
+            try{
+                $myDom = new DOMDocument();
+                $myDom->loadXML($resultado["data"]);
+            }catch(Throwable $e){
+                return ["ok" => false, "message" => "Error al recuperar XML : ".$e->getMessage()];
+            }
+            $xml = trim($myDom->saveXML());
+            //obtenerTimbrado
+            $params = array(
+                'CFDIcliente' => $xml,
+                'Usuario' => $user,
+                'password' => $key,
+            );
+
+            $res_client = $client->call('obtenerTimbrado', $params);
+            if($client->fault){
+                return ["ok" => false, "message" => "Error al consumir el servicio del provedor"];
+            }
+            //Se consume el método
+            $xmlobtenerTimbrado = $res_client['obtenerTimbradoResult'];
+            $xmlTimbre = $xmlobtenerTimbrado['timbre'];
+            if(isset($xmlTimbre['errores']) && $xmlTimbre['!esValido'] != "True"){
+                @$Err0r = $xmlTimbre['errores'];
+                @$men_error = $Err0r['Error'];
+                $fatality = count($Err0r);
+                if ($fatality > 0) {
+                    $cadenaerror = "";
+                    for ($i = 0; $i < count($Err0r); $i++) {
+                        $cadenaerror .= $men_error['!mensaje']. "|";
+                    }
+                    return ["ok" => false, "message" => $cadenaerror];
+                }
+            }
+            
+            $xmlTimbreFiscalDigital = $xmlTimbre['TimbreFiscalDigital'];
+            $xsi = $xmlTimbreFiscalDigital['!xsi:schemaLocation'];
+            $version = $xmlTimbreFiscalDigital['!version'];
+            $FechaTimbrado = $xmlTimbreFiscalDigital['!FechaTimbrado'];
+            $selloCFD = $xmlTimbreFiscalDigital['!selloCFD'];
+            $noCertificadoSAT = $xmlTimbreFiscalDigital['!noCertificadoSAT'];
+            $selloSAT = $xmlTimbreFiscalDigital['!selloSAT'];
+            $UUID = $xmlTimbreFiscalDigital['!UUID'];
+
+            $dat = 'http://www.sat.gob.mx/TimbreFiscalDigital';
+
+            $doc = new DOMDocument();
+            $doc->loadXML($xml);
+            $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Complemento')->item(0);
+            $nodo = $doc->createElement("tfd:TimbreFiscalDigital");
+            $nuevo_nodo = $c->appendChild($nodo);
+
+            $nuevo_nodo->setAttribute('xmlns:tfd', $dat);
+            $nuevo_nodo->setAttribute('xsi:schemaLocation', 'http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/TimbreFiscalDigital/TimbreFiscalDigital.xsd');
+            $nuevo_nodo->setAttribute('Version', $version);
+            $nuevo_nodo->setAttribute('FechaTimbrado', $FechaTimbrado);
+            $nuevo_nodo->setAttribute('RfcProvCertif', $provsert);
+            $nuevo_nodo->setAttribute('SelloCFD', $selloCFD);
+            $nuevo_nodo->setAttribute('NoCertificadoSAT', $noCertificadoSAT);
+            $nuevo_nodo->setAttribute('SelloSAT', $selloSAT);
+            $nuevo_nodo->setAttribute('UUID', $UUID);
+            $xmlsello = $doc->saveXML();
+            
+            return ["ok" => true, "data" => $xmlsello];
+       }
     }
 }
 ?>

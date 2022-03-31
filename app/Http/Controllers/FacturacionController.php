@@ -13,99 +13,6 @@ use App\Lib\Timbrado;
 
 class FacturacionController extends Controller
 {
-    public function facAltaFactura(Request $res)
-    {
-        //Validaciones
-        try{
-            $fecha = $this->getHoraFechaActual();
-            $usuario_creacion = $res["usuario_creacion"];
-            $factura = new Factura();
-            $factura->id_empresa = $res["id_empresa"];
-            $factura->id_catclientes = $res["id_cliente"];
-            $factura->id_serie = $res["id_serie"];
-            $factura->folio = $res["folio"];
-            $factura->id_formapago = $res["id_formapago"];
-            $factura->id_metodopago = $res["id_metodopago"];
-            $factura->numero_cuenta = $res["numero_cuenta"];
-            $factura->id_tipomoneda = $res["id_tipomoneda"];
-            $factura->id_usocfdi = $res["id_usocfdi"];
-            $factura->id_tipocomprobante = $res["tipo_comprobante"];
-            $factura->condicion_pago = $res["condiciones"];
-            $factura->tipo_cambio = $res["tipo_cambio"];
-            $factura->observaciones = $res["observaciones"];
-            $factura->usa_ine = $res["usa_ine"];
-            $factura->usa_cataporte = $res["usa_cataporte"];
-            $factura->subtotal = $res["subtotal"];
-            $factura->descuento = $res["descuento_t"];
-            $factura->iva = $res["iva_t"];
-            $factura->ieps = $res["ieps_t"];
-            $factura->otros = $res["otros_t"];
-            $factura->total = $res["total"];
-            $factura->fecha_creacion = $fecha;
-            $factura->usuario_creacion = $usuario_creacion;
-            $factura->activo = 1;
-            $factura->save();
-            $id_factura = $factura->id_factura;
-            $conceptos = $res["conceptos"];
-            foreach($conceptos as $concepto){
-                $detfactura = new DetFactura();
-                $detfactura->id_factura = $id_factura;
-                $detfactura->id_concepto = $concepto["id_concepto"];
-                $detfactura->descripcion = $concepto["descripcion"];
-                $detfactura->cantidad = $concepto["cantidad"];
-                $detfactura->importe = $concepto["precio"];
-                $detfactura->descuento = $concepto["descuento"];
-                $detfactura->iva = $concepto["iva"];
-                $detfactura->ieps = $concepto["ieps"];
-                $detfactura->otros_imp = $concepto["otros"];
-                $detfactura->subtotal = $concepto["neto"];
-                $detfactura->total = $concepto["importe"];
-                $detfactura->fecha_creacion = $fecha;
-                $detfactura->usuario_creacion = $usuario_creacion;
-                $detfactura->activo = 1;
-                $detfactura->save();
-            }
-            $cataporte = new Cataporte();
-            $cataporte->id_factura = $id_factura;
-            $cataporte->id_operador = $res["cataporte"]["transporte"]["id_operador"];
-            $cataporte->id_vehiculo = $res["cataporte"]["transporte"]["id_vehiculo"];
-            $cataporte->id_remolque = $res["cataporte"]["transporte"]["id_remolque"];
-            $cataporte->id_propietario = $res["cataporte"]["transporte"]["id_propietario"];
-            $cataporte->save();
-            $id_cataporte = $cataporte->id_cataporte;
-            foreach($res["cataporte"]["ubicaciones"] as $ubicacion){
-                DB::insert('insert into fac_ubicaciones (id_cataporte, id_catubicacion, distancia_recorrida, fecha) values (?,?,?,?)', [
-                    $id_cataporte,
-                    $ubicacion["id_lugar"],
-                    $ubicacion["distancia_recorrida"],
-                    date('Y-m-d h:i:s',strtotime($ubicacion["fecha_hora"]))
-                ]);
-            }
-            foreach($res["cataporte"]["mercancias"] as $mercancia ){
-                DB::insert('insert into fac_mercancias (id_cataporte, bienes_trasportados, clave_producto, descripcion, cantidad, id_ClaveUnidad, unidad, meterial_peligroso, dimensiones, id_TipoEmbajale, desc_embalaje, peso, valor, id_Moneda, fraccion_arancelaria, uuid_comercio) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
-                    $id_cataporte,
-                    $mercancia["bienes_trans"],
-                    $mercancia["clave_prod"],
-                    $mercancia["descripcion"],
-                    $mercancia["cantidad"],
-                    $mercancia["clave_uni"],
-                    $mercancia["unidad"],
-                    $mercancia["meterial_pel"],
-                    $mercancia["dimensiones"],
-                    $mercancia["embalaje"],
-                    $mercancia["desc_embalaje"],
-                    $mercancia["peso"],
-                    $mercancia["valor"],
-                    $mercancia["moneda"],
-                    $mercancia["fraccion_aran"],
-                    $mercancia["uuid_ext"]
-                ]);
-            }
-            return $this->crearRespuesta(1,"Factura dado de alta",200);
-        }catch(Throwable $e){
-            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
-        }
-    }
     public function obtenerFacturas(Request $res)
     {
         $id_cliente = $res["id_cliente"];
@@ -122,9 +29,9 @@ class FacturacionController extends Controller
         }else{
            array_push($id_empresas,$res["id_empresa"]);
         }
-        
+
         if(count($id_empresas)>0){
-            
+
             //Consultas
             $facturas = DB::table('fact_cattimbrado as fct')
             ->select("id_timbrado","empleado as nombre","rfc","codigo_empleado","uuid",
@@ -136,7 +43,7 @@ class FacturacionController extends Controller
                 }else{
                     $query->whereIn("id_empresa",$id_empresas);
                 }
-                if($filtros["id_sucursal"] != 0){   
+                if($filtros["id_sucursal"] != 0){
                     $query->where("id_sucursal",$filtros["id_sucursal"]);
                 }
                 if(strlen($filtros["rfc"]) > 0){
@@ -170,7 +77,7 @@ class FacturacionController extends Controller
                 }else{
                     $query->whereIn("id_empresa",$id_empresas);
                 }
-                if($filtros["id_sucursal"] != 0){   
+                if($filtros["id_sucursal"] != 0){
                     $query->where("id_sucursal",$filtros["id_sucursal"]);
                 }
                 if(strlen($filtros["rfc"]) > 0){
@@ -206,7 +113,7 @@ class FacturacionController extends Controller
     public function altaFactura(Request $res)
     {
         //Validaciones
-        
+
         if(!isset($res["id_empresa"])){
             return $this->crearRespuesta(2,"El parametro 'id_empresa' es obligatorio",301);
         }
@@ -400,7 +307,7 @@ class FacturacionController extends Controller
                 }else{
                     $query->whereIn("id_empresa",$id_empresas);
                 }
-                if($filtros["id_sucursal"] != 0){   
+                if($filtros["id_sucursal"] != 0){
                     $query->where("id_sucursal",$filtros["id_sucursal"]);
                 }
                 if(strlen($filtros["rfc"]) > 0){
@@ -459,7 +366,7 @@ class FacturacionController extends Controller
                 }else{
                     $query->whereIn("id_empresa",$id_empresas);
                 }
-                if($filtros["id_sucursal"] != 0){   
+                if($filtros["id_sucursal"] != 0){
                     $query->where("id_sucursal",$filtros["id_sucursal"]);
                 }
                 if(strlen($filtros["rfc"]) > 0){
@@ -736,7 +643,7 @@ class FacturacionController extends Controller
             return $this->crearRespuesta(1,"La ubicacion se ha agregado con éxito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
-        } 
+        }
     }
     public function getImportMercancias()
     {
@@ -747,9 +654,129 @@ class FacturacionController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function timbrado(Request $res)
+    public function facAltaFactura(Request $res)
     {
+        //Validaciones
         $timbrado = new Timbrado();
-        return $timbrado->timbrar($res["dato"]);
+        $resultado =  $timbrado->timbrar($res);
+        if($resultado["ok"]){
+            $result = $this->guardarFactura($res,$resultado["data"]);
+            if($result["ok"]){
+                $reporte = new FacturaExport();
+                $result_report = $reporte->generarFactura($result["data"]);
+                if($result_report["ok"]){
+                    return $this->crearRespuesta(1,$result_report["data"], 200);
+                }
+                return $this->crearRespuesta(1,"La factura ha sido timbrada y guardada con éxito", 200);
+            }
+            return $this->crearRespuesta(1,"Ha ocurrido un error : " . $result["message"], 200);
+        }
+        return $this->crearRespuesta(1,"Ha ocurrido un error : " . $resultado["message"], 200);
+    }
+    public function guardarFactura($res,$xml)
+    {
+        try{
+            $fecha = $this->getHoraFechaActual();
+            $usuario_creacion = $res["usuario_creacion"];
+            $factura = new Factura();
+            $factura->id_empresa = $res["id_empresa"];
+            $factura->id_catclientes = $res["id_cliente"];
+            $factura->id_serie = $res["id_serie"];
+            $factura->id_status = "10";
+            $factura->xml = $xml;
+            $factura->folio = $res["folio"];
+            $factura->id_formapago = $res["id_formapago"];
+            $factura->id_metodopago = $res["id_metodopago"];
+            $factura->numero_cuenta = $res["numero_cuenta"];
+            $factura->id_tipomoneda = $res["id_tipomoneda"];
+            $factura->id_usocfdi = $res["id_usocfdi"];
+            $factura->id_tipocomprobante = $res["tipo_comprobante"];
+            $factura->condicion_pago = $res["condiciones"];
+            $factura->tipo_cambio = $res["tipo_cambio"];
+            $factura->observaciones = $res["observaciones"];
+            $factura->usa_ine = $res["usa_ine"];
+            $factura->usa_cataporte = $res["usa_cataporte"];
+            $factura->subtotal = $res["subtotal"];
+            $factura->descuento = $res["descuento_t"];
+            $factura->iva = $res["iva_t"];
+            $factura->ieps = $res["ieps_t"];
+            $factura->otros = $res["otros_t"];
+            $factura->total = $res["total"];
+            $factura->fecha_creacion = $fecha;
+            $factura->usuario_creacion = $usuario_creacion;
+            $factura->activo = 1;
+            $factura->save();
+            $id_factura = $factura->id_factura;
+            $conceptos = $res["conceptos"];
+            foreach($conceptos as $concepto){
+                $detfactura = new DetFactura();
+                $detfactura->id_factura = $id_factura;
+                $detfactura->id_concepto = $concepto["id_concepto"];
+                $detfactura->descripcion = $concepto["descripcion"];
+                $detfactura->cantidad = $concepto["cantidad"];
+                $detfactura->importe = $concepto["precio"];
+                $detfactura->descuento = $concepto["descuento"];
+                $detfactura->iva = $concepto["iva"];
+                $detfactura->ieps = $concepto["ieps"];
+                $detfactura->otros_imp = $concepto["otros"];
+                $detfactura->subtotal = $concepto["neto"];
+                $detfactura->total = $concepto["importe"];
+                $detfactura->fecha_creacion = $fecha;
+                $detfactura->usuario_creacion = $usuario_creacion;
+                $detfactura->activo = 1;
+                $detfactura->save();
+            }
+            if($res["usa_cataporte"]){
+                $cataporte = new Cataporte();
+                $cataporte->id_factura = $id_factura;
+                $cataporte->id_operador = $res["cataporte"]["transporte"]["id_operador"];
+                $cataporte->id_vehiculo = $res["cataporte"]["transporte"]["id_vehiculo"];
+                $cataporte->id_remolque = $res["cataporte"]["transporte"]["id_remolque"];
+                $cataporte->id_propietario = $res["cataporte"]["transporte"]["id_propietario"];
+                $cataporte->save();
+                $id_cataporte = $cataporte->id_cataporte;
+                foreach($res["cataporte"]["ubicaciones"] as $ubicacion){
+                    DB::insert('insert into fac_ubicaciones (id_cataporte, id_catubicacion, distancia_recorrida, fecha) values (?,?,?,?)', [
+                        $id_cataporte,
+                        $ubicacion["id_lugar"],
+                        $ubicacion["distancia_recorrida"],
+                        date('Y-m-d h:i:s',strtotime($ubicacion["fecha_hora"]))
+                    ]);
+                }
+                foreach($res["cataporte"]["mercancias"] as $mercancia ){
+                    DB::insert('insert into fac_mercancias (id_cataporte, bienes_trasportados, clave_producto, descripcion, cantidad, id_ClaveUnidad, unidad, meterial_peligroso, dimensiones, id_TipoEmbajale, desc_embalaje, peso, valor, id_Moneda, fraccion_arancelaria, uuid_comercio) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+                        $id_cataporte,
+                        $mercancia["bienes_trans"],
+                        $mercancia["clave_prod"],
+                        $mercancia["descripcion"],
+                        $mercancia["cantidad"],
+                        $mercancia["clave_uni"],
+                        $mercancia["unidad"],
+                        $mercancia["meterial_pel"],
+                        $mercancia["dimensiones"],
+                        $mercancia["embalaje"],
+                        $mercancia["desc_embalaje"],
+                        $mercancia["peso"],
+                        $mercancia["valor"],
+                        $mercancia["moneda"],
+                        $mercancia["fraccion_aran"],
+                        $mercancia["uuid_ext"]
+                    ]);
+                }
+            }
+            return ["ok" => true, "data" => $factura->id_factura];
+        }catch(Throwable $e){
+            return ["ok" => false, "message" => $e->getMessage()];
+        }
+    }
+    public function generarFactura($id_factura)
+    {
+        $reporte = new FacturaExport();
+        return $reporte->generarFactura($id_factura);
+    }
+    public function generaFacturaPreview(Request $res)
+    {
+        $reporte = new FacturaExport();
+        return $reporte->generaFacturaPreview($res);
     }
 }

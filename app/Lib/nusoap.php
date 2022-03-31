@@ -195,8 +195,7 @@ class gen_xml
         $xml = $xml . '<cfdi:Conceptos>
 		';
         for ($i = 0; $i < count($cantidad); $i++) {
-            $xml = $xml . '<cfdi:Concepto importe="' . $importe[$i] . '" noIdentificacion="' . $codigopro[$i] . '" valorUnitario="' . $valoruni[$i] . '" descripcion="' . $descripcion[$i] . '" unidad="' . $unidad[$i] . '" cantidad="' . $cantidad[$i] . '" />
-			';
+            $xml = $xml . '<cfdi:Concepto importe="' . $importe[$i] . '" noIdentificacion="' . $codigopro[$i] . '" valorUnitario="' . $valoruni[$i] . '" descripcion="' . $descripcion[$i] . '" unidad="' . $unidad[$i] . '" cantidad="' . $cantidad[$i] . '" />';
         }
         $xml = $xml . '</cfdi:Conceptos>
 		';
@@ -401,10 +400,10 @@ class conexion
     public $pass = "5erte34?crh";
     public $nombd = "sertezac_factura";
 
-	// var $servidor="localhost";
-	// var $usuario="root";
-	// var $pass="";
-	// var $nombd="sertezac_factura";
+    // var $servidor="localhost";
+    // var $usuario="root";
+    // var $pass="";
+    // var $nombd="sertezac_factura";
 
     public function conectar()
     {

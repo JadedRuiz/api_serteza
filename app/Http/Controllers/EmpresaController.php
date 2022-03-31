@@ -81,7 +81,7 @@ class EmpresaController extends Controller
     }
     public function obtenerEmpresaPorId($id){
         $empresa = DB::table("gen_cat_empresa as gce")
-        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp","gce.cargo_repre")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp","gce.cargo_repre","gce.certificado","gce.key","gce.no_certificado")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->leftJoin("gen_cat_estados as gced","gced.id_estado","=","gcd.estado")
         ->where("gce.id_empresa",$id)
@@ -201,12 +201,9 @@ class EmpresaController extends Controller
                 $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
                 if(Storage::disk('empresa')->has($nombre_image)){
                     Storage::disk('empresa')->delete($nombre_image);
-                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
-                    Storage::disk('empresa')->put($nombre_image, $file);
-                }else{
-                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
-                    Storage::disk('empresa')->put($nombre_image, $file);
                 }
+                DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                Storage::disk('empresa')->put($nombre_image, $file);
             }
             //Actualizar empresa
             $empresa = Empresa::find($request["id_empresa"]);
@@ -229,17 +226,23 @@ class EmpresaController extends Controller
             if(isset($request["no_cer"])){
                 $empresa->no_certificado = $request["no_cer"];
             }
-            if(isset($request["cer"])){
+            if(isset($request["cer"]) && strlen($request["cer"]) > 0){
                 $path = "credenciales/CER_EMPRESA_ID_".$request["id_empresa"].".cer";
+                $file = base64_decode($request["cer"]);
                 if(Storage::disk('empresa')->has($path)){
-                    Storage::disk('empresa')->delete($nombre_image);
+                    Storage::disk('empresa')->delete($path);
                 }
-                Storage::disk('empresa')->put($nombre_image, $file);
-                $empresa->certificado = $request["cer"];
+                Storage::disk('empresa')->put($path, $file);
+                $empresa->certificado = $path;
             }
-            if(isset($request["key"])){
-                $nombre_image = "credenciales/KEY_EMPRESA_ID_".$request["id_empresa"].".key";
-                $empresa->key = $request["key"];
+            if(isset($request["key"]) && strlen($request["key"]) > 0){
+                $path = "credenciales/KEY_EMPRESA_ID_".$request["id_empresa"].".key.pem";
+                $file = base64_decode($request["key"]);
+                if(Storage::disk('empresa')->has($path)){
+                    Storage::disk('empresa')->delete($path);
+                }
+                Storage::disk('empresa')->put($path, $file);
+                $empresa->key = $path;
             }
             $empresa->fecha_modificacion = $fecha;
             $empresa->usuario_modificacion = $usuario_modificacion;
