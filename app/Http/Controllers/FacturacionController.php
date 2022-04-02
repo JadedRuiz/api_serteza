@@ -667,11 +667,11 @@ class FacturacionController extends Controller
                 if($result_report["ok"]){
                     return $this->crearRespuesta(1,$result_report["data"], 200);
                 }
-                return $this->crearRespuesta(1,"La factura ha sido timbrada y guardada con éxito", 200);
+                return $this->crearRespuesta(1,"1", 200);
             }
-            return $this->crearRespuesta(1,"Ha ocurrido un error : " . $result["message"], 200);
+            return $this->crearRespuesta(2,$result["message"], 200);
         }
-        return $this->crearRespuesta(1,"Ha ocurrido un error : " . $resultado["message"], 200);
+        return $this->crearRespuesta(2,$resultado["message"], 200);
     }
     public function guardarFactura($res,$xml)
     {
@@ -764,7 +764,7 @@ class FacturacionController extends Controller
                     ]);
                 }
             }
-            return ["ok" => true, "data" => $factura->id_factura];
+            return ["ok" => true, "data" => $id_factura];
         }catch(Throwable $e){
             return ["ok" => false, "message" => $e->getMessage()];
         }

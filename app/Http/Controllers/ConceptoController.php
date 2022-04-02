@@ -58,7 +58,7 @@ class ConceptoController extends Controller
    }
    public function facObtenerConceptosPorId($id_concepto)
    {
-    $conceptos = Concepto::select('id_concepto_empresa', 'satC.id_ClaveProdServ', 'satU.id_UnidadMedida', 'fac_catconceptos.descripcion', 'descuento', 'iva', 'tipo_iva', 'ieps', 'tipo_ieps', 'otros_imp', 'tipo_otros','satC.Descripcion as servicio',"satU.Descripcion as unidad")
+    $conceptos = Concepto::select('id_concepto_empresa', 'satC.id_ClaveProdServ', 'satU.id_UnidadMedida', 'fac_catconceptos.descripcion', 'descuento', 'iva', 'tipo_iva', 'ieps', 'tipo_ieps', 'otros_imp', 'tipo_otros','satC.Descripcion as servicio',"satU.Descripcion as unidad","nombre_otros")
     ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fac_catconceptos.id_ClaveProdServ")
     ->join("sat_UnidadMedida as satU","satU.id_UnidadMedida","=","fac_catconceptos.id_UnidadMedida")
     ->where("id_concepto_empresa",$id_concepto)->first();
@@ -99,6 +99,7 @@ class ConceptoController extends Controller
             $concepto->tipo_ieps = $res["tipo_ieps"];
             $concepto->otros_imp = floatval($res["otros"]."");
             $concepto->tipo_otros = $res["tipo_otros"];
+            $concepto->nombre_otros = $res["nombre_otros"];
             $concepto->fecha_creacion = $fecha;
             $concepto->usuario_creacion = $res["usuario"];
             $concepto->activo = 1;
@@ -135,6 +136,7 @@ class ConceptoController extends Controller
             $concepto->tipo_ieps = $res["tipo_ieps"];
             $concepto->otros_imp = floatval($res["otros"]."");
             $concepto->tipo_otros = $res["tipo_otros"];
+            $concepto->nombre_otros = $res["nombre_otros"];
             $concepto->fecha_creacion = $fecha;
             $concepto->usuario_creacion = $res["usuario"];
             $concepto->activo = 1;

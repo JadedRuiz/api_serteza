@@ -15,11 +15,12 @@ class ClienteController extends Controller
      *
      * @return void
      */
-    public function facObtenerClientes()
+    public function facObtenerClientes($id_cliente)
     {
         $clientes = DB::table('fac_catclientes as fcc')
         ->select("fcc.id_catclientes",DB::raw("CONCAT(fcc.rfc,'-',fcc.razon_social) as nombre"))
         ->limit(1000)
+        ->where("id_cliente",$id_cliente)
         ->get();
         if(count($clientes)>0){
             return $this->crearRespuesta(1,$clientes,200);
@@ -43,6 +44,9 @@ class ClienteController extends Controller
     {
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = 1;
+        if($res["id"] == ""){
+            return $this->crearRespuesta(2,"El id_cliente es obligatorio",200);
+        }
         if($res["rfc"] == ""){
             return $this->crearRespuesta(2,"El campo RFC es obligatorio",200);
         }
@@ -79,7 +83,7 @@ class ClienteController extends Controller
             $direccion->activo = 1;
             $direccion->save();
             $id_direccion = $direccion->id_direccion;
-            DB::insert('insert into fac_catclientes (id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?)', [$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1]);
+            DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1]);
             return $this->crearRespuesta(1,"Se ha creado el cliente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

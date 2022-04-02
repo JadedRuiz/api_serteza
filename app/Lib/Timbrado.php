@@ -30,7 +30,7 @@ class Timbrado {
        //Sellar
        $sello = new Sello();
        $resultado = $sello->sellar($datos);
-    //    return ["ok" => true, "data" => $resultado["data"]];
+    //    return ["ok" => false, "message" => $resultado["data"]];
 
        if($resultado["ok"]){
             try{
@@ -55,26 +55,20 @@ class Timbrado {
             $xmlobtenerTimbrado = $res_client['obtenerTimbradoResult'];
             $xmlTimbre = $xmlobtenerTimbrado['timbre'];
             if(isset($xmlTimbre['errores']) && $xmlTimbre['!esValido'] != "True"){
-                @$Err0r = $xmlTimbre['errores'];
-                @$men_error = $Err0r['Error'];
-                $fatality = count($Err0r);
-                if ($fatality > 0) {
-                    $cadenaerror = "";
-                    for ($i = 0; $i < count($Err0r); $i++) {
-                        $cadenaerror .= $men_error['!mensaje']. "|";
-                    }
-                    return ["ok" => false, "message" => $cadenaerror];
-                }
+                $Err0r = $xmlTimbre['errores'];
+                $men_error = $Err0r['Error'];
+                return ["ok" => false, "message" => $res_client];
             }
             
             $xmlTimbreFiscalDigital = $xmlTimbre['TimbreFiscalDigital'];
             $xsi = $xmlTimbreFiscalDigital['!xsi:schemaLocation'];
-            $version = $xmlTimbreFiscalDigital['!version'];
+            $version = $xmlTimbreFiscalDigital['!Version'];
             $FechaTimbrado = $xmlTimbreFiscalDigital['!FechaTimbrado'];
-            $selloCFD = $xmlTimbreFiscalDigital['!selloCFD'];
-            $noCertificadoSAT = $xmlTimbreFiscalDigital['!noCertificadoSAT'];
-            $selloSAT = $xmlTimbreFiscalDigital['!selloSAT'];
+            $selloCFD = $xmlTimbreFiscalDigital['!SelloCFD'];
+            $noCertificadoSAT = $xmlTimbreFiscalDigital['!NoCertificadoSAT'];
+            $selloSAT = $xmlTimbreFiscalDigital['!SelloSAT'];
             $UUID = $xmlTimbreFiscalDigital['!UUID'];
+            $provsert = $xmlTimbreFiscalDigital['!RfcProvCertif'];
 
             $dat = 'http://www.sat.gob.mx/TimbreFiscalDigital';
 

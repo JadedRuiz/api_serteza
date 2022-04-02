@@ -73,7 +73,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("elimiminarLiga","ClienteController@elimiminarLiga");
         $router->get("obtenerClientesPorIdEmpresa/{id_empresa}","ClienteController@obtenerClientesPorIdEmpresa");
         $router->post("autoCompleteCliente","ClienteController@autoComplete");
-        $router->get('facObtenerClientes','ClienteController@facObtenerClientes');
+        $router->get('facObtenerClientes/{id_cliente}','ClienteController@facObtenerClientes');
         $router->get('facObtenerClientesPorId/{id_cliente}','ClienteController@facObtenerClientesPorId');
         $router->post('facAltaCliente','ClienteController@facAltaCliente');
     });
