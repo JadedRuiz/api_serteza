@@ -47,11 +47,32 @@ return [
             'driver' => 'local',
             'root' => "",
         ],
-        
+
+        'favicon' => [
+            'driver' => 'local',
+            'root' => storage_path('favicon'),
+            'url' => env('APP_URL').'/storage/favicon',
+            'visibility' => 'public',
+        ],
+
         'usuario' => [
             'driver' => 'local',
             'root' => storage_path('usuario'),
             'url' => env('APP_URL').'/storage/usuario',
+            'visibility' => 'public',
+        ],
+
+        'excel' => [
+            'driver' => 'local',
+            'root' => storage_path('excel'),
+            'url' => env('APP_URL').'/storage/excel',
+            'visibility' => 'public',
+        ],
+
+        'contratos' => [
+            'driver' => 'local',
+            'root' => storage_path('contratos'),
+            'url' => env('APP_URL').'/storage/contratos',
             'visibility' => 'public',
         ],
 
@@ -73,6 +94,13 @@ return [
             'driver' => 'local',
             'root' => storage_path('candidato'),
             'url' => env('APP_URL').'/storage/candidato',
+            'visibility' => 'public',
+        ],
+
+        'cancelaciones' => [
+            'driver' => 'local',
+            'root' => storage_path('cancelaciones'),
+            'url' => env('APP_URL').'/storage/cancelaciones',
             'visibility' => 'public',
         ],
 

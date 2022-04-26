@@ -13,7 +13,111 @@ class DepartamentoController extends Controller
     {
         //
     }
-
+    public function autoComplete(Request $res){
+        $palabra = strtoupper($res["nombre_departamento"]);
+        $id_empresa = $res["id_empresa"];
+        $busqueda = DB::table('gen_cat_departamento as cd')
+        ->select("cd.departamento","cd.id_departamento")
+        ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+        ->where("led.activo",1)
+        ->where("cd.departamento","like","%".$palabra."%")
+        ->where("led.id_empresa",$id_empresa)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
+    public function obtenerDepartamentosPorIdCliente(Request $res)
+    {
+        $getEmpresa = DB::table('liga_empresa_cliente')
+        ->select("id_empresa")
+        ->where("id_cliente",$res["id_cliente"])
+        ->first();
+        $registros = DB::table('gen_cat_departamento as cd')
+        ->select("cd.departamento","cd.id_departamento","cd.activo","gce.empresa","gce.id_empresa",DB::raw("CONCAT('(',cd.id_departamento,') ',cd.departamento) as departamento_busqueda"))
+        ->join("gen_cat_empresa as gce","gce.id_empresa","=","cd.id_empresa")
+        ->where(function($query) use ($res, $getEmpresa){
+            if(isset($res["id_empresa"]) && $res["id_empresa"] != null){
+                $query->where("gce.id_empresa",$res["id_empresa"]);
+            }else{
+                $query->where("gce.id_empresa",$getEmpresa->id_empresa);
+            }
+        })
+        ->get();
+        if(count($registros)>0){
+            foreach($registros as $registro){
+                if($registro->activo){
+                    $registro->estatus = "Activo";
+                }else{
+                    $registro->estatus = "Desactivado";
+                }
+                $puestos = DB::table('gen_cat_puesto')
+                ->select("autorizados","id_puesto")
+                ->where("id_departamento",$registro->id_departamento)
+                ->where("activo",1)
+                ->get();
+                $autorizados = 0;
+                $contratados = 0;
+                foreach($puestos as $puesto){
+                    $contratados = $contratados + $this->obtenerContratados($puesto->id_puesto);
+                    $autorizados = $autorizados + intval($puesto->autorizados);
+                }
+                $registro->vacantes = $autorizados - $contratados;
+                $registro->autorizados = $autorizados;
+            }
+            return $this->crearRespuesta(1,$registros,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay departamentos que mostrar",200);
+        }
+    }
+    // public function obtenerDepartamentosPorIdEmpresa($id_empresa)
+    // {
+    //     $registros = DB::table('gen_cat_departamento as cd')
+    //     ->select("cd.departamento","cd.id_departamento")
+    //     ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
+    //     ->join("gen_cat_empresa as gce","gce.id_empresa","=","led.id_empresa")
+    //     ->where("gce.id_empresa",$id_empresa)
+    //     ->get();
+    //     if(count($registros)>0){
+    //         return $this->crearRespuesta(1,$registros,200);
+    //     }else{
+    //         return $this->crearRespuesta(2,"No hay departamentos que mostrar",200);
+    //     }
+    // }
+    public function obtenerDepartamentoPorId($id_departamento)
+    {
+        $registro = DB::table('gen_cat_departamento as cd')
+        ->select("cd.id_departamento","cd.id_empresa","cd.departamento","cd.descripcion")
+        ->where("cd.id_departamento",$id_departamento)
+        ->first();
+        if($registro){
+            $puestos = DB::table('gen_cat_puesto')
+            ->select("id_puesto as id_arreglo","id_puesto","puesto","descripcion","sueldo_tipo_a","sueldo_tipo_b","sueldo_tipo_c","autorizados","puesto as band_puesto")
+            ->where("id_departamento",$registro->id_departamento)
+            ->where("activo",1)
+            ->get();
+            $autorizados = 0;
+            $contratados = 0;
+            foreach($puestos as $puesto){
+                $puesto->id_arreglo += 1;
+                $num_contratados = $this->obtenerContratados($puesto->id_puesto);
+                $puesto->band_puesto = false;
+                if($num_contratados > 0){
+                    $puesto->band_puesto = true;
+                }
+                $contratados += $num_contratados;
+                $autorizados += intVal($puesto->autorizados);
+            }
+            $registro->puestos = $puestos;
+            $registro->vacantes = $autorizados - $contratados;
+            $registro->autorizados = $autorizados;
+            return $this->crearRespuesta(1,$registro,200);
+        }else{
+            return $this->crearRespuesta(2,"No hay departamento que mostrar",200);
+        }
+    }
     public function obtenerDepartamentos(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
@@ -41,7 +145,8 @@ class DepartamentoController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_departamento as cd')
+        $registros = DB::table('gen_cat_departamento as cd')
+        ->select("cd.departamento","cd.id_departamento","led.activo")
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
@@ -49,13 +154,29 @@ class DepartamentoController extends Controller
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_departamento as cd')
+        $contar = DB::table('gen_cat_departamento as cd')
         ->join("liga_empresa_departamento as led","led.id_departamento","=","cd.id_departamento")
         ->where("led.activo",$otro,$status)
         ->where("cd.departamento",$otro_dos,$palabra)
         ->where("led.id_empresa",$id_empresa)
         ->get();
         if(count($registros)>0){
+            foreach($registros as $registro){
+                $puestos = DB::table('gen_cat_puesto')
+                ->select("autorizados","contratados")
+                ->where("id_departamento",$registro->id_departamento)
+                ->get();
+                $autorizados = 0;
+                $contratados = 0;
+                foreach($puestos as $puesto){
+                    if($puesto->contratados != null){
+                        $contratados = $contratados + intval($puesto->contratados);
+                    }
+                    $autorizados = $autorizados + intval($puesto->autorizados);
+                }
+                $registro->vacantes = $autorizados - $contratados;
+                $registro->autorizados = $autorizados;
+            }
             $respuesta = [
                 "total" => count($contar),
                 "registros" => $registros
@@ -65,90 +186,103 @@ class DepartamentoController extends Controller
             return $this->crearRespuesta(2,"No hay departamentos que mostrar",200);
         }
     }
-    public function obtenerDepartamentoPorId($id){
-        $respuesta = Departamento::where("id_departamento",$id)->where("activo",1)->get();
-        return $this->crearRespuesta(1,$respuesta,200);
-    }
-    public function obtenerDepartamentoPorIdDepartamento($id_departamento){
-        $departamento = DB::table('cat_departamento as cd')
-        ->select("cd.id_departamento","cd.departamento","cd.descripcion","cd.disponibilidad","cd.activo as puestos","cd.activo")
-        ->where("cd.id_departamento",$id_departamento)
-        ->get();
-        $puestos = DB::table('cat_puesto as cp')
-        ->select("cp.id_puesto","cp.puesto","cp.descripcion","cp.disponibilidad")
-        ->where("cp.id_departamento",$id_departamento)
-        ->where("activo",1)
-        ->get();
-        if(count($departamento)>0){
-            $departamento[0]->puestos = $puestos;
-            return $this->crearRespuesta(1,$departamento,200);
-        }else{
-            return $this->crearRespuesta(2,"No hay departamentos que mostrar",200);
-        }
-    }
-    public function altaDepartamento(Request $request){
+    public function altaDepartamento(Request $request)
+    {
+        $fecha = $this->getHoraFechaActual();
         try{
-            $fecha = $this->getHoraFechaActual();
-            $id_empresa = $request["id_empresa"];
-            //Alta departamento
-            $id_departamento = $this->getSigId("cat_departamento");
             $departamento = new Departamento;
-            $departamento->id_departamento = $id_departamento;
-            $departamento->departamento = $request["departamento"];
-            $departamento->disponibilidad = $request["disponibilidad"];
-            $departamento->descripcion = $request["descripcion"];
+            $departamento->id_empresa = $request["id_empresa"];
+            $departamento->departamento = strtoupper($request["departamento"]);
+            $departamento->descripcion = strtoupper($request["descripcion"]);
             $departamento->fecha_creacion = $fecha;
             $departamento->usuario_creacion = $request["usuario_creacion"];
-            $departamento->activo = $request["activo"];
+            $departamento->activo = 1;
             $departamento->save();
-            //Alta puestos del departamento
-            $puestos = $request["puestos"];
-            foreach($puestos as $puesto){
-                $id_puesto = $this->getSigId("cat_puesto");
+            $id_departamento = $departamento->id_departamento;
+            foreach($request["puestos"] as $puesto){
                 $puesto_clase = new Puesto;
-                $puesto_clase->id_puesto = $id_puesto;
                 $puesto_clase->id_departamento = $id_departamento;
-                $puesto_clase->puesto = $puesto["puesto"];
-                $puesto_clase->disponibilidad = $puesto["disponibilidad"];
-                $puesto_clase->descripcion = $puesto["descripcion"];
+                $puesto_clase->puesto = strtoupper($puesto["puesto"]);
+                $puesto_clase->autorizados = $puesto["autorizados"];
+                $puesto_clase->descripcion = strtoupper($puesto["descripcion"]);
                 $puesto_clase->fecha_creacion = $fecha;
+                $puesto["sueldo_tipo_a"] = str_replace("$","",$puesto["sueldo_tipo_a"]);
+                $puesto["sueldo_tipo_a"] = str_replace(",","",$puesto["sueldo_tipo_a"]);
+                $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
+                $puesto["sueldo_tipo_b"] = str_replace("$","",$puesto["sueldo_tipo_b"]);
+                $puesto["sueldo_tipo_b"] = str_replace(",","",$puesto["sueldo_tipo_b"]);
+                $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
+                $puesto["sueldo_tipo_c"] = str_replace("$","",$puesto["sueldo_tipo_c"]);
+                $puesto["sueldo_tipo_c"] = str_replace(",","",$puesto["sueldo_tipo_c"]);
+                $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
                 $puesto_clase->usuario_creacion = $request["usuario_creacion"];
                 $puesto_clase->activo = 1;
                 $puesto_clase->save();
             }
-            //Ligar departamento con empresa
-            $id_empresa_departamento = $this->getSigId("liga_empresa_departamento");
-            DB::insert('insert into liga_empresa_departamento (id_empresa_departamento, id_empresa, id_departamento, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?)', [$id_empresa_departamento, $id_empresa, $id_departamento, $fecha, $request["usuario_creacion"], 1]);
             return $this->crearRespuesta(1,"Departamento registrado",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function actualizarDepartamento(Request $request){
+    public function modificarDepartamento(Request $request)
+    {
+        $fecha = $this->getHoraFechaActual();
+        $errores = [];
         try{
             $departamento = Departamento::find($request["id_departamento"]);
-            $departamento->departamento = $request["departamento"];
-            $departamento->disponibilidad = $request["disponibilidad"];
-            $departamento->descripcion = $request["descripcion"];
-            $departamento->fecha_modificacion = $this->getHoraFechaActual();
+            $departamento->departamento = strtoupper($request["departamento"]);
+            $departamento->descripcion = strtoupper($request["descripcion"]);
+            $departamento->fecha_modificacion = $fecha;
             $departamento->usuario_modificacion = $request["usuario_creacion"];
-            $departamento->activo = $request["activo"];
+            $departamento->activo = 1;
             $departamento->save();
-            //Alta puestos del departamento
-            $puestos = $request["puestos"];
-            foreach($puestos as $puesto){
-                $puesto_clase = Puesto::find($puesto["id_puesto"]);
-                $puesto_clase->puesto = $puesto["puesto"];
-                $puesto_clase->disponibilidad = $puesto["disponibilidad"];
-                $puesto_clase->descripcion = $puesto["descripcion"];
-                $puesto_clase->fecha_modificacion = $this->getHoraFechaActual();
+            $id_departamento = $departamento->id_departamento;
+            foreach($request["puestos"] as $puesto){
+                if($puesto["id_puesto"] != "0"){
+                    $puesto_clase = Puesto::find($puesto["id_puesto"]);
+                    $contratados = $this->obtenerContratados($puesto["id_puesto"]);
+                    $vacantes = $puesto_clase->autorizados - $contratados;
+                    if($vacantes < $puesto["autorizados"]){
+                        array_push($errores,"No se pudo actualizar el número de autorizados, el valor no puede ser menor al número de vacantes");
+                    }else{
+                        $puesto_clase->autorizados = $puesto["autorizados"];
+                    }
+                }else{
+                    $puesto_clase = new Puesto();
+                    $puesto_clase->autorizados = $puesto["autorizados"];
+                }
+                $puesto_clase->id_departamento = $id_departamento;
+                $puesto_clase->puesto = strtoupper($puesto["puesto"]);
+                $puesto_clase->descripcion = strtoupper($puesto["descripcion"]);
+                $puesto_clase->fecha_modificacion = $fecha;
+                $puesto["sueldo_tipo_a"] = str_replace("$","",$puesto["sueldo_tipo_a"]);
+                $puesto["sueldo_tipo_a"] = str_replace(",","",$puesto["sueldo_tipo_a"]);
+                $puesto_clase->sueldo_tipo_a = $puesto["sueldo_tipo_a"];
+                $puesto["sueldo_tipo_b"] = str_replace("$","",$puesto["sueldo_tipo_b"]);
+                $puesto["sueldo_tipo_b"] = str_replace(",","",$puesto["sueldo_tipo_b"]);
+                $puesto_clase->sueldo_tipo_b = $puesto["sueldo_tipo_b"];
+                $puesto["sueldo_tipo_c"] = str_replace("$","",$puesto["sueldo_tipo_c"]);
+                $puesto["sueldo_tipo_c"] = str_replace(",","",$puesto["sueldo_tipo_c"]);
+                $puesto_clase->sueldo_tipo_c = $puesto["sueldo_tipo_c"];
                 $puesto_clase->usuario_modificacion = $request["usuario_creacion"];
                 $puesto_clase->activo = 1;
                 $puesto_clase->save();
             }
-            return $this->crearRespuesta(1,"Departamento actualizado",200);
+            if(count($errores) > 0){
+                return $this->crearRespuesta(1,["tipo" => 1, "data" => $errores],200);
+            }
+            return $this->crearRespuesta(1,["tipo" => 2, "data" => "Departamento actualizado"],200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+   public function eliminarPuesto($id_puesto)
+   {
+       try{
+        DB::update('update gen_cat_puesto set activo = 0 where id_puesto = ?', [$id_puesto]);
+        return $this->crearRespuesta(1,"Puesto eliminado",200);
+       }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
+        }
+   }
 }

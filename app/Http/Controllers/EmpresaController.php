@@ -19,7 +19,19 @@ class EmpresaController extends Controller
     {
         //
     }
-
+    public function autoComplete(Request $res){
+        $palabra = strtoupper($res["nombre_empresa"]);
+        $busqueda = DB::table("gen_cat_empresa as ce")
+        ->select("ce.id_empresa","ce.empresa")
+        ->where("ce.empresa","like","%".$palabra."%")
+        ->where("ce.activo",1)
+        ->take(5)
+        ->get();
+        if(count($busqueda)>0){
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
+    }
     public function obtenerEmpresas(Request $res){
         $take = $res["taken"];
         $pagina = $res["pagina"];
@@ -46,13 +58,14 @@ class EmpresaController extends Controller
             $palabra = "%".$palabra."%";
         }
         $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_empresa')
+        $registros = DB::table('gen_cat_empresa')
+        ->select("empresa","id_empresa","id_empresa as id_entidad","empresa as entidad")
         ->where("id_status",$otro,$status)
         ->where("empresa",$otro_dos,$palabra)
         ->skip($incia)
         ->take($take)
         ->get();
-        $contar = DB::table('cat_empresa')
+        $contar = DB::table('gen_cat_empresa')
         ->where("id_status",$otro,$status)
         ->where("empresa",$otro_dos,$palabra)
         ->get();
@@ -67,13 +80,14 @@ class EmpresaController extends Controller
         }
     }
     public function obtenerEmpresaPorId($id){
-        $empresa = DB::table("cat_empresa as gce")
-        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo")
-        ->join("cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
+        $empresa = DB::table("gen_cat_empresa as gce")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp","gce.cargo_repre","gce.certificado","gce.key","gce.no_certificado","gce.regimen_fiscal")
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
+        ->leftJoin("gen_cat_estados as gced","gced.id_estado","=","gcd.estado")
         ->where("gce.id_empresa",$id)
         ->get();
         if(count($empresa)>0){
-            $fotografia = DB::table("cat_fotografia")
+            $fotografia = DB::table("gen_cat_fotografia")
             ->where("id_fotografia",$empresa[0]->id_fotografia)
             ->get();
             $empresa[0]->fotografia = Storage::disk('empresa')->url($fotografia[0]->nombre);
@@ -86,7 +100,7 @@ class EmpresaController extends Controller
     public function obtenerEmpresaPorIdUsuario($id_usuario)
     {
         $empresas_configuradas = DB::table('liga_usuario_empresa as lue')
-        ->join("cat_empresa","cat_empresa.id_empresa","lue.id_empresa")
+        ->join("gen_cat_empresa","gen_cat_empresa.id_empresa","lue.id_empresa")
         ->where("id_usuario",$id_usuario)
         ->where("lue.activo",1)
         ->get();
@@ -99,97 +113,159 @@ class EmpresaController extends Controller
     public function altaEmpresa(Request $request){
         //validate incoming request 
         $this->validate($request, [
-            'empresa' => 'required|string|max:300|unique:cat_empresa',
+            'empresa' => 'required|string|max:300|unique:gen_cat_empresa',
             'razon_social' => 'required|max:300',
-            'rfc' => 'required|max:150|unique:cat_empresa',
+            'rfc' => 'required|max:150|unique:gen_cat_empresa',
         ]);
         try{
             //Insertar fotografia
-            $id_fotografia = $this->getSigId("cat_fotografia");
+            $id_fotografia = $this->getSigId("gen_cat_fotografia");
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $request["usuario_creacion"];
             if($request["fotografia"]["docB64"] == ""){
                 //Guardar foto default
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"empresa_default.png",$fecha,$usuario_creacion,1]);
             }else{
                 $file = base64_decode($request["fotografia"]["docB64"]);
                 $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
-                DB::insert('insert into cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+                DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
                 Storage::disk('empresa')->put($nombre_image, $file); 
             }
             //Insertar dirección
-            $id_direccion = $this->getSigId("cat_direccion");
+            $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
-            $direccion->calle = $request["direccion"]["calle"];
-            $direccion->numero_interior = $request["direccion"]["numero_interior"];
-            $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
-            $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
-            $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
+            $direccion->calle = strtoupper($request["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($request["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($request["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($request["direccion"]["cruzamiento_uno"]);
+            $direccion->cruzamiento_dos = strtoupper($request["direccion"]["cruzamiento_dos"]);
             $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-            $direccion->colonia = $request["direccion"]["colonia"];
-            $direccion->localidad = $request["direccion"]["localidad"];
-            $direccion->municipio = $request["direccion"]["municipio"];
+            $direccion->colonia = strtoupper($request["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($request["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($request["direccion"]["municipio"]);
             $direccion->estado = $request["direccion"]["estado"];
-            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->descripcion = strtoupper($request["direccion"]["descripcion"]);
             $direccion->fecha_creacion = $fecha;
             $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = $request["activo"];
             $direccion->save();
             //Insertar Empresa
-            $id_empresa = $this->getSigId("cat_empresa");
+            $id_empresa = $this->getSigId("gen_cat_empresa");
             $empresa = new Empresa();
             $empresa->id_empresa = $id_empresa;
-            $empresa->id_status = $request["id_statu"];
+            $empresa->id_status = 1;
             $empresa->id_direccion = $id_direccion;
             $empresa->id_fotografia = $id_fotografia;
-            $empresa->empresa = $request["empresa"];
-            $empresa->razon_social = $request["razon_social"];
-            $empresa->rfc = $request["rfc"];
-            $empresa->descripcion = $request["descripcion"];
+            $empresa->empresa = strtoupper($request["empresa"]);
+            $empresa->razon_social = strtoupper($request["razon_social"]);
+            $empresa->rfc = strtoupper($request["rfc"]);
+            $empresa->descripcion = strtoupper($request["descripcion"]);
+            if(isset($request["representante"]["nombre"])){
+                $empresa->representante_legal = strtoupper($request["representante"]["nombre"]);
+            }
+            if(isset($request["representante"]["rfc"])){
+                $empresa->rfc_repre = strtoupper($request["representante"]["rfc"]);
+            }
+            if(isset($request["representante"]["curp"])){
+                $empresa->curp = strtoupper($request["representante"]["curp"]);
+            }
+            if(isset($request["representante"]["cargo"])){
+                $empresa->cargo_repre = strtoupper($request["representante"]["cargo"]);
+            }
             $empresa->fecha_creacion = $fecha;
             $empresa->usuario_creacion = $usuario_creacion;
             $empresa->activo = $request["activo"];
             $empresa->save();
-            return $this->crearRespuesta(1,"El candidato ha sido registrado correctamente",200);
+            return $this->crearRespuesta(1,"La empresa ha sido registrada correctamente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
     public function bajaEmpresa($id){
-        $data = DB::update('update gen_cat_empresas set activo = 0 where id = ?',[$id]);
+        $data = DB::update('update gen_gen_cat_empresas set activo = 0 where id = ?',[$id]);
         return $this->crearRespuesta(1,"Empresa Eliminada",200);
     }
     public function actualizarEmpresa(Request $request){
         try{
-            //Actualizar empresa
+            //Actualizar foto
             $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "empresa_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('empresa')->has($nombre_image)){
+                    Storage::disk('empresa')->delete($nombre_image);
+                }
+                DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                Storage::disk('empresa')->put($nombre_image, $file);
+            }
+            //Actualizar empresa
             $empresa = Empresa::find($request["id_empresa"]);
-            $empresa->empresa = $request["empresa"];
-            $empresa->razon_social = $request["razon_social"];
-            $empresa->rfc = $request["rfc"];
-            $empresa->descripcion = $request["descripcion"];
+            $empresa->empresa = strtoupper($request["empresa"]);
+            $empresa->razon_social = strtoupper($request["razon_social"]);
+            $empresa->rfc = strtoupper($request["rfc"]);
+            $empresa->descripcion = strtoupper($request["descripcion"]);
+            if(isset($request["representante"]["nombre"])){
+                $empresa->representante_legal = strtoupper($request["representante"]["nombre"]);
+            }
+            if(isset($request["representante"]["rfc"])){
+                $empresa->rfc_repre = strtoupper($request["representante"]["rfc"]);
+            }
+            if(isset($request["representante"]["curp"])){
+                $empresa->curp = strtoupper($request["representante"]["curp"]);
+            }
+            if(isset($request["representante"]["cargo"])){
+                $empresa->cargo_repre = strtoupper($request["representante"]["cargo"]);
+            }
+            if(isset($request["regimen"])){
+                $empresa->regimen_fiscal = strtoupper($request["regimen"]);
+            }
+            if(isset($request["no_cer"])){
+                $empresa->no_certificado = $request["no_cer"];
+            }
+            if(isset($request["cer"]) && strlen($request["cer"]) > 0){
+                $path = "credenciales/CER_EMPRESA_ID_".$request["id_empresa"].".cer";
+                $file = base64_decode($request["cer"]);
+                if(Storage::disk('empresa')->has($path)){
+                    Storage::disk('empresa')->delete($path);
+                }
+                Storage::disk('empresa')->put($path, $file);
+                $empresa->certificado = $path;
+            }
+            if(isset($request["key"]) && strlen($request["key"]) > 0){
+                $path = "credenciales/KEY_EMPRESA_ID_".$request["id_empresa"].".key.pem";
+                $file = base64_decode($request["key"]);
+                if(Storage::disk('empresa')->has($path)){
+                    Storage::disk('empresa')->delete($path);
+                }
+                Storage::disk('empresa')->put($path, $file);
+                $empresa->key = $path;
+            }
             $empresa->fecha_modificacion = $fecha;
-            $empresa->usuario_modificacion = $request["usuario_creacion"];
+            $empresa->usuario_modificacion = $usuario_modificacion;
             $empresa->save();
             //Actualizar direccion
             $direccion = Direccion::find($request["direccion"]["id_direccion"]);
-            $direccion->calle = $request["direccion"]["calle"];
+            $direccion->calle = strtoupper($request["direccion"]["calle"]);
             $direccion->numero_interior = $request["direccion"]["numero_interior"];
             $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
             $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
             $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
             $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-            $direccion->colonia = $request["direccion"]["colonia"];
-            $direccion->localidad = $request["direccion"]["localidad"];
-            $direccion->municipio = $request["direccion"]["municipio"];
+            $direccion->colonia = strtoupper($request["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($request["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($request["direccion"]["municipio"]);
             $direccion->estado = $request["direccion"]["estado"];
-            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->descripcion = strtoupper($request["direccion"]["descripcion"]);
             $direccion->fecha_modificacion = $fecha;
-            $direccion->usuario_modificacion = $request["usuario_creacion"];
+            $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();
-            //Actualizar foto
-            DB::update('update cat_fotografia set fotografia = ?, extension = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$request["usuario_creacion"],$request["fotografia"]["id_fotografia"]]);
             return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
@@ -260,8 +336,8 @@ class EmpresaController extends Controller
     public function obtenerEmpresasPorIdCliente($id_cliente)     
     {
         $empresas = DB::table('liga_empresa_cliente as lec')
-        ->select("lec.id_empresa","ce.empresa")
-        ->join("cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
+        ->select("lec.id_empresa",DB::raw("CONCAT('(',lec.id_empresa,')',' ',ce.empresa) as empresa"),"ce.empresa as nombre","ce.razon_social","representante_legal as repre")
+        ->join("gen_cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
         ->where("lec.id_cliente",$id_cliente)
         ->get();
         if(count($empresas)>0){

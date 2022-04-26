@@ -13,7 +13,7 @@ class Cliente extends Model {
      */
     const UPDATED_AT = null;
     const CREATED_AT = null;
-    protected $table = 'cat_cliente';
+    protected $table = 'gen_cat_cliente';
     protected $primaryKey = "id_cliente";
     protected $fillable = [
         'cliente', 

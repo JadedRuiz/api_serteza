@@ -37,15 +37,15 @@
         }
         .hijo_header{
             margin-top:20px;
-            width: 55%;
+            width: 30%;
             display: inline-block;
-            height: 130px;
+            height: 80px;
             margin-left: 10px;
             margin-bottom: -30px;
         }
         .hijo_header_dos{
             margin-top:0px;
-            width: 35%;
+            width: 65%;
             display: inline-block;
             text-align: center;
             margin-right: 10px;
@@ -53,7 +53,7 @@
         }
         .logo_cliente{
             width: 100%;
-            height: 130px;
+            height: 100%;
         }
         .container-body{
             margin-top: 15px;
@@ -61,7 +61,7 @@
         }
         .titulo_contenedor{
             border-bottom: 2px black solid;
-            background-color: rgba(99, 98, 98, 0.877);
+            background-color: rgba(167, 167, 167, 0.877);
             padding: 5px 5px;
             font-size: 14px;
         }
@@ -110,6 +110,7 @@
         }
         .input div {
             padding: 0;
+            margin-top: 0px;
             height: auto;
             word-wrap: break-word;
         }
@@ -122,8 +123,8 @@
         .input{
             margin-bottom: 10px;
         }
-        .domicilio .input {
-            margin-bottom: 10px;
+        .domicilio{
+            border: 1px transparent solid;
         }
     </style>
 </head>
@@ -139,21 +140,12 @@
         <div class="titulo_contenedor fuente_bold_monospace">DATOS GENERALES</div>
         <div class="cuerpo_contenedor">
             <div class="fotografia">
-                <img  class="img_user" src="data:image/{{$detalle_contratacion[0]->extension}};base64, {{$detalle_contratacion[0]->fotografia}}" alt="">
+                <img  class="img_user" src="{{$detalle_contratacion[0]->fotografia}}" alt="">
             </div>
             <div class="informacion_persona">
                 <div class="input display-block" style="text-align: center;width: 90%;">
                     <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$detalle_contratacion[0]->nombre}}</div>
-                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Nombre(s)</p>
-                </div>
-                <br>
-                <div class="input display-block" style="text-align: center;width: 45%;">
-                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$detalle_contratacion[0]->apellido_paterno}}</div>
-                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Apellido paterno</p>
-                </div>
-                <div class="input display-block" style="text-align: center;width: 45%;">
-                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;">{{$detalle_contratacion[0]->apellido_materno}}</div>
-                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Apellido materno</p>
+                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Nombre completo</p>
                 </div>
                 <br>
                 <div class="input display-block" style="text-align: center;width: 45%;">
@@ -210,15 +202,23 @@
                     <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Estado</p>
                 </div>
                 <br>
-                <div class="input" style="text-align: center;width: 99%;">
+                <div class="input display-block" style="text-align: center;width: 33%;">
                     <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;;text-transform: uppercase;">{{$detalle_contratacion[0]->colonia}}</div>
                     <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Colonia</p>
+                </div>
+                <div class="input display-block" style="text-align: center;width: 33%;">
+                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;;text-transform: uppercase;">{{$detalle_contratacion[0]->telefono}}</div>
+                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Telefono</p>
+                </div>
+                <div class="input display-block" style="text-align: center;width: 33%;">
+                    <div type="text" class="firma fuente_normal_Heebo" style="margin: 0px;padding: 0px;;text-transform: uppercase;">{{$detalle_contratacion[0]->telefono_dos}}</div>
+                    <p class="fuente_textos_monospace" style="margin: 0px;padding: 0px;">Telefono secundario</p>
                 </div>
             </div>
         </div>
     </div>
     <div class="container-body-seguido">
-        <div class="titulo_contenedor fuente_bold_monospace">DATOS DE CONTRATACIÓN <div class="fuente_bold_monospace" style="float: right;">FECHA DE CONTRATACIÓN: {{date("d-m-Y",strtotime($detalle_contratacion[0]->fecha_alta))}}</div></div>
+        <div class="titulo_contenedor fuente_bold_monospace">DATOS DE CONTRATACIÓN <div class="fuente_bold_monospace" style="float: right;">FECHA DE CONTRATACIÓN: {{date("d-m-Y",strtotime($detalle_contratacion[0]->fecha_detalle))}}</div></div>
         <div class="cuerpo_contenedor">
             <table class="table">
                 <thead style="border: 1px black solid;">
@@ -249,7 +249,7 @@
     <div class="firma-contenedor">
         <div class="firma_empleado hijo_firma">
             <p class="fuente_titulos_Heebo">Firma</p>
-            <p class="fuente_textos_monospace">{{$detalle_contratacion[0]->nombre.' '.$detalle_contratacion[0]->apellido_paterno.' '.$detalle_contratacion[0]->apellido_materno}}</p>
+            <p class="fuente_textos_monospace">{{$detalle_contratacion[0]->nombre}}</p>
             <div class="firma"></div>
         </div>
         <div class="firma_usuario hijo_firma">

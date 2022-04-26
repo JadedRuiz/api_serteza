@@ -37,15 +37,15 @@
         }
         .hijo_header{
             margin-top:20px;
-            width: 55%;
+            width: 40%;
             display: inline-block;
-            height: 130px;
+            height: 100px;
             margin-left: 10px;
             margin-bottom: -30px;
         }
         .hijo_header_dos{
             margin-top:0px;
-            width: 35%;
+            width: 55%;
             display: inline-block;
             text-align: center;
             margin-right: 10px;
@@ -53,7 +53,7 @@
         }
         .logo_cliente{
             width: 100%;
-            height: 130px;
+            height: 100%;
         }
         .dib{
             display: inline-block;
@@ -104,39 +104,44 @@
         </div>
         <div class="hijo_header_dos fuente_titulos_Heebo titulo_grande">{{$reporte_contrato[0]->cliente}}</div>
     </header>
-    <p class="fuente_titulos_Heebo" style="margin-left: 230px;">REPORTE DE CONTRATACIÓN</p>
-    <div class="info_general mt-10">
-        <div class="fecha_folio dib">
-            <div class="fecha dib vat fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_contratacion}}</div></div>
+    <p class="fuente_titulos_Heebo" style="margin-left: 380px;">REPORTE DE CONTRATACIÓN</p>
+    <div class="info_general">
+        <div class="fecha_folio dib" style="font-size: 12px;">
+            <div class="dib mt-5 fuente_titulos_Heebo">Fecha: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_movimiento}}</div></div>
             <br>
-            <div class="folio dib vat mt-10 fuente_titulos_Heebo">Folio: <div class="folio_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->folio}}</div></div>
-        </div>
-        <div class="usuario_trabajador dib">
-            <div class="fecha dib va fuente_titulos_Heebo">Usuario: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->usuario}}</div></div>
+            <div class="dib mt-5 fuente_titulos_Heebo">Fecha de impresión: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->fecha_hoy}}</div></div>
             <br>
-            <div class="folio dib vat mt-10 fuente_titulos_Heebo">No. de trabajadores: <div class="folio_valor dib vat fuente_normal_Heebo">{{count($reporte_contrato[0]->detalle)}}</div></div>
+            <div class="dib mt-5 fuente_titulos_Heebo">Usuario: <div class="fecha_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->usuario}}</div></div>
+            <br>
+            <div class="dib mt-5 fuente_titulos_Heebo">No. de trabajadores: <div class="folio_valor dib vat fuente_normal_Heebo">{{count($reporte_contrato[0]->detalle)}}</div></div>
+            <br>
+            <div class="dib mt-5 fuente_titulos_Heebo">Folio: <div class="folio_valor dib vat ww fuente_normal_Heebo">{{$reporte_contrato[0]->folio}}</div></div>
         </div>
     </div>
     <div class="table">
         <table class="w100">
             <thead class="bb">
-                <tr class="fuente_titulos_Heebo">
-                    <th colspan="1">NOMBRE DEL EMPLEADO</th>
-                    <th colspan="1">EMPRESA</th>
-                    <th colspan="1">DEPARTAMENTO</th>
-                    <th colspan="1">PUESTO</th>
-                    <th colspan="1">SUELDO</th>
+                <tr class="fuente_titulos_Heebo" style="font-size: 12px;">
+                    <th colspan="1" style="text-align: left;">Nombre</th>
+                    <th colspan="1">Fecha ingreso</th>
+                    <th colspan="1" style="text-align: left;">Empresa/Sucursal</th>
+                    <th colspan="1" style="text-align: left;">Dept/Puesto</th>
+                    <th colspan="1">Sueldo diario</th>
+                    <th colspan="1">Sueldo neto</th>
+                    <th colspan="2" style="text-align: left;">Descripción</th>
                 </tr>
             </thead>
             <tbody>
                 @if (count($reporte_contrato[0]->detalle)>0)
                     @foreach ($reporte_contrato[0]->detalle as $trabajador)
-                        <tr class="fuente_normal_Heebo text-center">
-                            <td colspan="1">{{$trabajador->nombre.' '.$trabajador->apellido_paterno.' '.$trabajador->apellido_materno}}</td>
-                            <td colspan="1">{{$trabajador->empresa}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->departamento}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->puesto}}</td>
-                            <td colspan="1" style="text-transform: uppercase;">{{$trabajador->sueldo}}</td>
+                        <tr class="fuente_normal_Heebo text-center" style="font-size: 10px;">
+                            <td colspan="1" style="text-align: left;">{{$trabajador->nombre.' '.$trabajador->apellido_paterno.' '.$trabajador->apellido_materno}}</td>
+                            <td colspan="1">{{$trabajador->fecha_detalle}}</td>
+                            <td colspan="1" style="text-transform: uppercase;text-align: left;">{{$trabajador->empresa}}<br>{{$trabajador->sucursal}}</td>
+                            <td colspan="1" style="text-transform: uppercase;text-align: left;">{{$trabajador->departamento}}<br>{{$trabajador->puesto}}</td>
+                            <td colspan="1" style="text-transform: uppercase;">${{$trabajador->sueldo}}</td>
+                            <td colspan="1">${{$trabajador->sueldo_neto}}</td>
+                            <td colspan="2" style="text-align: left;">{{$trabajador->observacion}}</td>
                         </tr>
                     @endforeach
                 @else
@@ -149,14 +154,14 @@
     </div>
     <div class="firmas mt-10 text-center">
         <div class="firma_user dib">
-            <p class="fuente_titulos_Heebo">Firma</p>
+            <p class="fuente_titulos_Heebo" style="font-size: 14px;">Firma</p>
             <div class="linea_firma"></div>
-            <div class="nombre_firma fuente_textos_monospace">{{$reporte_contrato[0]->usuario}}</div>
+            <div class="nombre_firma fuente_textos_monospace" style="font-size: 12px;">{{$reporte_contrato[0]->usuario}}</div>
         </div>
         <div class="firma_rh dib text-center">
             <p class="fuente_titulos_Heebo">Firma</p>
             <div class="linea_firma"></div>
-            <div class="nombre_firma fuente_textos_monospace">RECURSOS HUMANOS</div>
+            <div class="nombre_firma fuente_textos_monospace" style="font-size: 12px;">RECURSOS HUMANOS</div>
         </div>
     </div>
 </body>

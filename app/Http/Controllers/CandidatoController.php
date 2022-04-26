@@ -3,39 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\Candidato;
+use App\Models\Fotografia;
 use App\Models\Direccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CandidatoController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-    public function obtenerDatosDashBoard(){
-        $usuario_totales = count(Candidato::where("activo",1)->get());
-        $usuarios_contratatos = count(Candidato::where("cat_status_id",1)->where("activo",1)->get());
-        $usuarios_por_contratar = count(Candidato::where("cat_status_id",6)->where("activo",1)->get());
-        $numero_solicitudes = 0; //Aun no se como sacarlo
-        $respuesta = [
-            "num_solicitudes" => $numero_solicitudes,
-            "por_contratar" => $usuarios_por_contratar,
-            "contratados" => $usuarios_contratatos,
-            "total" => $usuario_totales
-        ];
-        return $this->crearRespuesta(1,$respuesta,200);
+    public function autoComplete(Request $res){
+        $status = $res["status"];
+        $palabra = "%".strtoupper($res["nombre_candidato"])."%";
+        $id_cliente = $res["id_cliente"];
+        if($status == "-1"){
+            $otro = "!=";
+            $status = -1;
+        }else{
+            $otro = "=";
+            $status = intval($status);
+        }
+        $busqueda = Candidato::select(DB::raw('CONCAT(rh_cat_candidato.apellido_paterno, " ", rh_cat_candidato.apellido_materno, " ", rh_cat_candidato.nombre) as nombre_completo'),"rh_cat_candidato.id_candidato","rh_cat_candidato.id_status","rh_cat_candidato.activo","cf.nombre as fotografia", "rh_cat_candidato.apellido_paterno","rh_cat_candidato.apellido_materno", "rh_cat_candidato.nombre","rh_cat_candidato.descripcion","cs.status")
+        ->join("gen_cat_statu as cs","cs.id_statu","=","rh_cat_candidato.id_status")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rh_cat_candidato.id_fotografia")
+        ->where("id_cliente",$id_cliente)
+        ->where("rh_cat_candidato.activo",1)
+        ->where(function($query) use ($palabra){
+            $query->where(DB::raw('CONCAT(apellido_paterno, " ", apellido_materno, " ", rh_cat_candidato.nombre)'),"like",$palabra)
+            ->orWhere('rh_cat_candidato.descripcion','LIKE',$palabra);
+        })
+        ->where("rh_cat_candidato.id_status",$otro,$status)
+        ->take(10)
+        ->get();
+        if(count($busqueda)>0){
+            foreach ($busqueda as $canditado) {
+                $canditado->fotografia = Storage::disk('candidato')->url($canditado->fotografia);
+                $canditado->nombre = $canditado->apellido_paterno." ".$canditado->apellido_materno." ".$canditado->nombre;
+            }
+            return $this->crearRespuesta(1,$busqueda,200);
+        }
+        return $this->crearRespuesta(2,"No se han encontrado resultados",200);
     }
     public function obtenerCandidatos(Request $res){
-        $take = $res["taken"];
-        $pagina = $res["pagina"];
         $status = $res["status"];
-        $palabra = $res["palabra"];
+        $palabra = strtoupper($res["palabra"]);
         $id_cliente = $res["id_cliente"];
         $otro = "";
         if($status == "-1"){
@@ -56,57 +66,30 @@ class CandidatoController extends Controller
             $otro_dos = "like";
             $palabra = "%".$palabra."%";
         }
-        $incia = intval($pagina) * intval($take);
-        $registros = DB::table('cat_candidato as cc')
-        ->select("cc.nombre","cc.apellido_paterno","cc.id_candidato","cs.status","cc.apellido_materno","cc.activo","cc.id_fotografia as fotografia","cc.id_fotografia as extension")
-        ->join("cat_statu as cs","cs.id_statu","=","cc.id_status")
+        $registros = DB::table('rh_cat_candidato as cc')
+        ->select(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre) as nombre_completo'),"cc.id_candidato","cs.status","cc.activo","cf.nombre as fotografia", "cc.apellido_paterno","cc.apellido_materno", "cc.nombre","cc.descripcion","cs.id_statu")
+        ->join("gen_cat_statu as cs","cs.id_statu","=","cc.id_status")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","cc.id_fotografia")
         ->where("cc.id_cliente",$id_cliente)
         ->where("cc.activo",1)
         ->where("cc.id_status",$otro,$status)
-        ->where(function ($query) use ($otro_dos,$palabra){
-            $query->where("cc.nombre",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
-        })
-        ->skip($incia)
-        ->take($take)
+        ->where(DB::raw('CONCAT(cc.apellido_paterno, " ", cc.apellido_materno, " ", cc.nombre)'),$otro_dos,$palabra)
+        ->orderBy("cc.fecha_creacion","desc")
+        ->take(1000)
         ->get();
         if(isset($res["tipo"]) && $res["tipo"] == 1){
             foreach($registros as $registro){
-                $fotografia = DB::table('cat_fotografia')
-                ->where("id_fotografia",$registro->fotografia)
-                ->get();
-                if(count($fotografia)>0){
-                    $registro->fotografia = $fotografia[0]->fotografia;
-                    $registro->extension = $fotografia[0]->extension;
-                }else{
-                    $registro->fotografia = "";
-                }
-                
+                $registro->fotografia = Storage::disk('candidato')->url($registro->fotografia);
             }
         }
-        $contar = DB::table('cat_candidato as cc')
-        ->where("cc.id_cliente",$id_cliente)
-        ->where("cc.activo",1)
-        ->where("cc.id_status",$otro,$status)
-        ->where(function ($query) use ($otro_dos,$palabra){
-            $query->where("cc.nombre",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_paterno",$otro_dos,$palabra)
-                  ->orWhere("cc.apellido_materno",$otro_dos,$palabra);
-        })
-        ->get();
         if(count($registros)>0){
-            $respuesta = [
-                "total" => count($contar),
-                "registros" => $registros
-            ];
-            return $this->crearRespuesta(1,$respuesta,200);
+            return $this->crearRespuesta(1,$registros,200);
         }else{
             return $this->crearRespuesta(2,"No hay candidatos que mostrar",200);
         }
     }
     public function obtenerCandidatosPorIdCliente($id){
-        $validador = Candidato::where("cat_clientes_id",$id)
+        $validador = Candidato::where("gen_cat_clientes_id",$id)
         ->select("nombre","apellido_paterno","apellido_materno","id")
         ->where("activo",1)
         ->orderBy("apellido_paterno","ASC")
@@ -121,24 +104,17 @@ class CandidatoController extends Controller
         }
     }
     public function obtenerCandidatoPorId($id){
-        $respuesta = DB::table("cat_candidato as rcc")
-        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension","gce.status")
-        ->join("cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
-        ->join("cat_statu as gce","gce.id_statu","=","rcc.id_status")
+        $respuesta = DB::table("rh_cat_candidato as rcc")
+        ->select("rcc.id_candidato", "rcc.id_fotografia", "rcc.id_status", "rcc.apellido_paterno", "rcc.apellido_materno", "rcc.nombre", "rcc.rfc", "rcc.curp", "rcc.numero_seguro", "rcc.edad", "rcc.fecha_nacimiento", "rcc.correo", "rcc.telefono", "rcc.telefono_dos", "rcc.telefono_tres", "rcc.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado as id_estado", "ge.estado", "gcd.descripcion as descripcion_direccion","gce.status","cf.nombre as fotografia","rcc.id_cliente")
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","rcc.id_direccion")
+        ->join("gen_cat_statu as gce","gce.id_statu","=","rcc.id_status")
+        ->join("gen_cat_fotografia as cf","cf.id_fotografia","=","rcc.id_fotografia")
+        ->leftJoin("gen_cat_estados as ge","ge.id_estado","=","gcd.estado")
         ->where("rcc.id_candidato",$id)
         ->where("rcc.activo",1)
         ->get();
         if(count($respuesta)>0){
-            $fotografia = DB::table("cat_fotografia")
-            ->where("id_fotografia",$respuesta[0]->id_fotografia)
-            ->get();
-            if(count($fotografia)>0){
-                $respuesta[0]->fotografia = $fotografia[0]->fotografia;
-                $respuesta[0]->extension = $fotografia[0]->extension;
-            }else{
-                $respuesta[0]->fotografia = "";
-                $respuesta[0]->extension = "";
-            }
+            $respuesta[0]->fotografia = Storage::disk('candidato')->url($respuesta[0]->fotografia);
             return $this->crearRespuesta(1,$respuesta,200);
         }else{
             return $this->crearRespuesta(2,"El usuario no ha sido encontrado",200);
@@ -152,29 +128,62 @@ class CandidatoController extends Controller
             'apellido_paterno' => 'required|max:150',
             'apellido_materno' => 'required|max:150',
         ]);
+        $validar_rfc = DB::table('rh_cat_candidato')
+        ->where("rfc",$request["rfc"])
+        ->where("activo",1)
+        ->get();
+        if(count($validar_rfc)>0){
+            return $this->crearRespuesta(2,"El RFC ya se encuentra registrado",301);
+        }
+        $validar_curp = DB::table('rh_cat_candidato')
+        ->where("curp",$request["curp"])
+        ->where("activo",1)
+        ->get();
+        if(count($validar_curp)>0){
+            return $this->crearRespuesta(2,"El CURP ya se encuentra registrado",301);
+        }
         try{
         $fecha = $this->getHoraFechaActual();
         $usuario_creacion = $request["usuario_creacion"];
-        //insertar fotografia
-        $id_fotografia = $this->getSigId("cat_fotografia");
-        DB::insert('insert into cat_fotografia
-        (id_fotografia,nombre, fotografia, extension, fecha_creacion, usuario_creacion, activo) values (?, ?, ?, ?, ?, ?, ?)',
-        [$id_fotografia,$request["fotografia"]["nombre"],$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$fecha,$usuario_creacion,1]);
-        //Insertar dirección
-            $id_direccion = $this->getSigId("cat_direccion");
+        $id_cliente = $request["id_cliente"];
+        //crear fotografia
+        $fotografia = new Fotografia();
+        //Insertar fotografia
+        if($request["fotografia"]["docB64"] == ""){
+            //Guardar foto default
+            $fotografia->nombre = "candidato_default.png";
+            $fotografia->fecha_creacion = $fecha;
+            $fotografia->usuario_creacion = $usuario_creacion;
+            $fotografia->activo = 1;
+            // DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,"candidato_default.png",$fecha,$usuario_creacion,1]);
+        }else{
+            
+            $file = base64_decode($request["fotografia"]["docB64"]);
+            $nombre_image = "Cliente".+$id_cliente."/candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+            $fotografia->nombre = $nombre_image;
+            $fotografia->fecha_creacion = $fecha;
+            $fotografia->usuario_creacion = $usuario_creacion;
+            $fotografia->activo = 1;
+            // DB::insert('insert into gen_cat_fotografia (id_fotografia, nombre, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_fotografia,$nombre_image,$fecha,$usuario_creacion,1]);
+            Storage::disk('candidato')->put($nombre_image, $file);
+        }
+        $fotografia->save();
+        $id_fotografia = $fotografia->id_fotografia;
+        //Insertar direcci贸n
+            $id_direccion = $this->getSigId("gen_cat_direccion");
             $direccion = new Direccion;
             $direccion->id_direccion = $id_direccion;
-            $direccion->calle = $request["direccion"]["calle"];
-            $direccion->numero_interior = $request["direccion"]["numero_interior"];
-            $direccion->numero_exterior = $request["direccion"]["numero_exterior"];
-            $direccion->cruzamiento_uno = $request["direccion"]["cruzamiento_uno"];
-            $direccion->cruzamiento_dos = $request["direccion"]["cruzamiento_dos"];
+            $direccion->calle =strtoupper($request["direccion"]["calle"]);
+            $direccion->numero_interior = strtoupper($request["direccion"]["numero_interior"]);
+            $direccion->numero_exterior = strtoupper($request["direccion"]["numero_exterior"]);
+            $direccion->cruzamiento_uno = strtoupper($request["direccion"]["cruzamiento_uno"]);
+            $direccion->cruzamiento_dos = strtoupper($request["direccion"]["cruzamiento_dos"]);
             $direccion->codigo_postal = $request["direccion"]["codigo_postal"];
-            $direccion->colonia = $request["direccion"]["colonia"];
-            $direccion->localidad = $request["direccion"]["localidad"];
-            $direccion->municipio = $request["direccion"]["municipio"];
-            $direccion->estado = $request["direccion"]["estado"];
-            $direccion->descripcion = $request["direccion"]["descripcion"];
+            $direccion->colonia = strtoupper($request["direccion"]["colonia"]);
+            $direccion->localidad = strtoupper($request["direccion"]["localidad"]);
+            $direccion->municipio = strtoupper($request["direccion"]["municipio"]);
+            $direccion->estado = strtoupper($request["direccion"]["estado"]);
+            $direccion->descripcion = strtoupper($request["direccion"]["descripcion"]);
             $direccion->fecha_creacion = $fecha;
             $direccion->usuario_creacion = $usuario_creacion;
             $direccion->activo = 1;
@@ -182,16 +191,16 @@ class CandidatoController extends Controller
         //Insertar candidato
         
             $canditado = new Candidato;
-            $canditado->id_candidato = $this->getSigId("cat_candidato");
+            $canditado->id_candidato = $this->getSigId("rh_cat_candidato");
             $canditado->id_status = $request["id_statu"];  //En reclutamiento
-            $canditado->id_cliente = $request["id_cliente"];
+            $canditado->id_cliente = $id_cliente;
             $canditado->id_fotografia = $id_fotografia;
             $canditado->id_direccion = $id_direccion;
             $canditado->nombre = strtoupper($request["nombre"]);
             $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
             $canditado->apellido_materno = strtoupper($request["apellido_materno"]);
-            $canditado->rfc = $request["rfc"];
-            $canditado->curp = $request["curp"];
+            $canditado->rfc = strtoupper($request["rfc"]);
+            $canditado->curp = strtoupper($request["curp"]);
             $canditado->numero_seguro = $request["numero_social"];
             $canditado->fecha_nacimiento = $request["fecha_nacimiento"];
             $canditado->correo = $request["correo"];
@@ -199,7 +208,7 @@ class CandidatoController extends Controller
             $canditado->edad = $request["edad"];
             $canditado->telefono_dos =$request["telefono_dos"];
             $canditado->telefono_tres =$request["telefono_tres"];
-            $canditado->descripcion = $request["descripcion"];
+            $canditado->descripcion = strtoupper($request["descripcion"]);
             $canditado->fecha_creacion = $fecha;
             $canditado->usuario_creacion = $usuario_creacion;
             $canditado->activo = 1;
@@ -210,15 +219,32 @@ class CandidatoController extends Controller
         }
     }
     public function eliminarCandidato($id){
-        $data = DB::update('update cat_candidato set activo = 0 where id_candidato = ?',[$id]);
+        $data = DB::update('update rh_cat_candidato set activo = 0 where id_candidato = ?',[$id]);
         return $this->crearRespuesta(1,"Candidato Eliminado",200);
     }
     public function actualizarCandidato(Request $request){
         try{
-            $fecha = $this->getHoraFechaActual();
-            $usuario_creacion = $request["usuario_creacion"];
-            //Actualizar candidato
             $canditado = Candidato::find($request["id_candidato"]);
+            $fecha = $this->getHoraFechaActual();
+            $usuario_modificacion = $request["usuario_creacion"];
+            $id_fotografia = $request["fotografia"]["id_fotografia"];
+            //Actualizar fotografia
+            if($request["fotografia"]["docB64"] == ""){
+                //Guardar foto default
+                DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$id_fotografia]);
+            }else{
+                $file = base64_decode($request["fotografia"]["docB64"]);
+                $nombre_image = "Cliente".$canditado->id_cliente."/candidato_img_".$id_fotografia.".".$request["fotografia"]["extension"];
+                if(Storage::disk('candidato')->has($nombre_image)){
+                    Storage::disk('candidato')->delete($nombre_image);
+                    DB::update('update gen_cat_fotografia set fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('candidato')->put($nombre_image, $file);
+                }else{
+                    DB::update('update gen_cat_fotografia set nombre = ?, fecha_modificacion = ?, usuario_modificacion = ? where id_fotografia = ?', [$nombre_image,$fecha,$usuario_modificacion,$request["fotografia"]["id_fotografia"]]);
+                    Storage::disk('candidato')->put($nombre_image, $file);
+                }
+            }
+            //Actualizar candidato
             $canditado->id_status = $request["id_statu"];  //En reclutamiento
             $canditado->nombre = strtoupper($request["nombre"]);
             $canditado->apellido_paterno = strtoupper($request["apellido_paterno"]);
@@ -234,7 +260,7 @@ class CandidatoController extends Controller
             $canditado->telefono_tres =$request["telefono_tres"];
             $canditado->descripcion = $request["descripcion"];
             $canditado->fecha_modificacion = $fecha;
-            $canditado->usuario_modificacion = $usuario_creacion;
+            $canditado->usuario_modificacion = $usuario_modificacion;
             $canditado->activo = 1;
             $canditado->save();
             //Actualizar direccion
@@ -251,13 +277,80 @@ class CandidatoController extends Controller
             $direccion->estado = $request["direccion"]["estado"];
             $direccion->descripcion = $request["direccion"]["descripcion"];
             $direccion->fecha_modificacion = $fecha;
-            $direccion->usuario_modificacion = $usuario_creacion;
+            $direccion->usuario_modificacion = $usuario_modificacion;
             $direccion->save();
-            //Actualizar foto
-            DB::update('update cat_fotografia set fotografia = ?, extension = ? where id_fotografia = ?',[$request["fotografia"]["docB64"],$request["fotografia"]["extension"],$request["fotografia"]["id_fotografia"]]);
-            return $this->crearRespuesta(1,"Se ha actualizado con exito",200);
+            return $this->crearRespuesta(1,"El candidato se ha editado con 茅xito",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
+    }
+
+    public function obtenerCandidatoActivoId($id_candidato)
+    {
+        $canditado_activo = DB::table('rh_detalle_contratacion as rdc')
+        ->select(DB::raw('CONCAT(rcc.apellido_paterno, " ", rcc.apellido_materno, " ", rcc.nombre) as nombre'),"gcd.departamento","gcp.puesto","rdc.fecha_alta","ncn.nomina","rdc.sueldo","rdc.id_nomina","rdc.id_empresa","rdc.id_departamento","rdc.id_puesto")
+        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdc.id_nomina")
+        ->join("rh_cat_candidato as rcc","rcc.id_candidato","=","rdc.id_candidato")
+        ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdc.id_departamento")
+        ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdc.id_puesto")
+        ->where("rdc.id_candidato",$id_candidato)
+        ->where("rdc.activo",1)
+        ->get();
+        if(count($canditado_activo)>0){
+            $canditado_activo[0]->fecha_alta = date("Y-m-d",strtotime($canditado_activo[0]->fecha_alta));
+            return $this->crearRespuesta(1,$canditado_activo,200);
+        }else{
+            return $this->crearRespuesta(2,"No se ha encontrado el candidato",301);
+        }
+    }
+    public function obtenerMovientosCandidato($id_candidato)
+    {
+        $status_candidato = DB::table('rh_cat_candidato as rcc')
+        ->select("id_status")
+        ->where("rcc.id_candidato",$id_candidato)
+        ->first();
+        $informacion_contrato_baja = [];
+        if($status_candidato->id_status == 2){  //Candidato dato de baja
+            $informacion_contrato_baja = DB::table('rh_movimientos as rm')
+            ->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina",DB::raw('DATE_FORMAT(rdb.fecha_baja, "%Y-%m-%d") as fecha_alta'),"rm.fecha_movimiento")
+            ->join("rh_detalle_baja as rdb","rdb.id_movimiento","=","rm.id_movimiento")
+            ->join("gen_cat_empresa as gce","gce.id_empresa","=","rdb.id_empresa")
+            ->join("gen_cat_departamento as gcd","gcd.id_departamento","=","rdb.id_departamento")
+            ->join("gen_cat_puesto as gcp","gcp.id_puesto","=","rdb.id_puesto")
+            ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","rdb.id_nomina")
+            ->where("rm.id_status",1)
+            ->where("rdb.id_candidato",$id_candidato)
+            ->get();
+        }
+        
+        $informacion_movimientos = DB::table('rh_movimientos as rm')
+        ->select("rm.tipo_movimiento",DB::raw('DATE_FORMAT(rm.fecha_movimiento, "%d-%m-%Y") as fecha_movimiento'),"rdc.observacion")
+        ->join("rh_detalle_movimiento as rdc","rdc.id_movimiento","=","rm.id_movimiento")
+        ->where("rm.id_status",1)
+        ->where("rdc.id_candidato",$id_candidato)
+        ->orderBy("rm.fecha_movimiento","DESC")
+        ->get();
+        $informacion_contrato_actual = DB::table('nom_empleados as ne')
+        ->select("gce.empresa","gcd.departamento","gcp.puesto","ncn.nomina","ne.sueldo_diario","ne.sueldo_integrado",'ne.fecha_ingreso as fecha_alta','ne.fecha_antiguedad')
+        ->leftJoin("rh_cat_candidato as rcc","rcc.id_candidato","=","ne.id_candidato")
+        ->leftJoin("nom_cat_nomina as ncn","ncn.id_nomina","=","ne.id_nomina")
+        ->leftJoin("gen_cat_puesto as gcp","gcp.id_puesto","=","ne.id_puesto")
+        ->leftJoin("nom_sucursales as ns","ns.id_sucursal","=","ne.id_sucursal")
+        ->leftJoin("gen_cat_empresa as gce","gce.id_empresa","=","ns.id_empresa")
+        ->leftJoin("gen_cat_departamento as gcd","gcd.id_departamento","=","gcp.id_departamento")
+        ->where("ne.id_candidato",$id_candidato)
+        ->first();
+        if($informacion_contrato_actual){  //El candidato tiene modificaciones
+            $informacion_contrato_actual->fecha_alta = date('Y-m-d',strtotime($informacion_contrato_actual->fecha_alta."+ 1 days"));
+            $informacion_contrato_actual->fecha_antiguedad = date('Y-m-d',strtotime($informacion_contrato_actual->fecha_antiguedad."+ 1 days"));
+            $informacion_contrato_actual->sueldo_diario ='$ '. number_format(floatval($informacion_contrato_actual->sueldo_diario),2,'.',',');
+            $informacion_contrato_actual->sueldo_integrado ='$ '. number_format(floatval($informacion_contrato_actual->sueldo_integrado),2,'.',',');
+            $respuesta = [
+                "informacion_contrato" => $informacion_contrato_actual,
+                "movimientos" => $informacion_movimientos
+            ];
+            return $this->crearRespuesta(1,$respuesta,200);
+        }
+        return $this->crearRespuesta(2,"Este candidado no tiene datos de contrataci贸n",200);
     }
 }
