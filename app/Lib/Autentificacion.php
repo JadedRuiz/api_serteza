@@ -16,11 +16,10 @@ class Autentificacion {
         $objEmpresa = DB::table("gen_cat_empresa")->select("certificado","key")
         ->where("id_empresa",$id_empresa)
         ->first();
-
         if( $objEmpresa ) {
             try{
-                $certificado = storage_path('empresa').$objEmpresa->certificado;
-                $key = storage_path('empresa').$objEmpresa->key;
+                $certificado = storage_path('empresa')."/".$objEmpresa->certificado;
+                $key = storage_path('empresa')."/".$objEmpresa->key;
                 $fiel = Fiel::create(
                     file_get_contents($certificado),
                     file_get_contents($key),
@@ -31,7 +30,6 @@ class Autentificacion {
                 if (! $fiel->isValid()) {
                     return ["ok" => false, "message" => "Las credenciales no son validas"];
                 }
-
                 // creación del web client basado en Guzzle que implementa WebClientInterface
                 // para usarlo necesitas instalar guzzlehttp/guzzle pues no es una dependencia directa
                 $webClient = new GuzzleWebClient();

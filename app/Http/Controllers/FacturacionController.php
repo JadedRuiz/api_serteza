@@ -10,6 +10,7 @@ use App\Models\DetFactura;
 use App\Models\Direccion;
 use App\Models\Cataporte;
 use App\Lib\Timbrado;
+use App\Lib\Autentificacion;
 
 class FacturacionController extends Controller
 {
@@ -778,5 +779,12 @@ class FacturacionController extends Controller
     {
         $reporte = new FacturaExport();
         return $reporte->generaFacturaPreview($res);
+    }
+    public function descargaMasivaSAT(Request $res)
+    {
+        $login = new Autentificacion();
+        $servicio = $login->identificarse($res["id_empresa"],'exagvd37',1);
+        
+        return $this->crearRespuesta(1,$servicio, 200);
     }
 }
