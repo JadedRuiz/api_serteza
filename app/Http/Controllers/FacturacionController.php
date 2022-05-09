@@ -10,7 +10,7 @@ use App\Models\DetFactura;
 use App\Models\Direccion;
 use App\Models\Cataporte;
 use App\Lib\Timbrado;
-use App\Lib\Autentificacion;
+use App\Lib\LibSat;
 
 class FacturacionController extends Controller
 {
@@ -655,6 +655,27 @@ class FacturacionController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
+    public function facObtenerFacturas(Request $res)
+    {
+        $id_empresa = $res["id_empresa"];
+        $id_serie = $res["id_serie"];
+
+        try{
+            $facturas = DB::table("fac_factura as ff")
+            ->select("ff.id_factura","ff.folio","fc.serie",DB::raw("date_format(ff.fecha_creacion, '%d-%m-%Y') as fecha"),"ff.total","ff.observaciones")
+            ->leftJoin("fac_catseries as fc","fc.id_serie","=","ff.id_serie")
+            ->where("ff.id_empresa",$id_empresa)
+            ->where("fc.id_serie",$id_serie)
+            ->orderBy("ff.fecha_creacion","DESC")
+            ->get();
+            if(count($facturas)>0){
+                return $this->crearRespuesta(1,$facturas,200);
+            }
+            return $this->crearRespuesta(2,"Ha ocurrido un error : No se han encontrado facturas con la empresa y serie seleccionada",200);
+        }catch(Throweable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),200);
+        }
+    }
     public function facAltaFactura(Request $res)
     {
         //Validaciones
@@ -666,7 +687,19 @@ class FacturacionController extends Controller
                 $reporte = new FacturaExport();
                 $result_report = $reporte->generarFactura($result["data"]);
                 if($result_report["ok"]){
-                    return $this->crearRespuesta(1,$result_report["data"], 200);
+                    $xml = DB::table("fac_factura")
+                    ->select("xml")
+                    ->where("id_factura",$result["data"])
+                    ->first();
+                    $xml_b64 = "";
+                    if($xml){
+                        $xml_b64 = base64_encode($xml->xml);
+                    }
+                    return $this->crearRespuesta(1,[
+                        "docB64" => $result_report["data"],
+                        "xml" => $xml_b64,
+                        "id_factura" => $result["data"]
+                        ], 200);
                 }
                 return $this->crearRespuesta(1,"1", 200);
             }
@@ -694,7 +727,7 @@ class FacturacionController extends Controller
             $factura->id_tipocomprobante = $res["tipo_comprobante"];
             $factura->condicion_pago = $res["condiciones"];
             $factura->tipo_cambio = $res["tipo_cambio"];
-            $factura->observaciones = $res["observaciones"];
+            $factura->observaciones = strtoupper($res["observaciones"]);
             $factura->usa_ine = $res["usa_ine"];
             $factura->usa_cataporte = $res["usa_cataporte"];
             $factura->subtotal = $res["subtotal"];
@@ -770,21 +803,91 @@ class FacturacionController extends Controller
             return ["ok" => false, "message" => $e->getMessage()];
         }
     }
-    public function generarFactura($id_factura)
+    public function generarFactura($id_factura,$tipo,$tipo_envio)
     {
-        $reporte = new FacturaExport();
-        return $reporte->generarFactura($id_factura);
+        if($tipo == 1){     //PDF
+            $reporte = new FacturaExport();
+            switch($tipo_envio){
+                case 1 :    //BASE64
+                    return $reporte->generarFactura($id_factura);
+                    break;
+                case 2 :    //Descarga
+                    //$path = 'temp_file_pdf.pdf';
+                    $contents = base64_decode($reporte->generarFactura($id_factura)["data"]);
+                    //file_put_contents($path, $contents);
+                    return response($contents)
+                	->header('Content-Type','application/pdf')
+                	->header('Pragma','public')
+                	->header('Content-Disposition','inline; filename="qrcodeimg.pdf"')
+                	->header('Cache-Control','max-age=60, must-revalidate');
+                    break;
+                default :
+                    break;
+            }
+        }
+        if($tipo == 2){     //XML
+            $xml = base64_encode(DB::table("fac_factura")->select("xml")->where("id_factura",$id_factura)->first()->xml);
+            switch($tipo_envio){
+                case 1 :    //BASE64
+                    return $this->crearRespuesta(1,$xml,"200");
+                    break;
+                case 2 :    //Descarga
+                    $path = 'temp_file_xml.xml';
+                    $contents = base64_decode($xml);
+                    file_put_contents($path, $contents);
+                    $headers = array(
+                      'Content-Type: application/octet-stream',
+                      'Content-Disposition: attachment; filename=factura.xml'
+                    );
+                    return response()->download($path, 'factura.xml',$headers)->deleteFileAfterSend(true);
+                    break;
+                default :
+                    break;
+            }
+        }
+        if($tipo == 3){     //Ambos
+
+        }
+        if($tipo == 4){     //Información
+
+        }
     }
     public function generaFacturaPreview(Request $res)
     {
         $reporte = new FacturaExport();
         return $reporte->generaFacturaPreview($res);
     }
+
     public function descargaMasivaSAT(Request $res)
     {
-        $login = new Autentificacion();
-        $servicio = $login->identificarse($res["id_empresa"],'exagvd37',1);
-        
-        return $this->crearRespuesta(1,$servicio, 200);
+        $lib = new LibSat();
+        //Arreglo para el metodo de consulta
+        // $datos = [
+        //     "id_empresa" => $res["id_empresa"],
+        //     "password" => 'exagvd37',
+        //     "fecha_inicial" => '2022-04-12 00:00:00',
+        //     "fecha_final" => '2022-04-29 23:59:59',
+        //     "rfc" => 'TEAA860214SK8',
+        //     "emitidos" => true,
+        //     "recibidos" => false
+        // ];
+        // $servicio = $lib->crearSolcitud($datos);
+        //Areglo para la validar
+        // $datos = [
+        //     "id_empresa" => $res["id_empresa"],
+        //     "password" => 'exagvd37',
+        //     "id_solicitud" => '374a1c95-a9a6-417c-a777-a017e579d964',
+        // ];
+        // $servicio = $lib->verificar($datos);
+        //Arreglo para el metodo descarga
+        $datos = [
+            "id_empresa" => $res["id_empresa"],
+            "password" => 'exagvd37',
+            "archivos" => [
+                '374A1C95-A9A6-417C-A777-A017E579D964_01'
+            ],
+        ];
+        $servicio = $lib->descargar($datos);
+        return $servicio;
     }
 }
