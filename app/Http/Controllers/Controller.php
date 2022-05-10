@@ -177,6 +177,25 @@ class Controller extends BaseController
                 return 1;
         }
     }
+    public function getSigIdBest($nombre_tabla,$order){
+        $bol = true;
+        $utlimo = DB::table($nombre_tabla)
+        ->orderBy($order,"ASC")
+        ->get();
+        if(count($utlimo) > 0){
+                $utlimo = $utlimo->last();
+                $id = "";
+                foreach($utlimo as $parametro){
+                        if($bol){
+                                $id = $parametro;
+                                $bol = false;
+                        }
+                }
+                return (intval($id)+1);
+        }elseif(count($utlimo) == 0){
+                return 1;
+        }
+    }
     public function decode_json($code){
         $ultimoCharacter = substr($code,-1);
         $restante = substr($code,0,-1);

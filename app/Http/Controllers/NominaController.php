@@ -55,17 +55,28 @@ class NominaController extends Controller
             $id_empresa = $res["id_empresa"];
             $fecha = $this->getHoraFechaActual();
             $usuario_creacion = $res["usuario_creacion"];
-            $id_empresa_nomina = $this->getSigId("liga_empresa_nomina");
-            DB::insert('insert into liga_empresa_nomina (id_empresa_nomina, id_empresa, id_nomina, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_empresa_nomina,$id_empresa,$id_nomina,$fecha,$usuario_creacion,1]);
-            return $this->crearRespuesta(1,"Se ha agreado el tipo de nómin a la empresa",200);
+            $validar = DB::table('liga_empresa_nomina')
+            ->where("id_empresa",$id_empresa)
+            ->where("id_nomina",$id_nomina)
+            ->first();
+            if($validar){
+                DB::update('update liga_empresa_nomina set activo = 1 where id_empresa = ? and id_nomina = ?', [$id_empresa, $id_nomina]);
+            }else{
+                $id_empresa_nomina = $this->getSigIdBest("liga_empresa_nomina","id_empresa_nomina");
+                DB::insert('insert into liga_empresa_nomina (id_empresa_nomina, id_empresa, id_nomina, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_empresa_nomina,$id_empresa,$id_nomina,$fecha,$usuario_creacion,1]);
+            }
+            
+            return $this->crearRespuesta(1,"Se ha agreado el tipo de nómina a la empresa",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
     }
-    public function eliminarLigaEmpresaNomina($id_empresa_nomina)
+    public function eliminarLigaEmpresaNomina(Request $res)
     {
         try{
-            DB::update('update liga_empresa_nomina set activo = 0 where id_empresa_nomina = ?', [$id_empresa_nomina]);
+            $id_nomina = $res["id_nomina"];
+            $id_empresa = $res["id_empresa"];
+            DB::update('update liga_empresa_nomina set activo = 0 where id_empresa = ? and id_nomina = ?', [$id_empresa, $id_nomina]);
             return $this->crearRespuesta(1,"Se ha eliminado el tipo de nómina a la empresa",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

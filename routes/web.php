@@ -189,7 +189,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('obtenerNombreNominaPorId/{id_nomina}', 'NominaController@obtenerNombreNominaPorId');
         $router->post('insertarLigaNominaEmpresa', 'NominaController@insertarLigaNominaEmpresa');
         $router->post('obtenerLigaEmpresaNomina', 'NominaController@obtenerLigaEmpresaNomina');
-        $router->get('eliminarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@eliminarLigaEmpresaNomina');
+        $router->post('eliminarLigaEmpresaNomina', 'NominaController@eliminarLigaEmpresaNomina');
         $router->get('activarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@activarLigaEmpresaNomina');
         $router->post('altaSucursal', 'NominaController@altaSucursal');
         $router->post('aplicarSolicitudesRH', 'NominaController@aplicarSolicitudesRH');
