@@ -873,21 +873,21 @@ class FacturacionController extends Controller
         // ];
         // $servicio = $lib->crearSolcitud($datos);
         //Areglo para la validar
-        // $datos = [
-        //     "id_empresa" => $res["id_empresa"],
-        //     "password" => 'exagvd37',
-        //     "id_solicitud" => '374a1c95-a9a6-417c-a777-a017e579d964',
-        // ];
-        // $servicio = $lib->verificar($datos);
-        //Arreglo para el metodo descarga
         $datos = [
             "id_empresa" => $res["id_empresa"],
             "password" => 'exagvd37',
-            "archivos" => [
-                '374A1C95-A9A6-417C-A777-A017E579D964_01'
-            ],
+            "id_solicitud" => '1d3b2463-2400-4a90-b70e-5698d1296798',
         ];
-        $servicio = $lib->descargar($datos);
+        $servicio = $lib->verificar($datos);
+        //Arreglo para el metodo descarga
+        // $datos = [
+        //     "id_empresa" => $res["id_empresa"],
+        //     "password" => 'exagvd37',
+        //     "archivos" => [
+        //         '374A1C95-A9A6-417C-A777-A017E579D964_01'
+        //     ],
+        // ];
+        // $servicio = $lib->descargar($datos);
         return $servicio;
     }
 }

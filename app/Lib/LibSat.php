@@ -17,10 +17,9 @@ use Illuminate\Support\Facades\DB;
 class LibSat {
 
     function login( $id_empresa, $password ) {
-        // $objEmpresa = DB::table("gen_cat_empresa")->select("certificado","key")
-        // ->where("id_empresa",$id_empresa)
-        // ->first();
-        $objEmpresa = true;
+        $objEmpresa = DB::table("gen_cat_empresa")->select("certificado","key")
+        ->where("id_empresa",$id_empresa)
+        ->first();
         if( $objEmpresa ) {
             try{
                 $certificado = storage_path('empresa')."/credenciales/CER_EMPRESA_ID_".$id_empresa.'.cer';
