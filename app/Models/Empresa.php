@@ -35,6 +35,9 @@ class Empresa extends Model {
         'no_certificado',
         'key',
         'certificado',
+        'firma_cer',
+        'firma_key',
+        'firma_contra',
         'activo'
     ];
 

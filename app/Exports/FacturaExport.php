@@ -1273,4 +1273,8 @@ class FacturaExport {
         // $nom=$emp."_F".$serie.$fol;
         return ["ok" => true, "data" => base64_encode($pdf->Output("S","ReporteFactura.pdf"))];
     }
+    public function FunctionName(Type $var = null)
+    {
+        # code...
+    }
 }

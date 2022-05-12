@@ -81,7 +81,7 @@ class EmpresaController extends Controller
     }
     public function obtenerEmpresaPorId($id){
         $empresa = DB::table("gen_cat_empresa as gce")
-        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp","gce.cargo_repre","gce.certificado","gce.key","gce.no_certificado","gce.regimen_fiscal")
+        ->select("gce.id_empresa","gce.empresa","gce.rfc","gce.razon_social","gce.descripcion","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio","gced.id_estado", "gced.estado", "gcd.descripcion as descripcion_direccion","gcd.descripcion as fotografia","gcd.descripcion as extension", "gce.id_fotografia","gce.activo","gce.representante_legal","gce.rfc_repre","gce.curp","gce.cargo_repre","gce.certificado","gce.key","gce.no_certificado","gce.regimen_fiscal","gce.firma_cer","gce.firma_key","gce.firma_contra")
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->leftJoin("gen_cat_estados as gced","gced.id_estado","=","gcd.estado")
         ->where("gce.id_empresa",$id)
@@ -246,6 +246,27 @@ class EmpresaController extends Controller
                 }
                 Storage::disk('empresa')->put($path, $file);
                 $empresa->key = $path;
+            }
+            if(isset($request["firma_contra"])){
+                $empresa->firma_contra = $request["firma_contra"];
+            }
+            if(isset($request["firma_cer"]) && strlen($request["firma_cer"]) > 0){
+                $path = "credenciales/FIRMA_CER_EMPRESA_ID_".$request["id_empresa"].".cer";
+                $file = base64_decode($request["firma_cer"]);
+                if(Storage::disk('empresa')->has($path)){
+                    Storage::disk('empresa')->delete($path);
+                }
+                Storage::disk('empresa')->put($path, $file);
+                $empresa->firma_cer = $path;
+            }
+            if(isset($request["firma_key"]) && strlen($request["firma_key"]) > 0){
+                $path = "credenciales/FIRMA_KEY_EMPRESA_ID_".$request["id_empresa"].".key";
+                $file = base64_decode($request["firma_key"]);
+                if(Storage::disk('empresa')->has($path)){
+                    Storage::disk('empresa')->delete($path);
+                }
+                Storage::disk('empresa')->put($path, $file);
+                $empresa->firma_key = $path;
             }
             $empresa->fecha_modificacion = $fecha;
             $empresa->usuario_modificacion = $usuario_modificacion;

@@ -244,6 +244,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("getPDFPreview","FacturacionController@generaFacturaPreview");
         //Descarga Masiva
         $router->post("descargaMasivaSAT","FacturacionController@descargaMasivaSAT");
+        $router->post("altaBobedaXML", "FacturacionController@altaBobedaXML");
     });
     $router->group(['prefix' => 'serie'], function () use ($router) {
         $router->get("obtenerSeries/{id_empresa}","SerieController@obtenerSeries");

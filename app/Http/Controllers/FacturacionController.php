@@ -9,8 +9,12 @@ use App\Models\Factura;
 use App\Models\DetFactura;
 use App\Models\Direccion;
 use App\Models\Cataporte;
+use App\Models\BobedaXML;
+use App\Models\DetalleNomina;
 use App\Lib\Timbrado;
 use App\Lib\LibSat;
+use DOMDocument;
+use XSLTProcessor;
 
 class FacturacionController extends Controller
 {
@@ -889,5 +893,74 @@ class FacturacionController extends Controller
         // ];
         // $servicio = $lib->descargar($datos);
         return $servicio;
+    }
+
+    
+    public function altaBobedaXML(Request $res)
+    {
+        #region Validaciones
+            if(empty($res["data"]) || !is_string($res["data"])){
+                return $this->crearRespuesta(2,"Error al subir documento",200);
+            }
+            if(empty($res["id_empresa"]) || $res["id_empresa"] == 0){
+                return $this->crearRespuesta(2,"No se ha seleccionado la empresa",200);
+            }
+        #endregion
+        $cfdi = base64_decode($res["data"]);
+        try{
+
+            $xdoc = new DOMDocument("1.0","UTF-8");
+            $xdoc->loadXML($cfdi);
+            $c = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Comprobante')->item(0);
+            $t = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital', 'TimbreFiscalDigital')->item(0);
+            $bobedaXML = new BobedaXML();
+            $bobedaXML->id_empresa = $res["id_empresa"];
+
+            if(empty($t->getAttribute('UUID'))){
+                return $this->crearRespuesta(2,"No se ha encontrado el UUID de este XML",200);
+            }
+            if(empty($t->getAttribute('TipoDeComprobante'))){
+                return $this->crearRespuesta(2,"No se ha encontrado el TipoDeComprobante de este XML",200);
+            }
+
+            $bobedaXML->uuid = $t->getAttribute('UUID');
+            $bobedaXML->tipo_combrobante = $c->getAttribute('TipoDeComprobante');
+            $bobedaXML->emitidos = true;
+            $bobedaXML->id_estatus = 1;
+            $bobedaXML->subtotal = $c->getAttribute('SubTotal');
+            $bobedaXML->total = $c->getAttribute('Total');
+            $bobedaXML->moneda = $c->getAttribute('Moneda');
+            $bobedaXML->descuento = $c->getAttribute('Descuento');
+            $bobedaXML->fecha_creacion = $this->getHoraFechaActual();
+            $bobedaXML->usuario_creacion = $res["usuario_c"];
+
+            if($bobedaXML->moneda != "MXN"){
+                $bobedaXML->cambio_subtotal = "";
+                $bobedaXML->cambio_total = "";
+                $bobedaXML->tipo_cambio = "";
+            }
+
+            if($bobedaXML->tipo_combrobante == "N"){
+                $p = $xdoc->getElementsByTagNameNS('nomina12', 'Percepcion');
+                $d = $xdoc->getElementsByTagNameNS('nomina12', 'Deduccion');
+                $o = $xdoc->getElementsByTagNameNS('nomina12', 'OtroPago');
+                foreach($p as $percepcion){
+                    $detalle_nomina = new DetalleNomina();
+                    $detalle_nomina->id_bobeda;
+                    $detalle_nomina->tipo = 'P';
+                    $detalle_nomina->clave = $p->getAttribute('Clave');
+                    $detalle_nomina->concepto = $p->getAttribute('Concepto');
+                    $detalle_nomina->importe = $p->getAttribute('ImporteExcento');
+                    $detalle_nomina->importe_gravado = $p->getAttribute('ImporteGravado');
+                    $detalle_nomina->clave_tipo = $p->getAttribute('TipoPercepcion');
+                    $detalle_nomina->fecha_creacion = $this->getHoraFechaActual();
+                    $detalle_nomina->usuario_creacion = $res["usuario_c"];
+                }
+            }
+
+        } catch(Throweable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),200);
+        }
+        return $this->crearRespuesta(1,$bobedaXML,200);
     }
 }
