@@ -906,61 +906,170 @@ class FacturacionController extends Controller
                 return $this->crearRespuesta(2,"No se ha seleccionado la empresa",200);
             }
         #endregion
-        $cfdi = base64_decode($res["data"]);
+
+        $cfdiOrZip = base64_decode($res["data"]);
+
+        if($res["extension"] == "application/x-zip-compressed"){
+            //Definimos la ruta de alamcenado
+            $path = storage_path("MisArchivosTemp");
+            //Almancenos el zip en base64 en archivo temp
+            file_put_contents($path."/temp_zip.zip",$cfdiOrZip);
+            $zip = new ZipArchive;
+            //Abrimos el .zip temporal
+            $comprimido = $zip->open($path."/temp_zip.zip");
+            if ($comprimido=== TRUE) {
+                //Lo descomprimimos
+                $zip->extractTo($path);
+                //Lo cerramos
+                $zip->close();
+                //Eliminamos el archivo .zip temp
+                unlink($path."/temp_zip.zip");
+
+                //Buscamos el directorio
+                $gestor = opendir($path);
+                $errores = [];
+                //Recorremos el directorio
+                while (($archivo = readdir($gestor)) !== false){
+                    $ruta_completa = $path."/".$archivo;
+                    $extension = pathinfo($ruta_completa, PATHINFO_EXTENSION);
+                    if(file_exists($ruta_completa) && $extension == "xml"){
+                        $xml = file_get_contents($ruta_completa);
+                        $result = $this->insertarXML($xml,$res["id_empresa"],$res["usuario_c"]);
+                        if(!$result["ok"]){
+                            array_push($errores,$result["message"]);
+                        }
+                        unlink($ruta_completa);
+                    }
+                }
+                if(count($errores) > 0){
+                    return $this->crearRespuesta(1,$errores,200);
+                }
+                return $this->crearRespuesta(1,"Zip insertado",200);
+            }
+            return $this->crearRespuesta(2,"Error al descomprimir el arhivo .zip",200);
+        }
+
+        //Insertar XML normal
+        $result =  $this->insertarXML($cfdiOrZip,$res["id_empresa"],$res["usuario_c"]);
+        if(!$result["ok"]){
+            return $this->crearRespuesta(2,$result["message"],200);
+        }
+        return $this->crearRespuesta(1,$result["data"],200);
+    }
+
+    function insertarXML($xml,$id_empresa,$usuario){
         try{
+            $rfc = "";
+            $datos_empresa = DB::table('gen_cat_empresa')->where("id_empresa",$id_empresa)->first();
+            if($datos_empresa){
+                $rfc = $datos_empresa->rfc;
+            }
+            $xml = simplexml_load_string($xml);
+            $namespaces = $xml->getNamespaces(true);
+            $xml->registerXPathNamespace('c', $namespaces['cfdi']);
+            $xml->registerXPathNamespace('t', $namespaces['tfd']);
+            $xml->registerXPathNamespace('n', $namespaces['nomina12']);
 
-            $xdoc = new DOMDocument("1.0","UTF-8");
-            $xdoc->loadXML($cfdi);
-            $c = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Comprobante')->item(0);
-            $t = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/TimbreFiscalDigital', 'TimbreFiscalDigital')->item(0);
             $bobedaXML = new BobedaXML();
-            $bobedaXML->id_empresa = $res["id_empresa"];
+            $bobedaXML->id_empresa = $id_empresa;
 
-            if(empty($t->getAttribute('UUID'))){
-                return $this->crearRespuesta(2,"No se ha encontrado el UUID de este XML",200);
-            }
-            if(empty($t->getAttribute('TipoDeComprobante'))){
-                return $this->crearRespuesta(2,"No se ha encontrado el TipoDeComprobante de este XML",200);
+            
+
+            foreach($xml->xpath('//c:Comprobante') as $dato){
+                $bobedaXML->tipo_combrobante = $dato['TipoDeComprobante'];
+                $bobedaXML->subtotal = $dato['SubTotal'];
+                $bobedaXML->total = $dato['Total'];
+                $bobedaXML->moneda = $dato['Moneda'];
+                $bobedaXML->descuento = $dato['Descuento'];
             }
 
-            $bobedaXML->uuid = $t->getAttribute('UUID');
-            $bobedaXML->tipo_combrobante = $c->getAttribute('TipoDeComprobante');
-            $bobedaXML->emitidos = true;
-            $bobedaXML->id_estatus = 1;
-            $bobedaXML->subtotal = $c->getAttribute('SubTotal');
-            $bobedaXML->total = $c->getAttribute('Total');
-            $bobedaXML->moneda = $c->getAttribute('Moneda');
-            $bobedaXML->descuento = $c->getAttribute('Descuento');
-            $bobedaXML->fecha_creacion = $this->getHoraFechaActual();
-            $bobedaXML->usuario_creacion = $res["usuario_c"];
+            if(empty($bobedaXML->tipo_combrobante)){
+                return [ "ok" => false, "message" => "No se ha encontrado el TipoDeComprobante de este XML"];
+            }
 
             if($bobedaXML->moneda != "MXN"){
-                $bobedaXML->cambio_subtotal = "";
-                $bobedaXML->cambio_total = "";
-                $bobedaXML->tipo_cambio = "";
+                $tipo_cambio = DB::table("sat_CatMoneda")->where("clave_moneda",$bobedaXML->moneda)->first()->tipo_cambio;
+                $bobedaXML->cambio_subtotal = doubleval($bobedaXML->subtotal) * doubleval($tipo_cambio);
+                $bobedaXML->cambio_total = doubleval($bobedaXML->total) * doubleval($tipo_cambio);;
+                $bobedaXML->tipo_cambio = $tipo_cambio;
             }
+            
+            foreach($xml->xpath('//t:TimbreFiscalDigital') as $dato){
+                $bobedaXML->uuid = $dato['UUID'];
+            }
+
+            //Validar UUID
+            if(empty($bobedaXML->uuid)){
+                return [ "ok" => false, "message" => "No se ha encontrado el UUID de este XML"];
+            }
+
+            $validar = DB::table('bobeda_xml')->where("uuid",$bobedaXML->uuid)->first();
+            if($validar){
+                return [ "ok" => false, "message" => "El XML con UUID ".$bobedaXML->uuid . " ya se encuentra registrado" ];
+            }
+
+            
+            $rfc_emisor = "";
+
+            foreach($xml->xpath('//c:Emisor') as $dato){
+                $rfc_emisor = $dato['Rfc'];
+            } 
+
+            $bobedaXML->emitidos = false;
+            if($rfc == $rfc_emisor){
+                $bobedaXML->emitidos = true;
+            }
+
+            $bobedaXML->id_estatus = 1;
+            $bobedaXML->fecha_creacion = $this->getHoraFechaActual();
+            $bobedaXML->usuario_creacion = $usuario;
+            $bobedaXML->save();
+            
 
             if($bobedaXML->tipo_combrobante == "N"){
-                $p = $xdoc->getElementsByTagNameNS('nomina12', 'Percepcion');
-                $d = $xdoc->getElementsByTagNameNS('nomina12', 'Deduccion');
-                $o = $xdoc->getElementsByTagNameNS('nomina12', 'OtroPago');
-                foreach($p as $percepcion){
-                    $detalle_nomina = new DetalleNomina();
-                    $detalle_nomina->id_bobeda;
+                $detalle_nomina = new DetalleNomina();
+                foreach($xml->xpath('//n:Percepciones/n:Percepcion') as $percepcion){
+                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
                     $detalle_nomina->tipo = 'P';
-                    $detalle_nomina->clave = $p->getAttribute('Clave');
-                    $detalle_nomina->concepto = $p->getAttribute('Concepto');
-                    $detalle_nomina->importe = $p->getAttribute('ImporteExcento');
-                    $detalle_nomina->importe_gravado = $p->getAttribute('ImporteGravado');
-                    $detalle_nomina->clave_tipo = $p->getAttribute('TipoPercepcion');
+                    $detalle_nomina->clave = $percepcion['Clave'];
+                    $detalle_nomina->concepto = $percepcion['Concepto'];
+                    $detalle_nomina->importe = $percepcion['ImporteExcento'];
+                    $detalle_nomina->importe_gravado = $percepcion['ImporteGravado'];
+                    $detalle_nomina->clave_tipo = $percepcion['TipoPercepcion'];
                     $detalle_nomina->fecha_creacion = $this->getHoraFechaActual();
-                    $detalle_nomina->usuario_creacion = $res["usuario_c"];
+                    $detalle_nomina->usuario_creacion = $usuario;
+                    $detalle_nomina->save();
+                }
+                foreach($xml->xpath('//n:Deducciones/n:Deduccion') as $deduccion){
+                    $detalle_nomina = new DetalleNomina();
+                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->tipo = 'D';
+                    $detalle_nomina->clave = $deduccion['Clave'];
+                    $detalle_nomina->concepto = $deduccion['Concepto'];
+                    $detalle_nomina->importe = $deduccion['Importe'];
+                    $detalle_nomina->importe_gravado = "";
+                    $detalle_nomina->clave_tipo = $deduccion['TipoDeduccion'];
+                    $detalle_nomina->fecha_creacion = $this->getHoraFechaActual();
+                    $detalle_nomina->usuario_creacion = $usuario;
+                    $detalle_nomina->save();
+                }
+                foreach($xml->xpath('//n:OtrosPagos/n:OtroPago') as $otros){
+                    $detalle_nomina = new DetalleNomina();
+                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->tipo = 'O';
+                    $detalle_nomina->clave = $otros['Clave'];
+                    $detalle_nomina->concepto = $otros['Concepto'];
+                    $detalle_nomina->importe = $otros['Importe'];
+                    $detalle_nomina->importe_gravado = "";
+                    $detalle_nomina->clave_tipo = $otros['TipoOtroPago'];
+                    $detalle_nomina->fecha_creacion = $this->getHoraFechaActual();
+                    $detalle_nomina->usuario_creacion = $usuario;
+                    $detalle_nomina->save();
                 }
             }
-
+            return [ "ok" => true, "data" => $bobedaXML ];
         } catch(Throweable $e){
-            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),200);
+            return [ "ok" => false, "message" => "Ha ocurrido un error : " . $e->getMessage() ];
         }
-        return $this->crearRespuesta(1,$bobedaXML,200);
     }
 }
