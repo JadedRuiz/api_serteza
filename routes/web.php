@@ -244,6 +244,14 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("getPDFPreview","FacturacionController@generaFacturaPreview");
         //Descarga Masiva
         $router->post("descargaMasivaSAT","FacturacionController@descargaMasivaSAT");
+
+        $router->post("crear-solicitud-sat","FacturacionController@crearSolicitudSat");
+        $router->post("verificar-solicitud-sat","FacturacionController@verificarEstatusSat");
+        $router->get("get-solicitudes-sat/{id_empresa}","FacturacionController@getSolicitudesSat");
+        $router->post("descargar-solicitud-sat","FacturacionController@descargarDocumentosSat");
+
+        
+        
         $router->post("altaBobedaXML", "FacturacionController@altaBobedaXML");
     });
     $router->group(['prefix' => 'serie'], function () use ($router) {

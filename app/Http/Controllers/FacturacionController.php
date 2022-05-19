@@ -869,7 +869,7 @@ class FacturacionController extends Controller
         // $datos = [
         //     "id_empresa" => $res["id_empresa"],
         //     "password" => 'exagvd37',
-        //     "fecha_inicial" => '2022-04-12 00:00:00',
+        //     "fecha_inicial" => '2022-04-05 00:00:00',
         //     "fecha_final" => '2022-04-29 23:59:59',
         //     "rfc" => 'TEAA860214SK8',
         //     "emitidos" => true,
@@ -877,23 +877,156 @@ class FacturacionController extends Controller
         // ];
         // $servicio = $lib->crearSolcitud($datos);
         //Areglo para la validar
-        $datos = [
-            "id_empresa" => $res["id_empresa"],
-            "password" => 'exagvd37',
-            "id_solicitud" => '1d3b2463-2400-4a90-b70e-5698d1296798',
-        ];
-        $servicio = $lib->verificar($datos);
-        //Arreglo para el metodo descarga
         // $datos = [
         //     "id_empresa" => $res["id_empresa"],
         //     "password" => 'exagvd37',
-        //     "archivos" => [
-        //         '374A1C95-A9A6-417C-A777-A017E579D964_01'
-        //     ],
+        //     "id_solicitud" => 'd06470be-2035-4c24-9882-60091e2cdd4e',
         // ];
-        // $servicio = $lib->descargar($datos);
+        // $servicio = $lib->verificar($datos);
+        //Arreglo para el metodo descarga
+        $datos = [
+            "id_empresa" => $res["id_empresa"],
+            "password" => 'exagvd37',
+            "archivos" => [
+                'D06470BE-2035-4C24-9882-60091E2CDD4E_01'
+            ],
+        ];
+        $servicio = $lib->descargar($datos);
         return $servicio;
     }
+    public function crearSolicitudSat(Request $request){
+        // try {
+            $lib = new LibSat();
+            $id_empresa = $request["id_empresa"];
+            $fecha_inicio = $request["fecha_inicio"];
+            $fecha_final = $request["fecha_final"];
+            $rfc = $request["rfc"];
+            $recibidos = $request["recibidos"];
+            $emitidos = $request["emitidos"];   
+            $id_usuario = $request["id_usuario"];    
+ 
+            $id_estatus = 1; // en espera
+
+            //Arreglo para el metodo de consulta
+            $pass = DB::table("gen_cat_empresa")
+                    ->select("firma_contra")
+                    ->where("id_empresa", $id_empresa)
+                    ->first();
+            $datos = [
+                "id_empresa" => $id_empresa,
+                "password" => $pass->firma_contra,
+                "fecha_inicial" => $fecha_inicio." 00:00:00",
+                "fecha_final" => $fecha_final." 23:59:59",
+                "rfc" => $rfc,
+                "emitidos" => $emitidos,
+                "recibidos" => $recibidos
+            ];
+            $servicio = $lib->crearSolcitud($datos);
+            // print_r($servicio);
+            $clave_solicitud = $servicio->getRequestId();
+            print_r($servicio->getStatus()->getCode());
+ 
+            if($servicio->getStatus()->isAccepted()){
+                DB::insert('insert into con_solicitudes_sat 
+                         (id_empresa, id_estatus, fecha_inicial, fecha_final, rfc, 
+                         recibidos, emitidos, clave_solicitud, activo, fecha_creacion, 
+                         fecha_modificacion, usuario_creacion, usuario_modificacion, nombre_archivo_sat) values 
+                         (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
+                         [$id_empresa, $id_estatus, $fecha_inicio, $fecha_final, $rfc, $recibidos,
+                         $emitidos, $clave_solicitud, 1, $this->getHoraFechaActual(), 
+                         $this->getHoraFechaActual(), $id_usuario, $id_usuario, ""]);
+            }
+            // echo $servicio->data->estatus->code;
+            return $servicio;
+
+            
+            
+
+        // } catch (\Throwable $th) {
+        //     return $this->crearRespuesta(0,"Ha ocurrido un error al momento de crear la solicitud ".$th->getMessage(),"300");
+        // }
+        
+    }
+    public function verificarEstatusSat(Request $request){
+        $lib = new LibSat();
+        $mi_estatus = 0;
+        $mi_archivo = "";
+        $id_empresa = $request["id_empresa"];
+        $id_solicitud_sat = $request["id_solicitud_sat"];
+        $clave_solicittud_sat = $request["clave_solicitud_sat"];
+        $id_usuario = $request["id_usuario"];
+        $bandera = 0;
+        $pass = DB::table("gen_cat_empresa")
+        ->select("firma_contra")
+        ->where("id_empresa", $id_empresa)
+        ->first();
+        $datos = [
+                "id_empresa" => $id_empresa,
+                "password" => $pass->firma_contra,
+                "id_solicitud" => $clave_solicittud_sat,
+        ];
+        $servicio = $lib->verificar($datos);
+
+        $statusRequest = $servicio->getStatusRequest();
+
+        if ($statusRequest->isExpired() || $statusRequest->isFailure() || $statusRequest->isRejected()) {
+            //Cancelado
+            $mi_estatus = 7;
+        }
+        if ($statusRequest->isInProgress() || $statusRequest->isAccepted()) {
+            $mi_estatus = 1;
+        }
+        if ($statusRequest->isFinished()) {
+            //TODO: Actualizar el estatus y el campo de archivo
+            $bandera = 1;
+            $mi_estatus = 14;
+            $archivo = $servicio->getPackagesIds();
+            $mi_archivo = $archivo[0];
+            
+        }
+        DB::update('update con_solicitudes_sat 
+            set usuario_modificacion = ?, fecha_modificacion = ?,
+            nombre_archivo_sat = ?, id_estatus = ?
+            where id_solicitud_sat = ?', 
+            [$id_usuario, $this->getHoraFechaActual(), $mi_archivo, 
+                $mi_estatus, $id_solicitud_sat]);
+
+        return $this->crearRespuesta(1,"Se ha aceptado la solicitud", 200);
+    }
+    public function descargarDocumentosSat(Request $request){
+        //try {
+            $lib = new LibSat();
+            $id_empresa = $request["id_empresa"];
+            $nombre_archivo_sat = $request["nombre_archivo_sat"];
+            $pass = DB::table("gen_cat_empresa")
+            ->select("firma_contra")
+            ->where("id_empresa", $id_empresa)
+            ->first();
+            $datos = [
+                "id_empresa" => $id_empresa,
+                "password" => $pass->firma_contra,
+                "archivos" => [
+                    $nombre_archivo_sat
+                ],
+            ];
+            $servicio = $lib->descargar($datos);
+            return $servicio;
+
+    }
+    public function getSolicitudesSat($id_empresa){
+        try {
+            $data = DB::table('con_solicitudes_sat as css')
+            ->join('gen_cat_statu as es', 'es.id_statu', '=', 'css.id_estatus')
+            ->select("css.*", "es.status")
+            ->where("css.id_empresa", $id_empresa)
+            ->get();
+            return $this->crearRespuesta(1, $data, 200);
+        } catch (\Throwable $th) {
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $th->getMessage(),200);
+        }
+    }
+
+
 
     
     public function altaBobedaXML(Request $res)

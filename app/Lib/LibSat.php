@@ -88,7 +88,7 @@ class LibSat {
             return [ "ok" => false, "message" => "Fallo al presentar la consulta: {$query->getStatus()->getMessage()}" ];
         }
 
-        return [ "ok" => true, "data" => $query ];
+        return $query;
     }
 
     function verificar($datos){
@@ -120,6 +120,7 @@ class LibSat {
             return [ "ok" => false, "message" => "La solicitud {$requestId} fue rechazada: {$verify->getCodeRequest()->getMessage()}" ];
         }
 
+        return $verify;
         // revisar el progreso de la generación de los paquetes
         $statusRequest = $verify->getStatusRequest();
 
