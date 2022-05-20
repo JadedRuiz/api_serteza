@@ -1033,10 +1033,7 @@ class FacturacionController extends Controller
         }
     }
 
-
-
-    
-    public function altaBobedaXML(Request $res)
+    public function consumeMetodo($res)
     {
         #region Validaciones
             if(empty($res["data"]) || !is_string($res["data"])){
@@ -1095,6 +1092,12 @@ class FacturacionController extends Controller
             return $this->crearRespuesta(2,$result["message"],200);
         }
         return $this->crearRespuesta(1,$result["data"],200);
+    }
+
+    
+    public function altaBobedaXML(Request $res)
+    {
+        return $this->consumeMetodo($res);
     }
 
     function insertarXML($xml,$id_empresa,$usuario){
