@@ -1010,7 +1010,14 @@ class FacturacionController extends Controller
                 ],
             ];
             $servicio = $lib->descargar($datos);
-            return $servicio;
+            $myRequest = new \Illuminate\Http\Request();
+            $myRequest->setMethod('POST');
+            $myRequest->request->add(['id_empresa' => $id_empresa]);
+            $myRequest->request->add(['data' => $servicio]);
+            $myRequest->request->add(['extension' => "application/x-zip-compressed"]);
+            $myRequest->request->add(['usuario_c' => 1]);
+
+            $this->altaBobedaXML($myRequest);
 
     }
     public function getSolicitudesSat($id_empresa){
