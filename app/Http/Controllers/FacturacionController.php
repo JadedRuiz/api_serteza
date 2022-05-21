@@ -1107,6 +1107,7 @@ class FacturacionController extends Controller
             if($datos_empresa){
                 $rfc = $datos_empresa->rfc;
             }
+            $sXML = $xml."";
             $xml = simplexml_load_string($xml);
             $namespaces = $xml->getNamespaces(true);
             $xml->registerXPathNamespace('c', $namespaces['cfdi']);
@@ -1115,7 +1116,7 @@ class FacturacionController extends Controller
 
             $bobedaXML = new BobedaXML();
             $bobedaXML->id_empresa = $id_empresa;
-
+            $bobedaXML->xml = $sXML;
             
 
             foreach($xml->xpath('//c:Comprobante') as $dato){
@@ -1137,8 +1138,30 @@ class FacturacionController extends Controller
                 $bobedaXML->tipo_cambio = $tipo_cambio;
             }
             
+            foreach($xml->xpath('//c:Receptor') as $dato){
+                $bobedaXML->rfc = $dato['Rfc'];
+                $bobedaXML->nombre = "";
+                if(isset($dato['Nombre'])){
+                    $bobedaXML->nombre = $dato['Nombre'];
+                }
+            }
+
             foreach($xml->xpath('//t:TimbreFiscalDigital') as $dato){
                 $bobedaXML->uuid = $dato['UUID'];
+            }
+
+            if($bobedaXML->tipo_combrobante == "N"){
+                foreach($xml->xpath('//n:Nomina') as $dato){
+                    $bobedaXML->fecha_pago = $dato['FechaPago'];
+                    $bobedaXML->fecha_inicial_pago = $dato['FechaInicialPago'];
+                    $bobedaXML->fecha_final_pago = $dato['FechaFinalPago'];
+                }
+                foreach($xml->xpath('//n:Receptor') as $dato){
+                    $bobedaXML->curp = $dato['Curp'];
+                    $bobedaXML->num_seguro = $dato['NumSeguridadSocial'];
+                    $bobedaXML->salario_diario = $dato['SalarioDiarioIntegrado'];
+                    $bobedaXML->salario_base = $dato['SalarioBaseCotApor'];
+                }
             }
 
             //Validar UUID
@@ -1166,6 +1189,7 @@ class FacturacionController extends Controller
             $bobedaXML->id_estatus = 1;
             $bobedaXML->fecha_creacion = $this->getHoraFechaActual();
             $bobedaXML->usuario_creacion = $usuario;
+            $bobedaXML->activo = 1;
             $bobedaXML->save();
             
 
@@ -1210,8 +1234,8 @@ class FacturacionController extends Controller
                     $detalle_nomina->save();
                 }
             }
-            return [ "ok" => true, "data" => $bobedaXML ];
-        } catch(Throweable $e){
+            return [ "ok" => true, "data" => "XML almacendo con éxito" ];
+        } catch(\Error $e){
             return [ "ok" => false, "message" => "Ha ocurrido un error : " . $e->getMessage() ];
         }
     }
