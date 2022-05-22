@@ -16,6 +16,6 @@ class BobedaXML extends Model {
     protected $primaryKey = "id_bobeda";
     protected $table = 'bobeda_xml';
     protected $fillable = [
-        'id_bobeda', 'id_empresa', 'uuid', 'tipo_combrobante', 'emitidos', 'id_estatus', 'subtotal', 'total', 'moneda', 'cambio_subtotal', 'cambio_total', 'tipo_cambio', 'descuento', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'activo'
+        'id_bobeda', 'id_empresa', 'uuid', 'rfc', 'curp', 'nombre', 'num_seguro', 'tipo_combrobante', 'emitidos', 'id_estatus', 'subtotal', 'total', 'moneda', 'cambio_subtotal', 'cambio_total', 'tipo_cambio', 'descuento', 'fecha_inicial_pago', 'fecha_final_pago', 'fecha_pago', 'salario_base', 'salario_diario', 'xml', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'activo'
     ];
 }

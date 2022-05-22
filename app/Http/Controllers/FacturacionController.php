@@ -1107,6 +1107,7 @@ class FacturacionController extends Controller
             if($datos_empresa){
                 $rfc = $datos_empresa->rfc;
             }
+            $sXML =$xml."";
             $xml = simplexml_load_string($xml);
             $namespaces = $xml->getNamespaces(true);
             $xml->registerXPathNamespace('c', $namespaces['cfdi']);
@@ -1115,6 +1116,7 @@ class FacturacionController extends Controller
 
             $bobedaXML = new BobedaXML();
             $bobedaXML->id_empresa = $id_empresa;
+            $bobedaXML->xml = $sXML;
 
             
 
@@ -1124,6 +1126,14 @@ class FacturacionController extends Controller
                 $bobedaXML->total = $dato['Total'];
                 $bobedaXML->moneda = $dato['Moneda'];
                 $bobedaXML->descuento = $dato['Descuento'];
+            }
+
+            foreach($xml->xpath('//c:Receptor') as $dato){
+                $bobedaXML->rfc = $dato['Rfc'];
+                $bobedaXML->nombre = "";
+                if(isset($dato['Nombre'])){
+                    $bobedaXML->nombre = $dato['Nombre'];
+                }
             }
 
             if(empty($bobedaXML->tipo_combrobante)){
@@ -1161,6 +1171,20 @@ class FacturacionController extends Controller
             $bobedaXML->emitidos = false;
             if($rfc == $rfc_emisor){
                 $bobedaXML->emitidos = true;
+            }
+
+            if($bobedaXML->tipo_combrobante == "N"){
+                foreach($xml->xpath('//n:Receptor') as $dato){
+                    $bobedaXML->curp = $dato['Curp'];
+                    $bobedaXML->num_seguro = $dato['NumSeguridadSocial'];
+                    $bobedaXML->salario_base = $dato['SalarioBaseCotApor'];
+                    $bobedaXML->salario_diario = $dato['SalarioDiarioIntegrado'];
+                }
+                foreach($xml->xpath('//n:Nomina') as $dato){
+                    $bobedaXML->fecha_inicial_pago = $dato['FechaInicialPago'];
+                    $bobedaXML->fecha_final_pago = $dato['FechaFinalPago'];
+                    $bobedaXML->fecha_pago = $dato['FechaPago'];
+                }
             }
 
             $bobedaXML->id_estatus = 1;
