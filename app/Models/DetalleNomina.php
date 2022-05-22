@@ -16,6 +16,6 @@ class DetalleNomina extends Model {
     protected $primaryKey = "id_detallenomina";
     protected $table = 'con_detallenomina';
     protected $fillable = [
-        'id_detallenomina', 'id_bobeda', 'tipo', 'clave', 'concepto', 'importe', 'importe_gravado', 'clave_tipo', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'activo'
+        'id_detallenomina', 'id_boveda', 'tipo', 'clave', 'concepto', 'importe', 'importe_gravado', 'clave_tipo', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'activo'
     ];
 }

@@ -1196,7 +1196,7 @@ class FacturacionController extends Controller
             if($bobedaXML->tipo_combrobante == "N"){
                 $detalle_nomina = new DetalleNomina();
                 foreach($xml->xpath('//n:Percepciones/n:Percepcion') as $percepcion){
-                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->id_boveda = $bobedaXML->id_boveda;
                     $detalle_nomina->tipo = 'P';
                     $detalle_nomina->clave = $percepcion['Clave'];
                     $detalle_nomina->concepto = $percepcion['Concepto'];
@@ -1209,7 +1209,7 @@ class FacturacionController extends Controller
                 }
                 foreach($xml->xpath('//n:Deducciones/n:Deduccion') as $deduccion){
                     $detalle_nomina = new DetalleNomina();
-                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->id_boveda = $bobedaXML->id_boveda;
                     $detalle_nomina->tipo = 'D';
                     $detalle_nomina->clave = $deduccion['Clave'];
                     $detalle_nomina->concepto = $deduccion['Concepto'];
@@ -1222,7 +1222,7 @@ class FacturacionController extends Controller
                 }
                 foreach($xml->xpath('//n:OtrosPagos/n:OtroPago') as $otros){
                     $detalle_nomina = new DetalleNomina();
-                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->id_boveda = $bobedaXML->id_boveda;
                     $detalle_nomina->tipo = 'O';
                     $detalle_nomina->clave = $otros['Clave'];
                     $detalle_nomina->concepto = $otros['Concepto'];
@@ -1234,7 +1234,7 @@ class FacturacionController extends Controller
                     $detalle_nomina->save();
                 }
             }
-            return [ "ok" => true, "data" => $bobedaXML ];
+            return [ "ok" => true, "data" => "XML subido con éxito"];
         } catch(Throweable $e){
             return [ "ok" => false, "message" => "Ha ocurrido un error : " . $e->getMessage() ];
         }
