@@ -1156,7 +1156,7 @@ class FacturacionController extends Controller
                 return [ "ok" => false, "message" => "No se ha encontrado el UUID de este XML"];
             }
 
-            $validar = DB::table('bobeda_xml')->where("uuid",$bobedaXML->uuid)->first();
+            $validar = DB::table('con_bovedaxml')->where("uuid",$bobedaXML->uuid)->first();
             if($validar){
                 return [ "ok" => false, "message" => "El XML con UUID ".$bobedaXML->uuid . " ya se encuentra registrado" ];
             }
