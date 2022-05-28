@@ -923,8 +923,10 @@ class FacturacionController extends Controller
             ];
             $servicio = $lib->crearSolcitud($datos);
             // print_r($servicio);
+            if (! $servicio->getStatus()->isAccepted()) {
+                return [ "ok" => false, "message" => "Fallo al presentar la consulta: {$servicio->getStatus()->getMessage()}" ];
+            }
             $clave_solicitud = $servicio->getRequestId();
-            print_r($servicio->getStatus()->getCode());
  
             if($servicio->getStatus()->isAccepted()){
                 DB::insert('insert into con_solicitudes_sat 
@@ -998,6 +1000,9 @@ class FacturacionController extends Controller
             $lib = new LibSat();
             $id_empresa = $request["id_empresa"];
             $nombre_archivo_sat = $request["nombre_archivo_sat"];
+            $id_usuario = $request["id_usuario"];
+            $id_estatus_finalizado = 15;
+            $id_solicitud = $request["id_solicitud"];
             $pass = DB::table("gen_cat_empresa")
             ->select("firma_contra")
             ->where("id_empresa", $id_empresa)
@@ -1009,30 +1014,62 @@ class FacturacionController extends Controller
                     $nombre_archivo_sat
                 ],
             ];
-            $servicio = $lib->descargar($datos);
-            $myRequest = new \Illuminate\Http\Request();
-            $myRequest->setMethod('POST');
-            $myRequest->request->add(['id_empresa' => $id_empresa]);
-            $myRequest->request->add(['data' => $servicio]);
-            $myRequest->request->add(['extension' => "application/x-zip-compressed"]);
-            $myRequest->request->add(['usuario_c' => 1]);
-
-            $this->altaBobedaXML($myRequest);
+            $archivo = $servicio = $lib->descargar($datos);
+            if(!$archivo["ok"]){
+                return $this->crearRespuesta(2, $archivo["errores"], 300);
+            }
+            DB::update('update con_solicitudes_sat 
+            set id_estatus = ?, fecha_modificacion = ?, usuario_modificacion = ?, activo = 0
+            where id_solicitud_sat = ?', 
+            [$id_estatus_finalizado, $this->getHoraFechaActual(), $id_usuario, $id_solicitud]);            
+            $data = array(
+                "id_empresa" => $id_empresa,
+                "data" => $archivo["data"],
+                "extension" => "application/x-zip-compressed",
+                "usuario_c" => $id_usuario
+            );
+            return $this->consumeMetodo($data);
+            
 
     }
-    public function getSolicitudesSat($id_empresa){
+    public function getSolicitudesSat($id_empresa, $id_estatus){
         try {
+            $id_estatus_activo = 1;
             $data = DB::table('con_solicitudes_sat as css')
             ->join('gen_cat_statu as es', 'es.id_statu', '=', 'css.id_estatus')
             ->select("css.*", "es.status")
             ->where("css.id_empresa", $id_empresa)
+            ->where(function ($query) use ( $id_estatus, $id_estatus_activo){
+                if($id_estatus != 0){
+                    $query->where("css.id_estatus", $id_estatus);
+                }else{
+                    // obtener solo activas
+                    $query->where("css.id_estatus", $id_estatus_activo);
+
+                }
+            })
+            ->orderBy('css.fecha_creacion', 'ASC')
             ->get();
             return $this->crearRespuesta(1, $data, 200);
         } catch (\Throwable $th) {
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $th->getMessage(),200);
         }
     }
+    public function cancelarSolicitud(Request $request){
+        try {
+            $id_estatus_cancelado = 12;
+            $id_solicitud = $request->get('id_solicitud');
+            $id_usuario = $request->get('id_usuario');
+            DB::update('update con_solicitudes_sat 
+            set id_estatus = ?, fecha_modificacion = ?, usuario_modificacion = ?, activo = 0
+            where id_solicitud_sat = ?', 
+            [$id_estatus_cancelado, $this->getHoraFechaActual(), $id_usuario, $id_solicitud]);
+            return $this->crearRespuesta(1, "se ha cancelado la solicitud", 200);
 
+        } catch (\Throwable $th) {
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $th->getMessage(),300);
+        }
+    }
     public function consumeMetodo($res)
     {
         #region Validaciones

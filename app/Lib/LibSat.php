@@ -84,9 +84,9 @@ class LibSat {
         }
 
         // verificar que el proceso de consulta fue correcto
-        if (! $query->getStatus()->isAccepted()) {
-            return [ "ok" => false, "message" => "Fallo al presentar la consulta: {$query->getStatus()->getMessage()}" ];
-        }
+        // if (! $query->getStatus()->isAccepted()) {
+        //     return [ "ok" => false, "message" => "Fallo al presentar la consulta: {$query->getStatus()->getMessage()}" ];
+        // }
 
         return $query;
     }
@@ -144,7 +144,8 @@ class LibSat {
 
         $service = $validar_service["data"];
         $packagesIds = $datos["archivos"];
-
+        $errores = array();
+        $ids ="";
         // consultar el servicio de verificación
         foreach($packagesIds as $packageId) {
             $download = $service->download($packageId);
@@ -154,11 +155,14 @@ class LibSat {
             }
             $path = 'temp_file.zip';
             $contents = $download->getPackageContent();
+            
             file_put_contents($path, $contents);
             $headers = array(
                 'Content-Type: application/octet-stream',
                 'Content-Disposition: attachment; filename=factura.xml'
             );
+           return [ "ok" => true, "data" => base64_encode(file_get_contents($path)) ];
+
             return response()->download($path, 'cfdis.zip',$headers);
         }
         return [ "ok" => true, "data" => $ids, "errores" => $errores ];
