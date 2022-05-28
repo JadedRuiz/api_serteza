@@ -1144,6 +1144,7 @@ class FacturacionController extends Controller
             if($datos_empresa){
                 $rfc = $datos_empresa->rfc;
             }
+            $sXML =$xml."";
             $xml = simplexml_load_string($xml);
             $namespaces = $xml->getNamespaces(true);
             $xml->registerXPathNamespace('c', $namespaces['cfdi']);
@@ -1152,6 +1153,7 @@ class FacturacionController extends Controller
 
             $bobedaXML = new BobedaXML();
             $bobedaXML->id_empresa = $id_empresa;
+            $bobedaXML->xml = $sXML;
 
             
 
@@ -1161,6 +1163,14 @@ class FacturacionController extends Controller
                 $bobedaXML->total = $dato['Total'];
                 $bobedaXML->moneda = $dato['Moneda'];
                 $bobedaXML->descuento = $dato['Descuento'];
+            }
+
+            foreach($xml->xpath('//c:Receptor') as $dato){
+                $bobedaXML->rfc = $dato['Rfc'];
+                $bobedaXML->nombre = "";
+                if(isset($dato['Nombre'])){
+                    $bobedaXML->nombre = $dato['Nombre'];
+                }
             }
 
             if(empty($bobedaXML->tipo_combrobante)){
@@ -1183,7 +1193,7 @@ class FacturacionController extends Controller
                 return [ "ok" => false, "message" => "No se ha encontrado el UUID de este XML"];
             }
 
-            $validar = DB::table('bobeda_xml')->where("uuid",$bobedaXML->uuid)->first();
+            $validar = DB::table('con_bovedaxml')->where("uuid",$bobedaXML->uuid)->first();
             if($validar){
                 return [ "ok" => false, "message" => "El XML con UUID ".$bobedaXML->uuid . " ya se encuentra registrado" ];
             }
@@ -1200,6 +1210,20 @@ class FacturacionController extends Controller
                 $bobedaXML->emitidos = true;
             }
 
+            if($bobedaXML->tipo_combrobante == "N"){
+                foreach($xml->xpath('//n:Receptor') as $dato){
+                    $bobedaXML->curp = $dato['Curp'];
+                    $bobedaXML->num_seguro = $dato['NumSeguridadSocial'];
+                    $bobedaXML->salario_base = $dato['SalarioBaseCotApor'];
+                    $bobedaXML->salario_diario = $dato['SalarioDiarioIntegrado'];
+                }
+                foreach($xml->xpath('//n:Nomina') as $dato){
+                    $bobedaXML->fecha_inicial_pago = $dato['FechaInicialPago'];
+                    $bobedaXML->fecha_final_pago = $dato['FechaFinalPago'];
+                    $bobedaXML->fecha_pago = $dato['FechaPago'];
+                }
+            }
+
             $bobedaXML->id_estatus = 1;
             $bobedaXML->fecha_creacion = $this->getHoraFechaActual();
             $bobedaXML->usuario_creacion = $usuario;
@@ -1209,7 +1233,7 @@ class FacturacionController extends Controller
             if($bobedaXML->tipo_combrobante == "N"){
                 $detalle_nomina = new DetalleNomina();
                 foreach($xml->xpath('//n:Percepciones/n:Percepcion') as $percepcion){
-                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->id_boveda = $bobedaXML->id_boveda;
                     $detalle_nomina->tipo = 'P';
                     $detalle_nomina->clave = $percepcion['Clave'];
                     $detalle_nomina->concepto = $percepcion['Concepto'];
@@ -1222,7 +1246,7 @@ class FacturacionController extends Controller
                 }
                 foreach($xml->xpath('//n:Deducciones/n:Deduccion') as $deduccion){
                     $detalle_nomina = new DetalleNomina();
-                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->id_boveda = $bobedaXML->id_boveda;
                     $detalle_nomina->tipo = 'D';
                     $detalle_nomina->clave = $deduccion['Clave'];
                     $detalle_nomina->concepto = $deduccion['Concepto'];
@@ -1235,7 +1259,7 @@ class FacturacionController extends Controller
                 }
                 foreach($xml->xpath('//n:OtrosPagos/n:OtroPago') as $otros){
                     $detalle_nomina = new DetalleNomina();
-                    $detalle_nomina->id_bobeda = $bobedaXML->id_bobeda;
+                    $detalle_nomina->id_boveda = $bobedaXML->id_boveda;
                     $detalle_nomina->tipo = 'O';
                     $detalle_nomina->clave = $otros['Clave'];
                     $detalle_nomina->concepto = $otros['Concepto'];
@@ -1247,7 +1271,7 @@ class FacturacionController extends Controller
                     $detalle_nomina->save();
                 }
             }
-            return [ "ok" => true, "data" => $bobedaXML ];
+            return [ "ok" => true, "data" => "XML subido con éxito"];
         } catch(Throweable $e){
             return [ "ok" => false, "message" => "Ha ocurrido un error : " . $e->getMessage() ];
         }
