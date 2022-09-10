@@ -1,7 +1,7 @@
 <?php
 //Rutas
 $router->get('/', function () use ($router) {
-    
+    return "RP_SERTEZA API";
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
@@ -193,6 +193,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('activarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@activarLigaEmpresaNomina');
         $router->post('altaSucursal', 'NominaController@altaSucursal');
         $router->post('aplicarSolicitudesRH', 'NominaController@aplicarSolicitudesRH');
+        $router->post("procesarCotizacion","NominaController@procesarCotizacion");
     });
     $router->group(['prefix' => 'concepto'], function () use ($router) { 
         $router->get('facObtenerConceptosEmpresa/{id_empresa}', 'ConceptoController@facObtenerConceptosEmpresa');

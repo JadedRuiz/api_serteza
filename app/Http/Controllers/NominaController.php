@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Candidato;
+use App\Models\Cotizacion;
+use App\Models\DetCotizacion;
 
 class NominaController extends Controller
 {
@@ -133,4 +135,97 @@ class NominaController extends Controller
         }
         return $this->crearRespuesta(2,"No se ha encontrado el detalle de la contratación, intentelo de nuevo o contacte al administrador",301);
     }
+    public function procesarCotizacion(Request $res)
+    {
+        //Variables globales;
+        $cotizacion = new Cotizacion();
+        #region [Validaciones]
+            if(isset($res["folio"]) && !empty($res["folio"])){
+                $cotizacion = Cotizacion::where("folio",$res["folio"])
+                ->first();
+            }else{
+                $cotizacion->folio = $this->obtenerFolio();
+            }
+            //Obligatorios
+            if(!$cotizacion){
+                if(!isset($res["cliente"])){
+                    return $this->crearRespuesta(2,"El campo 'Cliente' es obligatorio",200);
+                }else{
+                    if(strlen($res["cliente"] > 100)){
+                        return $this->crearRespuesta(2,"El campo 'Cliente' solo aceptap un máximo de 100 caracteres",200);
+                    }
+                }
+                if(!isset($res["fecha"])){
+                    return $this->crearRespuesta(2,"El campo 'Fecha' es obligatorio",200);
+                }else{
+                    $res["fecha"] = date('Y-m-d',strtotime($res["fecha"]));
+                }
+                if(!isset($res["correo"])){
+                    return $this->crearRespuesta(2,"El campo 'Correo' es obligatorio",200);
+                }
+            }
+        #endregion
+        //Se inserta o actualiza la cotizacion
+        $cotizacion->cliente = $res["cliente"];
+        $cotizacion->fecha = $res["fecha"];
+        $cotizacion->id_empresa = $res["id_empresa"];
+        $cotizacion->id_status = 1;
+        $cotizacion->correo = $res["correo"];
+        $cotizacion->save(); //Actualizar o Guardar
+        //Reiniciar cotizacion
+        if($cotizacion){
+            DB::update("UPDATE nom_detcotizaciones SET activo = 0 WHERE id_cotizacion = ?",[$cotizacion->id_cotizacion]);
+        }
+        //Se inserta o actualiza el detalle de cotizacion
+        foreach($res["detalle"] as $detalle){
+            $det_cotizacion = new DetCotizacion();
+            if($cotizacion){
+                $validar = DetCotizacion::where("id_cotizacion",$cotizacion->id_cotizacion)
+                ->where("identificador",strtoupper($detalle["identificador"]))
+                ->first();
+                if($validar){
+                    $det_cotizacion = $validar;
+                }
+            }
+            $det_cotizacion->id_cotizacion = $cotizacion->id_cotizacion;
+            $det_cotizacion->identificador = $detalle["identificador"];
+            $det_cotizacion->id_puesto = $detalle["id_puesto"];
+            $det_cotizacion->fecha_nacimiento = $detalle["fecha_nacimiento"];
+            $det_cotizacion->fecha_ingreso = $detalle["fecha_ingreso"];
+            $det_cotizacion->sueldo_mensual = $detalle["sueldo_mensual"];
+            $det_cotizacion->notas = $detalle["notas"];
+            $det_cotizacion->activo = 1;
+            $det_cotizacion->save();
+
+        }
+        return $this->crearRespuesta(1,$this->cotizar($res),200);
+    }
+
+    #region [Métodos Privados]
+        private function obtenerFolio()
+        {
+            $hoy = getdate();
+            return $hoy["year"].$hoy["hours"].$hoy["minutes"].$hoy["seconds"];
+        }
+        private function cotizar($data)
+        {
+            # Aqui va su función de cotizar
+            $respuesta = [
+                "cotizacion" => [
+                    "sueldos" => 0,
+                    "imss_obrero" => 0,
+                    "ims_patronal" => 0,
+                    "isn" => 0
+                ],
+                "cotizacion_estrategia" => [
+                    "sueldos" => 0,
+                    "imss_obrero" => 0,
+                    "ims_patronal" => 0,
+                    "isn" => 0
+                ]
+            ];
+            return $respuesta;
+        }
+    #endregion
+    
 }
