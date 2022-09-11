@@ -193,6 +193,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('activarLigaEmpresaNomina/{id_empresa_nomina}', 'NominaController@activarLigaEmpresaNomina');
         $router->post('altaSucursal', 'NominaController@altaSucursal');
         $router->post('aplicarSolicitudesRH', 'NominaController@aplicarSolicitudesRH');
+        $router->get("buscarFolio/{folio}","NominaController@buscarFolio");
         $router->post("procesarCotizacion","NominaController@procesarCotizacion");
     });
     $router->group(['prefix' => 'concepto'], function () use ($router) { 

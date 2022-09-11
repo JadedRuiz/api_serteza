@@ -135,6 +135,23 @@ class NominaController extends Controller
         }
         return $this->crearRespuesta(2,"No se ha encontrado el detalle de la contratación, intentelo de nuevo o contacte al administrador",301);
     }
+
+    public function buscarFolio($folio)
+    {
+        $datos_cotizacion = Cotizacion::where('folio',$folio)
+        ->first();
+        if($datos_cotizacion){
+            $datos_cotizacion->detalle = DetCotizacion::where('id_cotizacion',$datos_cotizacion->id_cotizacion)
+            ->get();
+            $respuesta = [
+                "busqueda" => $datos_cotizacion,
+                "datos_cotizacion" => $this->cotizar($datos_cotizacion->detalle)
+            ];
+            return $this->crearRespuesta(1,$respuesta,200);
+        }
+        return $this->crearRespuesta(2,"No se ha encontrado el folio ingresado.",200);
+    }
+
     public function procesarCotizacion(Request $res)
     {
         //Variables globales;
@@ -165,40 +182,46 @@ class NominaController extends Controller
                 }
             }
         #endregion
-        //Se inserta o actualiza la cotizacion
-        $cotizacion->cliente = $res["cliente"];
-        $cotizacion->fecha = $res["fecha"];
-        $cotizacion->id_empresa = $res["id_empresa"];
-        $cotizacion->id_status = 1;
-        $cotizacion->correo = $res["correo"];
-        $cotizacion->save(); //Actualizar o Guardar
-        //Reiniciar cotizacion
-        if($cotizacion){
-            DB::update("UPDATE nom_detcotizaciones SET activo = 0 WHERE id_cotizacion = ?",[$cotizacion->id_cotizacion]);
-        }
-        //Se inserta o actualiza el detalle de cotizacion
-        foreach($res["detalle"] as $detalle){
-            $det_cotizacion = new DetCotizacion();
+        try{
+            //Se inserta o actualiza la cotizacion
+            $cotizacion->cliente = $res["cliente"];
+            $cotizacion->fecha = $res["fecha"];
+            $cotizacion->id_empresa = $res["id_empresa"];
+            $cotizacion->id_status = 1;
+            $cotizacion->correo = $res["correo"];
+            $cotizacion->save(); //Actualizar o Guardar
+            //Reiniciar cotizacion
             if($cotizacion){
-                $validar = DetCotizacion::where("id_cotizacion",$cotizacion->id_cotizacion)
-                ->where("identificador",strtoupper($detalle["identificador"]))
-                ->first();
-                if($validar){
-                    $det_cotizacion = $validar;
-                }
+                DB::update("UPDATE nom_detcotizaciones SET activo = 0 WHERE id_cotizacion = ?",[$cotizacion->id_cotizacion]);
             }
-            $det_cotizacion->id_cotizacion = $cotizacion->id_cotizacion;
-            $det_cotizacion->identificador = $detalle["identificador"];
-            $det_cotizacion->id_puesto = $detalle["id_puesto"];
-            $det_cotizacion->fecha_nacimiento = $detalle["fecha_nacimiento"];
-            $det_cotizacion->fecha_ingreso = $detalle["fecha_ingreso"];
-            $det_cotizacion->sueldo_mensual = $detalle["sueldo_mensual"];
-            $det_cotizacion->notas = $detalle["notas"];
-            $det_cotizacion->activo = 1;
-            $det_cotizacion->save();
+            //Se inserta o actualiza el detalle de cotizacion
+            foreach($res["detalle"] as $detalle){
+                $det_cotizacion = new DetCotizacion();
+                if($cotizacion){
+                    $validar = DetCotizacion::where("id_cotizacion",$cotizacion->id_cotizacion)
+                    ->where("identificador",strtoupper($detalle["identificador"]))
+                    ->first();
+                    if($validar){
+                        $det_cotizacion = $validar;
+                    }
+                }
+                $det_cotizacion->id_cotizacion = $cotizacion->id_cotizacion;
+                $det_cotizacion->identificador = $detalle["identificador"];
+                $det_cotizacion->id_puesto = $detalle["id_puesto"];
+                $det_cotizacion->fecha_nacimiento = $detalle["fecha_nacimiento"];
+                $det_cotizacion->fecha_ingreso = $detalle["fecha_ingreso"];
+                $det_cotizacion->sueldo_mensual = $detalle["sueldo_mensual"];
+                $det_cotizacion->notas = $detalle["notas"];
+                $det_cotizacion->activo = 1;
+                $det_cotizacion->save();
 
+            }
+        }catch(Throwable $e){
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
-        return $this->crearRespuesta(1,$this->cotizar($res),200);
+        $respuesta = $this->cotizar($res["detalle"]);
+        $respuesta["folio"] = $cotizacion->folio;
+        return $this->crearRespuesta(1,$respuesta,200);
     }
 
     #region [Métodos Privados]
@@ -211,17 +234,18 @@ class NominaController extends Controller
         {
             # Aqui va su función de cotizar
             $respuesta = [
+                "folio" => "",
                 "cotizacion" => [
-                    "sueldos" => 0,
-                    "imss_obrero" => 0,
-                    "ims_patronal" => 0,
-                    "isn" => 0
+                    "sueldos" => 300.00,
+                    "imss_obrero" => 120.00,
+                    "ims_patronal" => 30.00,
+                    "isn" => 231.00
                 ],
                 "cotizacion_estrategia" => [
-                    "sueldos" => 0,
-                    "imss_obrero" => 0,
-                    "ims_patronal" => 0,
-                    "isn" => 0
+                    "sueldos" => 4210.00,
+                    "imss_obrero" => 120.00,
+                    "ims_patronal" => 320.00,
+                    "isn" => 112.00
                 ]
             ];
             return $respuesta;

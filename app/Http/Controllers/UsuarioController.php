@@ -257,7 +257,7 @@ class UsuarioController extends Controller
             ->where("luc.activo",1)
             ->get();
             $empresas = DB::table('liga_usuario_empresa as lue')
-            ->select("lue.id_empresa",)
+            ->select("lue.id_empresa")
             ->where("lue.id_usuario",$validar[0]->id_usuario)
             ->where("lue.activo",1)
             ->get();
