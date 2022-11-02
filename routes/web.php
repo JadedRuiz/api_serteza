@@ -171,7 +171,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
         $router->get('reporteEmpleado/{id_empleado}/{id_empresa}','ReporteController@reporteEmpleado');
         $router->post("reporteDepartamento","ReporteController@reporteDepartamento");
-        $router->get('generarFactura/{id_factura}/{tipo}/{tipo_envio}','FacturacionController@generarFactura');
+        $router->get('generarFactura/{id_factura}/{tipo}/{tipo_envio}','ReporteController@generarFactura');
     });
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');

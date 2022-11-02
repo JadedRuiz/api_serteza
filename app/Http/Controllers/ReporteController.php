@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade as PDF;
 use App\Exports\ReporteExport;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\FacturaExport;
 
 class ReporteController extends Controller
 {
@@ -209,5 +210,54 @@ class ReporteController extends Controller
             }
         }
         return $this->crearRespuesta(2,"La empresa no cuenta con despartamentos",301);
+    }
+    public function generarFactura($id_factura,$tipo,$tipo_envio)
+    {
+        if($tipo == 1){     //PDF
+            $reporte = new FacturaExport();
+            switch($tipo_envio){
+                case 1 :    //BASE64
+                    return $reporte->generarFactura($id_factura);
+                    break;
+                case 2 :    //Descarga
+                    //$path = 'temp_file_pdf.pdf';
+                    $contents = base64_decode($reporte->generarFactura($id_factura)["data"]);
+                    //file_put_contents($path, $contents);
+                    return response($contents)
+                	->header('Content-Type','application/pdf')
+                	->header('Pragma','public')
+                	->header('Content-Disposition','inline; filename="qrcodeimg.pdf"')
+                	->header('Cache-Control','max-age=60, must-revalidate');
+                    break;
+                default :
+                    break;
+            }
+        }
+        if($tipo == 2){     //XML
+            $xml = base64_encode(DB::table("fac_factura")->select("xml")->where("id_factura",$id_factura)->first()->xml);
+            switch($tipo_envio){
+                case 1 :    //BASE64
+                    return $this->crearRespuesta(1,$xml,"200");
+                    break;
+                case 2 :    //Descarga
+                    $path = 'temp_file_xml.xml';
+                    $contents = base64_decode($xml);
+                    file_put_contents($path, $contents);
+                    $headers = array(
+                      'Content-Type: application/octet-stream',
+                      'Content-Disposition: attachment; filename=factura.xml'
+                    );
+                    return response()->download($path, 'factura.xml',$headers)->deleteFileAfterSend(true);
+                    break;
+                default :
+                    break;
+            }
+        }
+        if($tipo == 3){     //Ambos
+
+        }
+        if($tipo == 4){     //Información
+
+        }
     }
 }
