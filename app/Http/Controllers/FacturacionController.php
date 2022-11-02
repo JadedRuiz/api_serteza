@@ -34,45 +34,88 @@ class FacturacionController extends Controller
         }else{
            array_push($id_empresas,$res["id_empresa"]);
         }
+        
 
         if(count($id_empresas)>0){
 
             //Consultas
+            // $facturas = DB::table('fact_cattimbrado as fct')
+            // ->select("id_timbrado","empleado as nombre","rfc","codigo_empleado","uuid",
+            // DB::raw('DATE_FORMAT(fecha_pago,"%d-%m-%Y") as fecha_pago'),DB::raw('DATE_FORMAT(fecha_timbrado,"%d-%m-%Y") as fecha_timbrado'),'periodo','codigo_nomina','ejercicio')
+            // ->where("activo",1)
+            // ->where(function ($query) use ($filtros, $id_empresas){
+            //     if($filtros["id_empresa"] != 0){
+            //         $query->where("id_empresa",$filtros["id_empresa"]);
+            //     }else{
+            //         $query->whereIn("id_empresa",$id_empresas);
+            //     }
+            //     if($filtros["id_sucursal"] != 0){
+            //         $query->where("id_sucursal",$filtros["id_sucursal"]);
+            //     }
+            //     if(strlen($filtros["rfc"]) > 0){
+            //         $query->where("rfc","like","%".strtoupper($filtros["rfc"])."%");
+            //     }
+            //     if(strlen($filtros["tipo_nomina"]) > 0){
+            //         $query->where("codigo_nomina",$filtros["tipo_nomina"]);
+            //     }
+            //     if(strlen($filtros["periodo"]) > 0){
+            //         $query->where("periodo",$filtros["periodo"]);
+            //     }
+            //     if(strlen($filtros["ejercicio"]) > 0){
+            //         $query->where("ejercicio",$filtros["ejercicio"]);
+            //     }
+            //     if($filtros["fecha_pago_i"] != "" && $filtros["fecha_pago_f"] != ""){
+            //         $query->whereBetween("fecha_pago",[date('Y-m-d',strtotime($filtros["fecha_pago_i"])),date('Y-m-d',strtotime($filtros["fecha_pago_f"]))]);
+            //     }
+            //     if($filtros["fecha_final"] != "" && $filtros["fecha_inicial"] != ""){
+            //         $query->whereBetween("fecha_timbrado",[date('Y-m-d',strtotime($filtros["fecha_inicial"])),date('Y-m-d',strtotime($filtros["fecha_final"]))]);
+            //     }
+            // })
+            // ->take(1000)
+            // ->orderBy("id_timbrado","DESC")
+            // ->get();
+
             $facturas = DB::table('fact_cattimbrado as fct')
             ->select("id_timbrado","empleado as nombre","rfc","codigo_empleado","uuid",
             DB::raw('DATE_FORMAT(fecha_pago,"%d-%m-%Y") as fecha_pago'),DB::raw('DATE_FORMAT(fecha_timbrado,"%d-%m-%Y") as fecha_timbrado'),'periodo','codigo_nomina','ejercicio')
-            ->where("activo",1)
-            ->where(function ($query) use ($filtros, $id_empresas){
+            ->where("activo",1) ;
+            
                 if($filtros["id_empresa"] != 0){
-                    $query->where("id_empresa",$filtros["id_empresa"]);
+                    $facturas = $facturas->where("id_empresa",$filtros["id_empresa"]);
                 }else{
-                    $query->whereIn("id_empresa",$id_empresas);
+                    $facturas = $facturas->whereIn("id_empresa",$id_empresas);
                 }
                 if($filtros["id_sucursal"] != 0){
-                    $query->where("id_sucursal",$filtros["id_sucursal"]);
+                    $facturas = $facturas->where("id_sucursal",$filtros["id_sucursal"]);
                 }
                 if(strlen($filtros["rfc"]) > 0){
-                    $query->where("rfc","like","%".strtoupper($filtros["rfc"])."%");
+                    $facturas = $facturas->where("rfc","like","%".strtoupper($filtros["rfc"])."%");
                 }
                 if(strlen($filtros["tipo_nomina"]) > 0){
-                    $query->where("codigo_nomina",$filtros["tipo_nomina"]);
+                    if($filtros["id_sucursal"] != "0"){
+                        $facturas = $facturas->where("codigo_nomina",$filtros["tipo_nomina"]);
+                    }
                 }
                 if(strlen($filtros["periodo"]) > 0){
-                    $query->where("periodo",$filtros["periodo"]);
+                    $facturas = $facturas->where("periodo",$filtros["periodo"]);
                 }
                 if(strlen($filtros["ejercicio"]) > 0){
-                    $query->where("ejercicio",$filtros["ejercicio"]);
+                    $facturas = $facturas->where("ejercicio",$filtros["ejercicio"]);
                 }
                 if($filtros["fecha_pago_i"] != "" && $filtros["fecha_pago_f"] != ""){
-                    $query->whereBetween("fecha_pago",[date('Y-m-d',strtotime($filtros["fecha_pago_i"])),date('Y-m-d',strtotime($filtros["fecha_pago_f"]))]);
+                    $facturas = $facturas->whereBetween("fecha_pago",[date('Y-m-d',strtotime($filtros["fecha_pago_i"])),date('Y-m-d',strtotime($filtros["fecha_pago_f"]))]);
                 }
                 if($filtros["fecha_final"] != "" && $filtros["fecha_inicial"] != ""){
-                    $query->whereBetween("fecha_timbrado",[date('Y-m-d',strtotime($filtros["fecha_inicial"])),date('Y-m-d',strtotime($filtros["fecha_final"]))]);
+                    $facturas = $facturas->whereBetween("fecha_timbrado",[date('Y-m-d',strtotime($filtros["fecha_inicial"])),date('Y-m-d',strtotime($filtros["fecha_final"]))]);
                 }
-            })
-            ->take(1000)
+            
+                $facturas = $facturas->take(1000)
             ->orderBy("id_timbrado","DESC")
             ->get();
+
+
+            // return $this->crearRespuesta(1,$facturas,200);
+
             $total = DB::table('fact_cattimbrado as fct')
             ->select("empleado as nombre","rfc","codigo_empleado","fecha_pago","fecha_timbrado")
             ->where("activo",1)
@@ -221,7 +264,7 @@ class FacturacionController extends Controller
         $id_timbrado = $res["id_timbrado"];
         $tipo = $res["tipo"];
         $xml = DB::table('fact_cattimbrado as fc')
-        ->select("uuid","xml","fc.id_empresa","empleado","gcf.nombre as logo","gce.empresa")
+        ->select("uuid","xml","fc.id_empresa","empleado","gcf.nombre as logo","gce.empresa","fc.periodo","fc.ejercicio")
         ->leftJoin("gen_cat_empresa as gce","gce.id_empresa","=","fc.id_empresa")
         ->leftJoin("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gce.id_fotografia")
         ->where("id_timbrado",$id_timbrado)
@@ -267,8 +310,8 @@ class FacturacionController extends Controller
                             "nombre" => $xml->empleado
                         ],
                     ],
-                    "asunto" => "RECIBO DE NÓMINA",
-                    "mensaje" => "Le hemos enviado sus archivos correspondientes",
+                    "asunto" => "RECIBO DE NÓMINA DEL PERIODO ".$xml->periodo."-".$xml->ejercicio,
+                    "mensaje" => "Le hemos enviado sus recibos de nomina del periodo ".$xml->periodo."-".$xml->ejercicio,
                     "adjuntos" => [
                         [
                             "extension" => "pdf",
@@ -277,7 +320,7 @@ class FacturacionController extends Controller
                         ],
                         [
                             "extension" => "xml",
-                            "nombre" => "FORMTAO_XML",
+                            "nombre" => "FORMATO_XML",
                             "data" => base64_encode($xml->xml)
                         ]
                     ],
@@ -754,7 +797,7 @@ class FacturacionController extends Controller
                 $detfactura->cantidad = $concepto["cantidad"];
                 $detfactura->importe = $concepto["precio"];
                 $detfactura->descuento = $concepto["descuento"];
-                $detfactura->iva = $concepto["iva"];
+                $detfactura->iva = round((float)$concepto["iva"],2);
                 $detfactura->ieps = $concepto["ieps"];
                 $detfactura->otros_imp = $concepto["otros"];
                 $detfactura->subtotal = $concepto["neto"];

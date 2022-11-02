@@ -91,6 +91,65 @@ class Controller extends BaseController
         }
         return $this->crearRespuesta(2,"No se tiene perfiles para este sistema",200);
     }
+
+    public function obtenerMeses()
+    {
+        $meses = [];
+
+        array_push($meses,[
+                "id" => 1,
+                "mes" => "ENERO",
+        ]);
+        array_push($meses,[
+                "id" => 2,
+                "mes" => "FEBRERO",
+        ]);
+        array_push($meses,[
+                "id" => 3,
+                "mes" => "MARZO",
+        ]);
+        array_push($meses,[
+                "id" => 4,
+                "mes" => "ABRIL",
+        ]);
+        array_push($meses,[
+                "id" => 5,
+                "mes" => "MAYO",
+        ]);
+        array_push($meses,[
+                "id" => 6,
+                "mes" => "JUNIO",
+        ]);
+        array_push($meses,[
+                "id" => 7,
+                "mes" => "JULIO",
+        ]);
+        array_push($meses,[
+                "id" => 8,
+                "mes" => "AGOSTO",
+        ]);
+        array_push($meses,[
+                "id" => 9,
+                "mes" => "SEPTIEMBRE",
+        ]);
+        array_push($meses,[
+                "id" => 10,
+                "mes" => "OCTUBRE",
+        ]);
+        array_push($meses,[
+                "id" => 11,
+                "mes" => "NOVIEMBRE",
+        ]);
+        array_push($meses,[
+                "id" => 12,
+                "mes" => "DICIEMBRE",
+        ]);
+       
+        return $this->crearRespuesta(1,$meses,200);
+        
+    }
+
+
     public function getEstatus($tipo){
             $data = '';
         if($tipo = "cancelar"){
@@ -117,6 +176,15 @@ class Controller extends BaseController
             return response()->json(['ok' => false, 'message' => $obj], $http_response);
         }
     }
+    public function crearRespuestaConTotales($tipo,$obj, $totales, $http_response){
+        if($tipo == 1){ //Success
+            return response()->json(['ok' => true, 'data' => $obj,'totales' => $totales], $http_response);
+        }
+        if($tipo == 2) {    //Failed
+            return response()->json(['ok' => false, 'message' => $obj,'totales' => $totales], $http_response);
+        }
+    }
+
     public function getEnv($nombre){
         return env($nombre,"");
     }

@@ -13,7 +13,7 @@ class SerieController extends Controller
     {
         $folio = Factura::select("folio")
         ->where("id_serie",$id_serie)
-        ->orderBy("folio","desc")
+        ->orderBy(DB::raw("cast(folio as integer)"),"desc")
         ->first();
         if($folio){
             return $this->crearRespuesta(1,intval($folio->folio)+1,200);

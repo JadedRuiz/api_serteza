@@ -11,6 +11,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get("obtenerPerfiles","Controller@obtenerPerfiles");
     $router->get("decode_json/{code}","Controller@decode_json");
     $router->get("obtenerContratados/{id_puesto}","Controller@obtenerContratados");
+    $router->get("obtenerMeses","Controller@obtenerMeses");
     
     //Rutas de Usuario
     $router->group(['prefix' => 'usuario'], function () use ($router) {
@@ -170,7 +171,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('reporteContrato/{id_movimiento}','ReporteController@reporteContrato');
         $router->get('reporteEmpleado/{id_empleado}/{id_empresa}','ReporteController@reporteEmpleado');
         $router->post("reporteDepartamento","ReporteController@reporteDepartamento");
-        $router->get('generarFactura/{id_factura}','FacturacionController@generarFactura');
+        $router->get('generarFactura/{id_factura}/{tipo}/{tipo_envio}','FacturacionController@generarFactura');
     });
     $router->group(['prefix' => 'dashboard'], function () use ($router) {
         $router->get('obtenerDashboardAdmin/{id_empresa}','DashboardController@obtenerDashboardAdmin');
@@ -218,6 +219,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('crearNuevoPeriodo', 'PeriodoController@crearNuevoPeriodo');
         $router->post('modificarPeriodo', 'PeriodoController@modificarPeriodo');
         $router->get("obtenerPeriodoEjercicioActual/{id_empresa}/{id_nomina}","PeriodoController@obtenerPeriodoEjercicioActual");
+        $router->post('obtenerPeriodosMensual', 'PeriodoController@obtenerPeriodosMensual');
     });
     $router->group(['prefix' => 'excel'], function () use ($router) {
         $router->get("formatoExcelCaptura/{empresa}","ExcelController@formatoCapturaConceptos");
@@ -232,6 +234,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("generarExcel","FacturacionController@generarExcel");
         $router->post("facAltaFactura","FacturacionController@facAltaFactura");
         //Routes cataporte
+        $router->post("facObtenerFacturas","FacturacionController@facObtenerFacturas");
         $router->post("facAltaOperador","FacturacionController@facAltaOperador");
         $router->post("facAltaPersona","FacturacionController@facAltaPersona");
         $router->get("facObtenerOperadores/{id_empresa}","FacturacionController@facObtenerOperadores");
@@ -246,16 +249,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("getPDFPreview","FacturacionController@generaFacturaPreview");
         //Descarga Masiva
         $router->post("descargaMasivaSAT","FacturacionController@descargaMasivaSAT");
-
         $router->post("crear-solicitud-sat","FacturacionController@crearSolicitudSat");
         $router->post("verificar-solicitud-sat","FacturacionController@verificarEstatusSat");
         $router->get("get-solicitudes-sat/{id_empresa}/{id_estatus}","FacturacionController@getSolicitudesSat");
         $router->post("descargar-solicitud-sat","FacturacionController@descargarDocumentosSat");
         $router->post("cancelar-solicitud-sat","FacturacionController@cancelarSolicitud");
-
-        
-        
-        
         $router->post("altaBobedaXML", "FacturacionController@altaBobedaXML");
     });
     $router->group(['prefix' => 'serie'], function () use ($router) {
@@ -264,5 +262,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("altaSerie","SerieController@altaSerie");
         $router->post("modificarSerie","SerieController@modificarSerie");
         $router->get("facObtenerFolio/{id_serie}","SerieController@facObtenerFolioSig");
+    });
+
+    $router->group(['prefix' => 'gerencia'], function () use ($router) {
+        $router->post('costoNomina', 'CostosController@costosNomina');
     });
 });

@@ -103,6 +103,56 @@ class PeriodoController extends Controller
             return $this->crearRespuesta(2,"Ha ocurrido un error",200);
         }
     }
+
+    public function obtenerPeriodosMensual(Request $res){
+        $id_empresa = $res["id_empresa"];
+        $ejercicio = $res["ejercicio"];
+        $mes = $res["mes"];
+
+
+        $ejercicios_de_nomina = DB::table('nom_periodos')
+        ->select("nom_periodos.id_periodo", "nom_periodos.ejercicio","nom_periodos.id_nomina","ncn.nomina","nom_periodos.fecha_inicial", "nom_periodos.fecha_final","nom_periodos.periodo")
+        ->join("nom_cat_nomina as ncn","ncn.id_nomina","=","nom_periodos.id_nomina")
+        ->where("nom_periodos.id_empresa",$id_empresa)
+        ->where("nom_periodos.ejercicio", $ejercicio)
+        ->where("nom_periodos.mes", $mes)
+        ->get();
+        $respuesta = [];
+        
+
+        // 'AGREGA EL PRIMER PERIODO'
+        array_push($respuesta,[
+            "id_periodo" => 0,
+            "nomina" => "TODOS",
+            "periodo" => "0",
+            "ejercicio" => $ejercicio,
+            "fecha_inicial" => "",
+            "fecha_final" => "",
+            "descripcion" => "00-TODOS",
+        ]);
+        
+        $cont = 1;
+        foreach($ejercicios_de_nomina as $ejercicio){
+            
+            array_push($respuesta,[
+                "id_periodo" => $ejercicio->id_periodo,
+                "nomina" => $ejercicio->nomina,
+                "periodo" => $ejercicio->periodo,
+                "ejercicio" => $ejercicio->ejercicio,
+                "fecha_inicial" => date("d/m/Y", strtotime($ejercicio->fecha_inicial)),
+                "fecha_final" => date("d/m/Y", strtotime($ejercicio->fecha_final)),
+                "descripcion" => substr("00".$ejercicio->periodo,-2)."- DEL ".date("d/m/Y", strtotime($ejercicio->fecha_inicial))." AL ".date("d/m/Y", strtotime($ejercicio->fecha_final)),
+            ]);
+            $cont++;
+        }
+
+        if(count($respuesta)>0){
+            return $this->crearRespuesta(1,$respuesta,200);
+        }else{
+            return $this->crearRespuesta(2,"Ha ocurrido un error",200);
+        }
+    }
+
     public function obtenerPeriodoPorId($id_periodo)
     {
         $periodo = DB::table('nom_periodos')
