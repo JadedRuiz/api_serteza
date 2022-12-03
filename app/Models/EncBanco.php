@@ -12,6 +12,6 @@ class EncBanco extends Model
     protected $primaryKey = "id_encbanco";
     protected $table = 'ban_encbancos';
     protected $fillable = [
-        'id_encbanco','id_saldobanco','id_concepto','id_estatus','mes','ejercicio','fechamovto','fechapago','documento','beneficiario','descripcion','importe','usuario_creacion','usuario_modificacion', 'fecha_creacion', 'fecha_modificacion'
+        'id_encbanco','id_catbanco','id_concepto','id_estatus','mes','ejercicio','fechamovto','documento','beneficiario','descripcion','importe','tipo_cambio','usuario_creacion','usuario_modificacion', 'fecha_creacion', 'fecha_modificacion'
     ];
 }

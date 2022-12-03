@@ -151,22 +151,31 @@ class Controller extends BaseController
 
 
     public function getEstatus($tipo){
+
+        // return $this->crearRespuesta(2,"LLEGO",200);
             $data = '';
+            $respuesta = '';
         if($tipo = "cancelar"){
                 $data = DB::table('gen_cat_statu')
                 ->select('id_statu')
                 ->where('status', "Cancelado")
                 ->first();
-                $data = $data->id_statu;
+                $respuesta = $data->id_statu;
         }
         if($tipo = "activo"){
                 $data = DB::table('gen_cat_statu')
                 ->select('id_statu')
                 ->where('status', "Activo")
                 ->first();
-                $data = $data->id_statu;
+                $respuesta = $data->id_statu;
+        }else{
+                $data = DB::table('gen_cat_statu')
+                ->select('id_statu')
+                ->where('status', $tipo)
+                ->first();
+                $respuesta = $data->id_statu;   
         }
-        return $data;
+        return $respuesta;
     }
     public function crearRespuesta($tipo,$obj,$http_response){
         if($tipo == 1){ //Success

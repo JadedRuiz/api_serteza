@@ -58,9 +58,10 @@ class ConceptoController extends Controller
    }
    public function facObtenerConceptosPorId($id_concepto)
    {
-    $conceptos = Concepto::select('id_concepto_empresa', 'satC.id_ClaveProdServ', 'satU.id_UnidadMedida', 'fac_catconceptos.descripcion', 'descuento', 'iva', 'tipo_iva', 'ieps', 'tipo_ieps', 'otros_imp', 'tipo_otros','satC.Descripcion as servicio',"satU.Descripcion as unidad","nombre_otros")
+    $conceptos = Concepto::select('id_concepto_empresa', 'satC.id_ClaveProdServ', 'satU.id_UnidadMedida', 'fac_catconceptos.descripcion', 'descuento', 'iva', 'tipo_iva', 'ieps', 'tipo_ieps', 'otros_imp', 'tipo_otros','satC.Descripcion as servicio',"satU.Descripcion as unidad","nombre_otros", 'id_objetoimp', 'satI.clave')
     ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fac_catconceptos.id_ClaveProdServ")
     ->join("sat_UnidadMedida as satU","satU.id_UnidadMedida","=","fac_catconceptos.id_UnidadMedida")
+    ->join("sat_objetoimp as satI", "satI.id_objetoimp", "=", "fac_catconceptos.id_objetoimp")
     ->where("id_concepto_empresa",$id_concepto)->first();
     if($conceptos){
         return $this->crearRespuesta(1,$conceptos,200);
@@ -103,6 +104,7 @@ class ConceptoController extends Controller
             $concepto->fecha_creacion = $fecha;
             $concepto->usuario_creacion = $res["usuario"];
             $concepto->activo = 1;
+            $concepto->id_objetoimp = 2;
             $concepto->save();
             return $this->crearRespuesta(1,"Concepto guardado",200);
         }catch(Throwable $e){
@@ -149,14 +151,31 @@ class ConceptoController extends Controller
    {
        $palabra = "%".$res["busqueda"]."%";
        $conceptos = DB::table("fac_catconceptos as fcc")
-       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.tipo_iva', 'fcc.ieps', 'fcc.tipo_ieps', 'fcc.otros_imp', 'fcc.tipo_otros')
+       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.tipo_iva', 'fcc.ieps', 'fcc.tipo_ieps', 'fcc.otros_imp', 'fcc.tipo_otros', 'fcc.id_objetoimp', 'satI.clave')
        ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
+       ->join("sat_objetoimp as satI", "satI.id_objetoimp","=", "fcc.id_objetoimp")
        ->where("fcc.id_empresa",$res["id_empresa"])
        ->where(function ($query) use ($palabra){
            $query->where("fcc.descripcion","like",$palabra)
            ->orWhere("satC.ClaveProdServ","like",$palabra);
        })
        ->get();
+       if(count($conceptos)>0){
+        return $this->crearRespuesta(1,$conceptos,200);
+       }
+        return $this->crearRespuesta(2,"Este concepto no existe o no le pertenece a esta empresa",200);
+   }
+
+   public function buscarConceptosPorNombre($id_empresa,$concepto)
+   {
+       $conceptos = DB::table("fac_catconceptos as fcc")
+       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.tipo_iva', 'fcc.ieps', 'fcc.tipo_ieps', 'fcc.otros_imp', 'fcc.tipo_otros', 'fcc.id_objetoimp', 'satI.clave')
+       ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
+       ->join("sat_objetoimp as satI", "satI.id_objetoimp", "=", "fac_catconceptos.id_objetoimp")
+       ->where("fcc.id_empresa",$id_empresa)
+       ->where("fcc.descripcion",$concepto)
+       ->get();
+
        if(count($conceptos)>0){
         return $this->crearRespuesta(1,$conceptos,200);
        }

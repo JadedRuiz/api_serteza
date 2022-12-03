@@ -45,14 +45,14 @@ class ContabilidadController extends Controller
                     (id_empresa, id_bovedaxml, id_provcliente, id_status,
                     folio, fecha, metodopago, formapago, moneda, subtotal,
                     total, iva, retencion_iva, retencion_isr, id_cativas, 
-                    cuentacontable, tipo_documento, ieps) values 
-                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
+                    cuentacontable, tipo_documento, ieps,tipofactura) values 
+                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
                     [$request["id_empresa"], $request["id_bovedaxml"], $request["id_provcliente"],
                     $request["id_status"], $request["folio"], $request["fecha"],
                     $request["metodopago"], $request["formapago"], $request["moneda"], 
                     $request["subtotal"], $request["total"], $request["iva"],
                     $request["retencion_iva"], $request["retencion_isr"], $request["id_cativas"],
-                    $request["cuentacontable"], $request["tipo_documento"], $request["ieps"]]);
+                    $request["cuentacontable"], $request["tipo_documento"], $request["ieps"], $request["tipofactura"]]);
         return ["ok"=> true, "mensaje" => "Elemento registrado"];       
     }
     public function actualizarFacturas(Request $request){
@@ -60,14 +60,14 @@ class ContabilidadController extends Controller
         set id_bovedaxml = ?, id_provcliente = ?, id_status = ?,
         folio = ?, fecha = ?, metodopago = ?, formapago = ?, moneda = ?, subtotal = ?,
         total = ?, iva = ?, retencion_iva = ?, retencion_isr = ?, id_cativas = ?, 
-        cuentacontable = ?, tipo_documento = ?, ieps = ?
+        cuentacontable = ?, tipo_documento = ?, ieps = ?, tipofactura = ?
         where id_movfactura = ?', 
         [$request["id_bovedaxml"], $request["id_provcliente"],
         $request["id_status"], $request["folio"], $request["fecha"],
         $request["metodopago"], $request["formapago"], $request["moneda"], 
         $request["subtotal"], $request["total"], $request["iva"],
         $request["retencion_iva"], $request["retencion_isr"], $request["id_cativas"],
-        $request["cuentacontable"], $request["tipo_documento"], $request["ieps"], $request["id_movfactura"]]);
+        $request["cuentacontable"], $request["tipo_documento"], $request["ieps"], $request["tipofactura"], $request["id_movfactura"]]);
         return ["ok"=> true, "mensaje" => "Elemento actualizado"];       
     }
     public function getCatIvas($id_empresa){

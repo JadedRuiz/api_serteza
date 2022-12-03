@@ -16,7 +16,7 @@ class ConFactura extends Model {
     protected $primaryKey = "id_movfactura";
     protected $table = 'con_movfacturas';
     protected $fillable = [
-        'id_movfactura', 'id_empresa', 'id_movedaxml', 'id_concepto', 'id_provcliente', 'id_status', 'folio', 'fecha', 'subtotal', 'total', 'iva', 'retencion_iva', 'retencion_isr', 'id_cativas', 'cuentacontable', 'tipo_documento', 'ieps', 'tipocambio'
+        'id_movfactura', 'id_empresa', 'id_movedaxml', 'id_concepto', 'id_provcliente', 'id_status', 'folio', 'fecha', 'subtotal', 'total', 'iva', 'retencion_iva', 'retencion_isr', 'id_cativas', 'cuentacontable', 'tipo_documento', 'ieps', 'tipocambio','pagos'
     ];
 
     /**

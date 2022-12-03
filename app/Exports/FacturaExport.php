@@ -84,13 +84,13 @@ class FacturaExport {
             $inicio_relacion = "";
             $tipo_regimen = "";
             foreach($xml->xpath('//n:Receptor') as $dato){
-                $sueldo = floatval($dato["SalarioBaseCotApor"]."");
+                $sueldo = floatval($dato["SalarioDiarioIntegrado"]."");
                 $puesto = $dato["Puesto"];
                 $tipo_jornada = $dato["TipoJornada"];
                 $periocidad = $dato["PeriodicidadPago"];
                 $curp = $dato["Curp"];
                 $num_ss = $dato["NumSeguridadSocial"];
-                $sueldo_integrado = floatval($dato["SalarioDiarioIntegrado"]."");
+                $sueldo_integrado = floatval($dato["SalarioBaseCotApor"]."");
                 $tipo_contrato = $dato["TipoContrato"];
                 $inicio_relacion = date('d-m-Y',strtotime($dato["FechaInicioRelLaboral"].""));
                 $tipo_regimen = $dato["TipoRegimen"];
@@ -233,7 +233,7 @@ class FacturaExport {
                 if($tamaño_per >= $i){
                     $suma = 0;
                     $pdf->Cell(70,5,$xml->xpath('//n:Percepciones/n:Percepcion')[$i]["Concepto"],0,0,"L");  
-                    if($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["Clave"] == "009"){
+                    if($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["TipoPercepcion"] == "029"){
                         $vales += floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteExento"]."");
                         $vales += floatval($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteGravado"]."");
                         $suma = floatval(($xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteExento"] + $xml->xpath('//n:Percepciones/n:Percepcion')[($i)]["ImporteGravado"])."");
@@ -427,7 +427,7 @@ class FacturaExport {
     public function generarFactura($datos)
     {
         $xml = DB::table('fac_factura as ff')
-        ->select("ff.id_catclientes","xml","gcf.nombre","gce.empresa","iva","ieps","otros","calle","cruzamiento_uno","numero_exterior","numero_interior","colonia","localidad","gcee.estado")
+        ->select("ff.id_catclientes","xml","observaciones","gcf.nombre","gce.empresa","iva","ieps","otros","calle","cruzamiento_uno","numero_exterior","numero_interior","colonia","localidad","gcee.estado")
         ->join("gen_cat_empresa as gce","gce.id_empresa","=","ff.id_empresa")
         ->leftJoin("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->leftJoin("gen_cat_estados as gcee","gcee.id_estado","=","gcd.estado")
@@ -439,7 +439,7 @@ class FacturaExport {
                 $cliente = DB::table("fac_catclientes as fcc")
                 ->select("calle","cruzamiento_uno","numero_exterior","numero_interior","colonia","localidad","gcee.estado")
                 ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","fcc.id_direccion")
-                ->join("gen_cat_estados as gcee","gcee.id_estado","=","gcd.estado")
+                ->leftJoin("gen_cat_estados as gcee","gcee.id_estado","=","gcd.estado")
                 ->where("id_catclientes",$xml->id_catclientes)
                 ->first();
                 $logo_empresa = storage_path('empresa')."/".$xml->nombre;
@@ -467,6 +467,7 @@ class FacturaExport {
                 $moneda="";
                 $selloCFD="";
                 $total="";
+                $total_sf = "";
                 $subtotal="";
                 $descueto="";
                 $iva="$ ".$xml->iva;
@@ -477,6 +478,7 @@ class FacturaExport {
                 $rfc_emisor="";
                 $nombre_emisor="";
                 $tipo_regimen="";
+                $observaciones=$xml->observaciones;
                 $direccion_emisor=strtoupper($xml->calle."  #".$xml->numero_exterior." - Int. ".$xml->numero_interior." x ".$xml->cruzamiento_uno." Col. ".$xml->colonia.", ".$xml->localidad
                 .", ".$xml->estado);
                 //Daos receptor
@@ -494,6 +496,7 @@ class FacturaExport {
                     $forma_pago = $dato["FormaPago"];
                     $metodo_pago = $dato["MetodoPago"];
                     $moneda = $dato["Moneda"];
+                    $total_sf =number_format($dato["Total"]."",2,'.',',');
                     $total = "$ " . number_format($dato["Total"]."",2,'.',',');
                     $subtotal = "$ " . number_format($dato["SubTotal"]."",2,'.',',');
                     $descuento = "$ " . number_format($dato["Descuento"]."",2,'.',',');
@@ -517,6 +520,24 @@ class FacturaExport {
                     $direccion="";
                     $uso_cfdi = $dato["UsoCFDI"];
                 }
+                //Consulta api qr
+                $temp_image = "image_temp_qr.png";
+                $baseUrl = 'https://chart.googleapis.com/chart';
+                $client = new Client();
+                $response = $client->request('POST', $baseUrl, [
+                        'form_params' => [
+                            "cht" => "qr",
+                            "chs" => "200x200",
+                            "chl" => 'https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx?&id='.$uuid.'&re='.$rfc_emisor.'&rr='.$rfc_receptor.'&tt='.$total_sf.'&fe='.substr($selloCFD,-8)
+                        ]
+                ]);
+                $statuscode = $response->getStatusCode();
+                if (200 === $statuscode) {
+                    $qr_image = $response->getBody();
+                }else{
+                    $qr_image = file_get_contents('https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl="https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx');
+                }
+                file_put_contents($temp_image, $qr_image);
                 //carga pdf
                 $pdf = new Fpdf('P','mm','A4');
                 $pdf->AddPage();
@@ -554,7 +575,7 @@ class FacturaExport {
                 $pdf->SetFillColor(213, 216, 220);
                 $pdf->SetDrawColor(213, 216, 220);
     
-                // $pdf->Image($logo_empresa,13,13,25,25,$extension,'');
+                 $pdf->Image($logo_empresa,10,10,35,35,$extension,'');
                 $pdf->Ln(); 
                 
                 $pdf->SetFont('Arial','B',8);
@@ -676,7 +697,69 @@ class FacturaExport {
                 $pdf->SetFont('Arial','',6);
                 $cont_h = 1;
                 $y=135;
+				$contadorconceptos = 0;
+				$conceptosimprimir = 13;
+				$NumeroPagina = 1;
                 foreach($xml_load->xpath('//c:Conceptos/c:Concepto') as $dato){
+					if($contadorconceptos > $conceptosimprimir){
+						$NumeroPagina = $NumeroPagina + 1;
+                        $pdf->AddPage();
+                        $pdf->SetFont('Arial','B',15);
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(70,5,$nombre_empresa,0,0,"L");
+                        $pdf->Ln();
+            
+                        $pdf->SetFont('Arial','B',7);
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Fecha y hora de Expedición"),0,0,"L");
+                        $pdf->Cell(55,5,$fecha_hora,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Número de Serie de Certificado del Emisor"),0,0,"L");
+                        $pdf->Cell(55,5,$numcer,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Número de Serie de Certificado del SAT"),0,0,"L");
+                        $pdf->Cell(55,5,$cerSAT,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Folio Fiscal"),0,0,"L");
+                        $pdf->Cell(55,5,$uuid,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Fecha y hora de Certificación"),0,0,"L");
+                        $pdf->Cell(55,5,$fechatimbre,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Versión del Comprobante"),0,0,"L");
+                        $pdf->Cell(55,5,$version_compro[0],0,0,"L");
+                        $pdf->Ln();
+                        $pdf->SetFont('Arial','B',12);
+                        $pdf->SetFillColor(213, 216, 220);
+                        $pdf->SetDrawColor(213, 216, 220);
+        				$pdf->Cell(190,1,"",1,0,"L",true);
+                        $pdf->Cell(5,5,"",0,0,"L");
+                        $pdf->Cell(80,5,"",0,0,"C");
+                        $pdf->SetFont('Arial','B',8);
+						
+                        $pdf->Image($logo_empresa,10,10,35,35,$extension,'');
+                        $pdf->Ln(); 
+                        $pdf->Ln();
+                        $pdf->Cell(15,10,"Codigo",1,0,"L",true);
+                        $pdf->Cell(15,10,"ClaveProdSer",1,0,"L",true);
+                        $pdf->Cell(65,10,"Descricion",1,0,"L",true);
+                        $pdf->Cell(35,10,"Unidad",1,0,"L",true);
+                        $pdf->Cell(25,10,"Precio",1,0,"R",true);
+                        $pdf->Cell(15,10,"Cantidad",1,0,"R",true);
+                        $pdf->Cell(20,10,"Importe",1,0,"R",true);
+                        $pdf->Ln();
+						$i=0;
+						$pdf->SetFont('Arial','',6);
+						$cont_h = 1;
+						$y=65;
+                        $contadorconceptos = 0;
+						$conceptosimprimir = 20;
+                    }
                     $pdf->Cell(15,5,$dato["ClaveUnidad"],1,0,"L");
                     $pdf->Cell(15,5,$dato["ClaveProdServ"],1,0,"L");
                     $pdf->MultiCell( 65, 5, $dato["Descripcion"], 1);
@@ -693,6 +776,7 @@ class FacturaExport {
                     $pdf->Cell(15,5,$dato['Cantidad'],1,0,"C");
                     $pdf->Cell(20,5,number_format($dato['Importe']."",2,'.',','),1,0,"R");
                     $pdf->Ln();
+					$contadorconceptos = $contadorconceptos + 1;
                 }
                 // foreach($resp as $d){
                 //     $pdf->Cell(15,5,$d['Codigo'],1,0,"L");
@@ -788,7 +872,58 @@ class FacturaExport {
                 ////
                 //Obtencion de los valores totales de la factura
                 ////
-    
+    			
+				if((($NumeroPagina > 1) && ($contadorconceptos > 10)) || (($NumeroPagina == 1) && ($contadorconceptos > 5))){
+                        $pdf->AddPage();
+                        $pdf->SetFont('Arial','B',15);
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(70,5,$nombre_empresa,0,0,"L");
+                        $pdf->Ln();
+            
+                        $pdf->SetFont('Arial','B',7);
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Fecha y hora de Expedición"),0,0,"L");
+                        $pdf->Cell(55,5,$fecha_hora,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Número de Serie de Certificado del Emisor"),0,0,"L");
+                        $pdf->Cell(55,5,$numcer,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Número de Serie de Certificado del SAT"),0,0,"L");
+                        $pdf->Cell(55,5,$cerSAT,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Folio Fiscal"),0,0,"L");
+                        $pdf->Cell(55,5,$uuid,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Fecha y hora de Certificación"),0,0,"L");
+                        $pdf->Cell(55,5,$fechatimbre,0,0,"L");
+                        $pdf->Ln();
+                        $pdf->Cell(40,5,"",0,0,"L");
+                        $pdf->Cell(55,5,utf8_decode("Versión del Comprobante"),0,0,"L");
+                        $pdf->Cell(55,5,$version_compro[0],0,0,"L");
+                        $pdf->Ln();
+                        $pdf->SetFont('Arial','B',12);
+                        $pdf->SetFillColor(213, 216, 220);
+                        $pdf->SetDrawColor(213, 216, 220);
+        				$pdf->Cell(190,1,"",1,0,"L",true);
+                        $pdf->Cell(5,5,"",0,0,"L");
+                        $pdf->Cell(80,5,"",0,0,"C");
+                        $pdf->SetFont('Arial','B',8);
+						
+                        $pdf->Image($logo_empresa,10,10,35,35,$extension,'');
+                        $pdf->Ln(); 
+                        
+						$i=0;
+						$pdf->SetFont('Arial','',6);
+						$cont_h = 1;
+						$y=65;
+                        $contadorconceptos = 0;
+						$conceptosimprimir = 20;
+                    }
+				
     
                 $pdf->Ln();
                 $pdf->SetFont('Arial','',8);
@@ -803,8 +938,6 @@ class FacturaExport {
                 $pdf->Cell(25,5,"O.Impuesto",1,0,"R",true);
                 $pdf->Cell(35,5,"Total",1,0,"R",true);
                 $pdf->Ln();
-    
-                $observaciones="";
                 $pdf->Cell(40,5,$subtotal,1,0,"R");
     
                 ///Imprimir resultados--------
@@ -856,8 +989,8 @@ class FacturaExport {
                 $pdf->SetFont('Arial','',6);
                 $pdf->Ln();
                 $pdf->MultiCell(190,5,utf8_decode($selloSAT));
-                // $pdf->Image($folio.".jpg",170,15,30,30,'JPG','');
-                $pdf->Image($logo_empresa,10,10,35,35,$extension,'');
+                $pdf->Image($temp_image,170,15,30,30,'PNG','');
+                //$pdf->Image($logo_empresa,10,10,35,35,$extension,'');
     
                 ////
                 //FIN deImprimir datos en el pie de la factura
@@ -870,12 +1003,14 @@ class FacturaExport {
                 // $emp=str_pad($datos[57], 3, "0", STR_PAD_LEFT);
                 // $fol=str_pad($folio, 6, "0", STR_PAD_LEFT);
                 // $nom=$emp."_F".$serie.$fol;
+                unlink($temp_image);
                 return ["ok" => true, "data" => base64_encode($pdf->Output("S","ReporteFactura.pdf"))];
             }
             // return ["ok" => false, "message" => "No se ha podido recuperar el XML"];
         }catch(Trowable $e){
             return ["ok" => false, "message" => "Error al cargar el XML"];
         }
+
     }
     public function generaFacturaPreview($datos)
     {

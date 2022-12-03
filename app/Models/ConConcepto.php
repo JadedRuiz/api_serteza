@@ -16,7 +16,7 @@ class ConConcepto extends Model {
     protected $primaryKey = "id_concepto";
     protected $table = 'con_catconceptos';
     protected $fillable = [
-        'id_concepto', 'id_empresa', 'concepto', 'cuentacontable', 'confacura', 'cancelaiva', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'tipomovimiento'
+        'id_concepto', 'id_empresa', 'concepto', 'cuentacontable', 'confacura', 'cancelaiva', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'tipomovimiento', 'nomina'
     ];
 
     /**

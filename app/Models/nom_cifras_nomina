@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class nom_cifras_nomina extends Model
+{
+    protected $table = 'nom_cifras_nomina';
+    protected $primaryKey = 'id_cifras_nomina';
+    public $incrementing = true;
+    protected $keyType = 'int';
+    public $timestamps = false;
+    protected $fillable = [
+        'id_cifras_nomina', 'id_cliente_nomina', 'id_periodo', 'neto_fiscal', 'neto_exento', 'costo_social', 'impuesto_estatl', 'comisiones', 'iva','total', 'pagos', 'activo'
+    ];
+}

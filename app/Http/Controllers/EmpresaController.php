@@ -357,7 +357,7 @@ class EmpresaController extends Controller
     public function obtenerEmpresasPorIdCliente($id_cliente)     
     {
         $empresas = DB::table('liga_empresa_cliente as lec')
-        ->select("lec.id_empresa",DB::raw("CONCAT('(',lec.id_empresa,')',' ',ce.empresa) as empresa"),"ce.empresa as nombre","ce.razon_social","representante_legal as repre")
+        ->select("lec.id_empresa",DB::raw("CONCAT('(',lec.id_empresa,')',' ',ce.empresa) as empresa"),"ce.empresa as nombre","ce.razon_social","representante_legal as repre", "ce.rfc")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
         ->where("lec.id_cliente",$id_cliente)
         ->get();

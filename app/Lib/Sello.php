@@ -8,7 +8,7 @@ use XSLTProcessor;
 
 class Sello {
 
-    public function sellar($datos)
+    public function sellar($datos,$mVersion)
     {
         //Recuperar datos empresa
         $datos_empresa = Empresa::select("no_certificado","certificado","key")
@@ -25,15 +25,24 @@ class Sello {
         $private = openssl_pkey_get_private(file_get_contents(storage_path("empresa")."/".$key));
         $certificado = str_replace(array('\n', '\r'), '', base64_encode(file_get_contents(storage_path("empresa")."/".$cer)));
 
+        
         $cfdi = $this->generarXML($datos,$numcer);
         //$cfdi='cachktest_0.xml';
         
         try{
+            //return ["ok"=>true, "data" => $cfdi];
+
             $xdoc = new DOMDocument("1.0","UTF-8");
+
             $xdoc->loadXML($cfdi);
 
             $XSL = new DOMDocument();
-            $path = storage_path("utilerias")."/cadenaoriginal_3_3.xslt";
+            if($mVersion == "4.0"){
+                $path = storage_path("utilerias")."/cadenaoriginal_4_0.xslt";
+            }else{
+                $path = storage_path("utilerias")."/cadenaoriginal_3_3.xslt";
+            }
+            error_log(print_r($path, true), 3, "path_xml_log.log");
             $XSL->load($path);
 
             $proc = new XSLTProcessor;
@@ -55,7 +64,11 @@ class Sello {
         openssl_sign($cadena_original, $sig, $private, OPENSSL_ALGO_SHA256);
         $sello = base64_encode($sig);
 
-        $c = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Comprobante')->item(0);
+        if($mVersion == "4.0"){
+            $c = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Comprobante')->item(0);
+        }else{
+            $c = $xdoc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Comprobante')->item(0);
+        }
         $c->setAttribute('Sello', $sello);
         $c->setAttribute('Certificado', $certificado);
         // $c->setAttribute('NoCertificado', $numcer);
@@ -82,6 +95,8 @@ class Sello {
         ->first()
         ->forma_pago;
         $fecha = date("Y-m-d")."T".date("H:i:s");
+        $periodicidad = date("m");
+        $ejercicio = date("Y");
         $lugarexpedicion = "97144"; //CP
         $moneda = "MXN";
         $serie = DB::table('fac_catseries')
@@ -96,7 +111,8 @@ class Sello {
         ->first();
         $regimenemi = $datos_emisor->regimen_fiscal;
         $datos_receptor = DB::table('fac_catclientes')
-        ->select("rfc","razon_social","gcd.calle","gcd.descripcion","gcd.numero_exterior","gcd.numero_interior","gcd.colonia","gcd.municipio","gce.estado","gce.pais","gcd.codigo_postal")
+        ->select("rfc","razon_social","gcd.calle","gcd.descripcion","gcd.numero_exterior","gcd.numero_interior","gcd.colonia","gcd.municipio","gce.estado","gce.pais","gcd.codigo_postal", "srf.clave as regimenfiscal")
+        ->join("sat_regimenesfiscales as srf", "fac_catclientes.id_regimenfiscal", "=", "srf.id_regimenfiscal")
         ->leftJoin("gen_cat_direccion as gcd","gcd.id_direccion","=","fac_catclientes.id_direccion")
         ->leftJoin("gen_cat_estados as gce","gce.id_estado","=","gcd.estado")
         ->where("id_catclientes",$datos["id_cliente"])
@@ -106,6 +122,12 @@ class Sello {
         ->where("id_usocfdi",$datos["id_usocfdi"])
         ->first()
         ->clave_cfdi;
+
+        if (($datos_emisor->rfc == "DAP100329TR6") || ($datos_emisor->rfc == "EMU100406QG4") || ($datos_emisor->rfc == "PME100111J68") || ($datos_emisor->rfc == "CIN140605QM1")){
+            $versiontimbrado = "4.0";
+        }else{
+            $versiontimbrado = "3.3";
+        }
         //XML
         $xml = "";
         $implocal = "";
@@ -113,22 +135,47 @@ class Sello {
             $implocal = ' xmlns:implocal="http://www.sat.gob.mx/implocal" ';
         }
         $xml = $xml . '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml = $xml . '<cfdi:Comprobante '.$implocal.' xsi:schemaLocation="http://www.sat.gob.mx/cfd/3 http://www.sat.gob.mx/sitio_internet/cfd/3/cfdv33.xsd" xmlns:cfdi="http://www.sat.gob.mx/cfd/3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LugarExpedicion="' . $lugarexpedicion . '" MetodoPago="' . $metodopago . '" CondicionesDePago="' . $datos["condiciones"] . '" TipoDeComprobante="' . $tipocomprobante . '" Total="' .  number_format(round(str_replace(',','',$datos["total"]),2),2,'.','') . '" Descuento="' .  number_format(round(str_replace(',','',$datos["descuento_t"]),2),2,'.','') . '" SubTotal="' .  number_format(round(str_replace(',','',$datos["subtotal"]),2),2,'.','') . '" Certificado="" NoCertificado="'.$numcer.'" FormaPago="' . $formapago . '" Sello=""  Fecha="' . $fecha . '" Moneda="' . $moneda . '" Folio="' . $datos["folio"] . '" Serie="' . $serie . '" Version="3.3">
-  		<cfdi:Emisor Rfc="' . trim($datos_emisor->rfc) . '" Nombre="' . $datos_emisor->empresa . '" RegimenFiscal="'.$regimenemi.'" />';
+        
+        
+        
+  		
+        $exportacion = "01";
+        if($versiontimbrado == "4.0"){
+            $xml = $xml . '<cfdi:Comprobante '.$implocal.' xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LugarExpedicion="' . $lugarexpedicion . '" MetodoPago="' . $metodopago . '" CondicionesDePago="' . $datos["condiciones"] . '" TipoDeComprobante="' . $tipocomprobante .'" Exportacion="'.$exportacion . '" Total="' .  number_format(round(str_replace(',','',$datos["total"]),2),2,'.','') . '" Descuento="' .  number_format(round(str_replace(',','',$datos["descuento_t"]),2),2,'.','') . '" SubTotal="' .  number_format(round(str_replace(',','',$datos["subtotal"]),2),2,'.','') . '" Certificado="" NoCertificado="'.$numcer.'" FormaPago="' . $formapago . '" Sello=""  Fecha="' . $fecha . '" Moneda="' . $moneda . '" Folio="' . $datos["folio"] . '" Serie="' . $serie;
+            $xml = $xml .'" Version="4.0">';
+            $domicilio_receptor = $datos_receptor->codigo_postal;
+            if($datos_receptor->rfc == "XAXX010101000"){
+                $xml = $xml .'<cfdi:InformacionGlobal Periodicidad="01" Meses="'.$periodicidad.'" Año="' . $ejercicio .'" />';
+                $usoCFDI = "S01";
+                $domicilio_receptor = $lugarexpedicion;
+            }
+            $xml = $xml . '<cfdi:Emisor Rfc="' . trim($datos_emisor->rfc) . '" Nombre="' . $datos_emisor->empresa . '" RegimenFiscal="'.$regimenemi.'" />';
+            $xml = $xml . '<cfdi:Receptor Rfc="' . $datos_receptor->rfc . '" Nombre="' . $datos_receptor->razon_social . '" DomicilioFiscalReceptor="'.$datos_receptor->codigo_postal. '" RegimenFiscalReceptor="'.$datos_receptor->regimenfiscal. '" UsoCFDI="'.$usoCFDI.'" />';
+        }else{
+            $xml = $xml . '<cfdi:Comprobante '.$implocal.' xsi:schemaLocation="http://www.sat.gob.mx/cfd/3 http://www.sat.gob.mx/sitio_internet/cfd/3/cfdv33.xsd" xmlns:cfdi="http://www.sat.gob.mx/cfd/3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LugarExpedicion="' . $lugarexpedicion . '" MetodoPago="' . $metodopago . '" CondicionesDePago="' . $datos["condiciones"] . '" TipoDeComprobante="' . $tipocomprobante . '" Total="' .  number_format(round(str_replace(',','',$datos["total"]),2),2,'.','') . '" Descuento="' .  number_format(round(str_replace(',','',$datos["descuento_t"]),2),2,'.','') . '" SubTotal="' .  number_format(round(str_replace(',','',$datos["subtotal"]),2),2,'.','') . '" Certificado="" NoCertificado="'.$numcer.'" FormaPago="' . $formapago . '" Sello=""  Fecha="' . $fecha . '" Moneda="' . $moneda . '" Folio="' . $datos["folio"] . '" Serie="' . $serie;
+            $xml = $xml .'" Version="3.3">';
+            $xml = $xml . '<cfdi:Emisor Rfc="' . trim($datos_emisor->rfc) . '" Nombre="' . $datos_emisor->empresa . '" RegimenFiscal="'.$regimenemi.'" />';
+            $xml = $xml . '<cfdi:Receptor Rfc="' . $datos_receptor->rfc . '" Nombre="' . $datos_receptor->razon_social . '" UsoCFDI="'.$usoCFDI.'" />';
+        }
 
-        $xml = $xml . '<cfdi:Receptor Rfc="' . $datos_receptor->rfc . '" Nombre="' . $datos_receptor->razon_social . '" UsoCFDI="'.$usoCFDI.'" />';
+        
         $xml = $xml . '<cfdi:Conceptos>';
         $conceptos_array = [];
         foreach($datos["conceptos"] as $concepto){
             array_push($conceptos_array,$concepto["id_concepto"]);
             $concepto_info = DB::table('fac_catconceptos as fcc')
-            ->select("scp.ClaveProdServ","sum.ClaveUnidad","sum.Descripcion as unidad")
+            ->select("scp.ClaveProdServ","sum.ClaveUnidad","sum.Descripcion as unidad","soi.clave as objetoimp")
             ->join("sat_UnidadMedida as sum","sum.id_UnidadMedida","=","fcc.id_UnidadMedida")
             ->join("sat_ClaveProdServ as scp","scp.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
+            ->join("sat_objetoimp as soi", "soi.id_objetoimp","=", "fcc.id_objetoimp")
             ->where("fcc.id_concepto_empresa",$concepto["id_concepto"])
             ->first();
             $codigo = "PROD";
-            $xml = $xml . '<cfdi:Concepto Importe="' . number_format(round($concepto["neto"],2),2,'.','') . '" NoIdentificacion="' . $codigo . '" ValorUnitario="' .  number_format(round($concepto["precio"],2),2,'.','') . '" Descripcion="' . $concepto["descripcion"] . '" Unidad="' . $concepto_info->unidad . '" Cantidad="' . $concepto["cantidad"] . '" Descuento="'.$concepto["descuento"].'" ClaveProdServ="' .$concepto_info->ClaveProdServ. '" ClaveUnidad="'.$concepto_info->ClaveUnidad.'">';
+            if($versiontimbrado == "4.0"){
+                $xml = $xml . '<cfdi:Concepto Importe="' . number_format(round($concepto["neto"],2),2,'.','') . '" NoIdentificacion="' . $codigo . '" ValorUnitario="' .  number_format(round($concepto["precio"],2),2,'.','') . '" Descripcion="' . $concepto["descripcion"] . '" Unidad="' . $concepto_info->unidad . '" Cantidad="' . $concepto["cantidad"] . '" Descuento="'.$concepto["descuento"].'" ClaveProdServ="' .$concepto_info->ClaveProdServ. '" ClaveUnidad="'.$concepto_info->ClaveUnidad. '" ObjetoImp="'.$concepto_info->objetoimp.'">';
+            }else{
+                $xml = $xml . '<cfdi:Concepto Importe="' . number_format(round($concepto["neto"],2),2,'.','') . '" NoIdentificacion="' . $codigo . '" ValorUnitario="' .  number_format(round($concepto["precio"],2),2,'.','') . '" Descripcion="' . $concepto["descripcion"] . '" Unidad="' . $concepto_info->unidad . '" Cantidad="' . $concepto["cantidad"] . '" Descuento="'.$concepto["descuento"].'" ClaveProdServ="' .$concepto_info->ClaveProdServ. '" ClaveUnidad="'.$concepto_info->ClaveUnidad. '">';
+            }
             if($concepto["iva"] != "0"){
                 $totalimptrasladado = $concepto["ieps"] + $concepto["iva"];
                 $xml = $xml . '<cfdi:Impuestos>';
@@ -198,7 +245,18 @@ class Sello {
         $xml = $xml.'</cfdi:Complemento>';
         $xml = $xml . '</cfdi:Comprobante>';
 
+        error_log(print_r($xml, true), 3, "xml_log.log");
+
+        // $this->write_to_console($xml);
         return $xml;
     }
+
+    function write_to_console($data) {
+        $console = $data;
+        if (is_array($console))
+        $console = implode(',', $console);
+       
+        echo "<script>console.log('Console: " . $console . "' );</script>";
+       }
 }
 ?>

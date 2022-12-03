@@ -1,0 +1,145 @@
+POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0POST /serp/api_serteza/public/api/facturacion/facAltaFactura HTTP/1.1
+Accept:             application/json, text/plain, */*
+Accept-Encoding:    gzip, deflate, br
+Accept-Language:    es-419,es;q=0.9,en;q=0.8
+Connection:         keep-alive
+Content-Length:     1095
+Content-Type:       application/json
+Host:               localhost
+Origin:             http://localhost:4200
+Referer:            http://localhost:4200/
+Sec-Ch-Ua:          "Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"
+Sec-Ch-Ua-Mobile:   ?0
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Fetch-Dest:     empty
+Sec-Fetch-Mode:     cors
+Sec-Fetch-Site:     same-site
+User-Agent:         Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+
+{"folio":592,"id_serie":1,"id_empresa":56,"id_cliente":115,"id_formapago":3,"id_metodopago":1,"id_tipomoneda":100,"id_usocfdi":3,"numero_cuenta":"","tipo_comprobante":1,"tipo_cambio":"0","condiciones":"CONTADO/CREDITO","observaciones":"","usa_ine":false,"usa_cataporte":false,"cataporte":{"ubicaciones":[{"id_row":0,"id_lugar":0,"ide":"","tipo":"O","lugar":"","fecha_hora":"","distancia_recorrida":"","btn":false}],"transporte":{"id_operador":0,"operador":"","id_vehiculo":0,"vehiculo":"","id_remolque":0,"remolque":"","id_propietario":0,"propietario":""},"mercancias":[]},"conceptos":[{"id_row":0,"id_concepto":16,"descripcion":"MANTENIMIENTO Y SOPORTE EN APLICACIONES","cantidad":"1","precio":"508.62","unidad":"","descuento_porcent":0,"descuento":0,"iva_porcent":16,"iva":"81.38","ieps":"0.00","ieps_porcent":0,"otros":"0.00","otro_porcent":0,"otros_tipo":"","importe":"0.00","neto":508.62,"neto_print":"$ 508.62","btn":false,"otros_porcent":0,"otros_tipos":"T"}],"subtotal":"508.62","descuento_t":"0.00","iva_t":"81.38","ieps_t":"0.00","otros_t":"0.00","total":"590.00","usuario_creacion":6}****** VERSION *****4.0

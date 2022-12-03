@@ -77,6 +77,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('facObtenerClientes/{id_cliente}','ClienteController@facObtenerClientes');
         $router->get('facObtenerClientesPorId/{id_cliente}','ClienteController@facObtenerClientesPorId');
         $router->post('facAltaCliente','ClienteController@facAltaCliente');
+        $router->get('facObtenerClientesPorRfc/{id_cliente}/{rfc}','ClienteController@facObtenerClientesPorRfc');
     });
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
@@ -205,6 +206,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("facAltaConcepto","ConceptoController@facAltaConcepto");
         $router->post('facModificarConcepto','ConceptoController@facModificarConcepto');
         $router->post('buscarConceptos','ConceptoController@buscarConceptos');        
+        $router->get('buscarConceptosPorNombre/{id_empresa}/{concepto}', 'ConceptoController@buscarConceptosPorNombre');
     });
     $router->group(['prefix' => 'sucursal'], function () use ($router) {
         $router->post('crearSucursal', 'SucursalController@crearSucursal');
@@ -266,5 +268,26 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->group(['prefix' => 'gerencia'], function () use ($router) {
         $router->post('costoNomina', 'CostosController@costosNomina');
+    });
+
+    $router->group(['prefix' => 'contabilidad'], function () use ($router) {
+        $router->post("ConceptosAutocomplete","conConceptoController@ConceptosAutocomplete");
+        $router->get("ConceptosEmpresa/{id_empresa}","conConceptoController@ConceptosEmpresa");
+        $router->get("ObtenerConceptoPorId/{id_concepto}","conConceptoController@ObtenerConceptoPorId");
+        $router->post("AltaConcepto","conConceptoController@AltaConcepto");
+        $router->post('ModificarConcepto','conConceptoController@ModificarConcepto');
+
+        // Bancos
+        $router->post("BancosAutocomplete","conBancoController@BancosAutocomplete");
+        $router->get("BancosEmpresa/{id_empresa}","conBancoController@BancosEmpresa");
+        $router->get("ObtenerBancoPorId/{id_catbanco}","conBancoController@ObtenerBancoPorId");
+        $router->post("AltaBanco","conBancoController@AltaBanco");
+        $router->post('ModificarBanco','conBancoController@ModificarBanco');
+
+        // Movimientos
+        $router->post("AltaMovBanco","conMovBancoController@AltaMovBanco");
+        $router->post("ModificarMovBanco","conMovBancoController@ModificarMovBanco");
+        $router->post("EstadoCuenta","conMovBancoController@EstadoCuenta");
+
     });
 });

@@ -30,9 +30,11 @@ class ClienteController extends Controller
     public function facObtenerClientesPorId($id_cliente)
     {
         $cliente = DB::table('fac_catclientes as fcc')
-        ->select("fcc.id_catclientes","fcc.rfc","fcc.razon_social","fcc.curp","fcc.email","fcc.telefono","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion","gce.estado","gcd.estado as id_estado")
+        ->select("fcc.id_catclientes","fcc.rfc","fcc.razon_social","fcc.curp","fcc.email","fcc.telefono","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion",
+                  "gce.estado","gcd.estado as id_estado", "fcc.id_regimenfiscal", DB::raw("concat(srf.clave,'-',srf.regimenfiscal) as regimenfiscal"))
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","fcc.id_direccion")
         ->join("gen_cat_estados as gce","gce.id_estado","=","gcd.estado")
+        ->join("sat_regimenesfiscales as srf","fcc.id_regimenfiscal", "=","srf.id_regimenfiscal")
         ->where("fcc.id_catclientes",$id_cliente)
         ->first();
         if($cliente){
@@ -40,6 +42,24 @@ class ClienteController extends Controller
         }
         return $this->crearRespuesta(2,"No se ha encontrado el cliente",200);
     }
+
+    public function facObtenerClientesPorRfc($id_cliente,$rfc)
+    {
+        $cliente = DB::table('fac_catclientes as fcc')
+        ->select("fcc.id_catclientes","fcc.id_cliente", "fcc.rfc","fcc.razon_social","fcc.curp","fcc.email","fcc.telefono","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion",
+                 "gce.estado","gcd.estado as id_estado", "fcc.id_regimenfiscal", DB::raw("concat(srf.clave,'-',srf.regimenfiscal) as regimenfiscal"))
+        ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","fcc.id_direccion")
+        ->join("gen_cat_estados as gce","gce.id_estado","=","gcd.estado")
+        ->join("sat_regimenesfiscales as srf","fcc.id_regimenfiscal", "=","srf.id_regimenfiscal")
+        ->where("fcc.id_cliente",$id_cliente)
+        ->where("fcc.rfc",$rfc)
+        ->first();
+        if($cliente){
+            return $this->crearRespuesta(1,$cliente,200);
+        }
+        return $this->crearRespuesta(2,"No se ha encontrado el cliente",200);
+    }
+
     public function facAltaCliente(Request $res)
     {
         $fecha = $this->getHoraFechaActual();
@@ -59,6 +79,10 @@ class ClienteController extends Controller
         if($res["direccion"]["codigo_postal"] == ""){ 
             return $this->crearRespuesta(2,"El campo C.P es obligatorio",200);
         }
+        if($res["id_regimenfiscal"] == ""){
+            return $this->crearRespuesta(2,"El id del Regimen Fiscal, es obligatorio",200);
+        }
+
         $validar_rfc = DB::table('sat_CodigoPostal as scp')
         ->where("c_CodigoPostal",$res["direccion"]["codigo_postal"])
         ->first();
@@ -83,7 +107,7 @@ class ClienteController extends Controller
             $direccion->activo = 1;
             $direccion->save();
             $id_direccion = $direccion->id_direccion;
-            DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1]);
+            DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo,id_regimenfiscal) values (?,?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1,$res["id_regimenfiscal"]]);
             return $this->crearRespuesta(1,"Se ha creado el cliente",200);
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);

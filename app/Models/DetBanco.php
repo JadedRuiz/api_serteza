@@ -12,6 +12,6 @@ class DetBanco extends Model
     protected $primaryKey = "id_detbanco";
     protected $table = 'ban_detbancos';
     protected $fillable = [
-        'id_detbanco','id_encbanco','id_movfactura','cuentacontable','descripcion','importe','iva','ieps','retencion_iva','retencion_isr','tipocambio','id_cifras_nomina'
+        'id_detbanco','id_encbanco','id_movfactura','cuentacontable','descripcion','importe','iva','ieps','retencion_iva','retencion_isr','id_cifras_nomina'
     ];
 }
