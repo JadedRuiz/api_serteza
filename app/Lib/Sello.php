@@ -44,7 +44,7 @@ class Sello {
             }else{
                 $path = storage_path("utilerias")."/cadenaoriginal_3_3.xslt";
             }
-            error_log(print_r($path, true), 3, "path_xml_log.log");
+            //error_log(print_r($path, true), 3, "path_xml_log.log");
             $XSL->load($path);
 
             // $proc = new XSLTProcessor;
