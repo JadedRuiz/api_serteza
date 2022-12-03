@@ -40,7 +40,7 @@ class Timbrado {
        //error_log(print_r($datos."****** VERSION *****".$mVersion, true), 3, "sellar_log.log");
 
        $resultado = $sello->sellar($datos,$mVersion);
-    //    return ["ok" => false, "message" => $resultado["data"]];
+        // return ["ok" => false, "message" => $resultado["data"]];
 
        if($resultado["ok"]){
             try{
@@ -56,11 +56,11 @@ class Timbrado {
                 'Usuario' => $user,
                 'password' => $key,
             );
-
             $res_client = $client->call('obtenerTimbrado', $params);
             if($client->fault){
                 return ["ok" => false, "message" => "Error al consumir el servicio del provedor"];
             }
+            // return ["ok" => false, "message" => json_encode($res_client)];
             //Se consume el método
             $xmlobtenerTimbrado = $res_client['obtenerTimbradoResult'];
             $xmlTimbre = $xmlobtenerTimbrado['timbre'];

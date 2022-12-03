@@ -4,7 +4,9 @@ namespace App\Lib;
 use App\Models\Empresa;
 use Illuminate\Support\Facades\DB;
 use DOMDocument;
-use XSLTProcessor;
+// use XSLTProcessor;
+use Genkgo\Xsl\XsltProcessor;
+use Genkgo\Xsl\Cache\NullCache;
 
 class Sello {
 
@@ -45,8 +47,10 @@ class Sello {
             //error_log(print_r($path, true), 3, "path_xml_log.log");
             $XSL->load($path);
 
-            $proc = new XSLTProcessor;
-            $proc->importStyleSheet($XSL);
+            // $proc = new XSLTProcessor;
+            // $proc->importStyleSheet($XSL);
+            $proc = new XsltProcessor(new NullCache());
+            $proc->importStylesheet($XSL);
         }catch( Throwable $e){
             return ["ok"=>false, "data" => "XML invalido : " . $e->getMessage()];
         }
@@ -97,7 +101,7 @@ class Sello {
         $fecha = date("Y-m-d")."T".date("H:i:s");
         $periodicidad = date("m");
         $ejercicio = date("Y");
-        $lugarexpedicion = "97144"; //CP
+        $lugarexpedicion = "97000"; //CP
         $moneda = "MXN";
         $serie = DB::table('fac_catseries')
         ->select("serie")
@@ -131,7 +135,7 @@ class Sello {
         //XML
         $xml = "";
         $implocal = "";
-        if($datos["otros_t"] != ""){
+        if($datos["otros_t"] != "" && intval($datos["otros_t"]) > 0){
             $implocal = ' xmlns:implocal="http://www.sat.gob.mx/implocal" ';
         }
         $xml = $xml . '<?xml version="1.0" encoding="UTF-8"?>';
@@ -202,7 +206,7 @@ class Sello {
                 ';
                 $xml = $xml . '<cfdi:Traslados>
                 ';
-                $xml = $xml . '<cfdi:Traslado Impuesto="002" TasaOCuota="0.160000" Importe="' . number_format(round(str_replace(',','',$datos["iva_t"]),2),2,'.','') . '" TipoFactor="Tasa"></cfdi:Traslado>
+                $xml = $xml . '<cfdi:Traslado Base="1.00" Impuesto="002" TasaOCuota="0.160000" Importe="' . number_format(round(str_replace(',','',$datos["iva_t"]),2),2,'.','') . '" TipoFactor="Tasa"></cfdi:Traslado>
                 ';
                 if ($datos["ieps_t"] != "0") {
                     for ($i = 0; $i < count($importeieps); $i++) {
@@ -218,7 +222,7 @@ class Sello {
         }
         $xml = $xml . '<cfdi:Complemento>';
         //Otros impuestos
-        if($datos["otros_t"] != "0"){
+        if($datos["otros_t"] != "0" && intval($datos["otros_t"]) > 0){
             $string_impuestos = "";
             $datos_conceptos = DB::table('fac_catconceptos')
             ->select("otros_imp","tipo_otros","nombre_otros")
