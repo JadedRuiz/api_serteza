@@ -9,6 +9,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Illuminate\Support\Facades\Storage;
+use GuzzleHttp\Client;
 
 class FacturaExport {
 
@@ -523,7 +524,7 @@ class FacturaExport {
                 //Consulta api qr
                 $temp_image = "image_temp_qr.png";
                 $baseUrl = 'https://chart.googleapis.com/chart';
-                $client = new Client();
+                $client = new \GuzzleHttp\Client();
                 $response = $client->request('POST', $baseUrl, [
                         'form_params' => [
                             "cht" => "qr",
