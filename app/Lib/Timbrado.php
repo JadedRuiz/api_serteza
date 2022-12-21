@@ -40,7 +40,7 @@ class Timbrado {
        //error_log(print_r($datos."****** VERSION *****".$mVersion, true), 3, "sellar_log.log");
 
        $resultado = $sello->sellar($datos,$mVersion);
-        // return ["ok" => false, "message" => $resultado["data"]];
+       return ["ok" => false, "message" => $resultado["data"]];
 
        if($resultado["ok"]){
             try{

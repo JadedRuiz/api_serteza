@@ -153,11 +153,21 @@ class Sello {
                 $usoCFDI = "S01";
                 $domicilio_receptor = $lugarexpedicion;
             }
+            if($datos["tiene_rela"]){
+                $xml .= '<cfdi:CfdiRelacionados TipoRelacion="'.$datos["relaciones"]["id_tiporela"].'" >';
+                    $xml .= '<cfdi:CfdiRelacionado UUID="'.strtoupper($datos["relaciones"]["folio_fiscal"]).'" />';
+                $xml .= '</cfdi:CfdiRelacionados>';
+            }
             $xml = $xml . '<cfdi:Emisor Rfc="' . trim($datos_emisor->rfc) . '" Nombre="' . $datos_emisor->empresa . '" RegimenFiscal="'.$regimenemi.'" />';
             $xml = $xml . '<cfdi:Receptor Rfc="' . $datos_receptor->rfc . '" Nombre="' . $datos_receptor->razon_social . '" DomicilioFiscalReceptor="'.$datos_receptor->codigo_postal. '" RegimenFiscalReceptor="'.$datos_receptor->regimenfiscal. '" UsoCFDI="'.$usoCFDI.'" />';
         }else{
             $xml = $xml . '<cfdi:Comprobante '.$implocal.' xsi:schemaLocation="http://www.sat.gob.mx/cfd/3 http://www.sat.gob.mx/sitio_internet/cfd/3/cfdv33.xsd" xmlns:cfdi="http://www.sat.gob.mx/cfd/3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LugarExpedicion="' . $lugarexpedicion . '" MetodoPago="' . $metodopago . '" CondicionesDePago="' . $datos["condiciones"] . '" TipoDeComprobante="' . $tipocomprobante . '" Total="' .  number_format(round(str_replace(',','',$datos["total"]),2),2,'.','') . '" Descuento="' .  number_format(round(str_replace(',','',$datos["descuento_t"]),2),2,'.','') . '" SubTotal="' .  number_format(round(str_replace(',','',$datos["subtotal"]),2),2,'.','') . '" Certificado="" NoCertificado="'.$numcer.'" FormaPago="' . $formapago . '" Sello=""  Fecha="' . $fecha . '" Moneda="' . $moneda . '" Folio="' . $datos["folio"] . '" Serie="' . $serie;
             $xml = $xml .'" Version="3.3">';
+            if($datos["tiene_rela"]){
+                $xml .= '<cfdi:CfdiRelacionados TipoRelacion="'.$datos["relaciones"]["id_tiporela"].'" >';
+                    $xml .= '<cfdi:CfdiRelacionado UUID="'.strtoupper($datos["relaciones"]["folio_fiscal"]).'" />';
+                $xml .= '</cfdi:CfdiRelacionados>';
+            }
             $xml = $xml . '<cfdi:Emisor Rfc="' . trim($datos_emisor->rfc) . '" Nombre="' . $datos_emisor->empresa . '" RegimenFiscal="'.$regimenemi.'" />';
             $xml = $xml . '<cfdi:Receptor Rfc="' . $datos_receptor->rfc . '" Nombre="' . $datos_receptor->razon_social . '" UsoCFDI="'.$usoCFDI.'" />';
         }

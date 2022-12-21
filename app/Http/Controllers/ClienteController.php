@@ -83,14 +83,24 @@ class ClienteController extends Controller
             return $this->crearRespuesta(2,"El id del Regimen Fiscal, es obligatorio",200);
         }
 
-        $validar_rfc = DB::table('sat_CodigoPostal as scp')
+        $validar_cp = DB::table('sat_CodigoPostal as scp')
         ->where("c_CodigoPostal",$res["direccion"]["codigo_postal"])
         ->first();
-        if(!$validar_rfc){
+        if(!$validar_cp){
             return $this->crearRespuesta(2,"El Codigo Postal ingresado no se ha encontrado en el catálogo del sat, intente con otro.",200);
         }
         try{
-            $direccion = new Direccion;
+            $validar_rfc = DB::table("fac_catclientes")
+            ->select("id_catclientes")
+            ->where("rfc",strtoupper($res["rfc"]))
+            ->first();
+
+            if($validar_rfc){
+                $direccion = Direccion::find($res["direccion"]["id_direccion"]);
+            }else{
+                $direccion = new Direccion;
+            }
+            
             $direccion->calle = $res["direccion"]["calle"];
             $direccion->numero_interior = $res["direccion"]["numero_interior"];
             $direccion->numero_exterior = $res["direccion"]["numero_exterior"];
@@ -107,8 +117,15 @@ class ClienteController extends Controller
             $direccion->activo = 1;
             $direccion->save();
             $id_direccion = $direccion->id_direccion;
-            DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo,id_regimenfiscal) values (?,?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1,$res["id_regimenfiscal"]]);
-            return $this->crearRespuesta(1,"Se ha creado el cliente",200);
+
+            if($validar_rfc){
+                DB::update('update fac_catclientes set rfc = ?, razon_social = ?, curp = ?, email = ?, telefono = ?, id_regimenfiscal = ? where id_catclientes = ?', [strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$res["id_regimenfiscal"],$validar_rfc->id_catclientes]);
+                return $this->crearRespuesta(1,"Se ha modificado el cliente",200);
+            }else{
+                DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo,id_regimenfiscal) values (?,?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1,$res["id_regimenfiscal"]]);
+                return $this->crearRespuesta(1,"Se ha creado el cliente",200);
+            }
+
         }catch(Throwable $e){
             return $this->crearRespuesta(2,"Ha ocurrido un error : " . $e->getMessage(),301);
         }
