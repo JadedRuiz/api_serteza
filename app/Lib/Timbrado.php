@@ -18,8 +18,16 @@ class Timbrado {
 
        //Crear la conexión SOAP
        try{
-            if(($datos["id_empresa"] == 106) || ($datos["id_empresa"] == 107) || ($datos["id_empresa"] == 108) || ($datos["id_empresa"] == 56)){
+            if(($datos["id_empresa"] == 106) || ($datos["id_empresa"] == 107) || ($datos["id_empresa"] == 108)){
                 $url = env("URL_TIMBRE40");
+                $mVersion = "4.0";
+            }else{
+                $url = env("URL_PROVEEDOR");
+                $mVersion = "3.3";
+            }
+           
+		   if(($datos["id_empresa"] == 105)) {
+		       $url = env("URL_TIMBRE40");
                 $mVersion = "4.0";
             }else{
                 $url = env("URL_PROVEEDOR");
@@ -40,7 +48,7 @@ class Timbrado {
        //error_log(print_r($datos."****** VERSION *****".$mVersion, true), 3, "sellar_log.log");
 
        $resultado = $sello->sellar($datos,$mVersion);
-       return ["ok" => false, "message" => $resultado["data"]];
+       //return ["ok" => false, "message" => $resultado["data"]];
 
        if($resultado["ok"]){
             try{
