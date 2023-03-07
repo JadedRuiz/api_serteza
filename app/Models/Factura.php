@@ -16,6 +16,6 @@ class Factura extends Model {
     protected $primaryKey = "id_factura";
     protected $table = 'fac_factura';
     protected $fillable = [
-        'id_factura', 'id_empresa', 'id_catclientes', 'id_serie', 'folio', 'id_formapago', 'id_metodopago', 'numero_cuenta', 'id_tipomoneda', 'id_usocfdi', 'id_tipocomprobante', 'condicion_pago', 'tipo_cambio', 'observaciones', 'usa_ine', 'usa_cataporte', 'subtotal', 'descuento', 'iva', 'ieps', 'otros', 'total', 'fecha_creacion', 'usuario_creacion', 'activo'
+        'id_factura', 'id_empresa', 'id_catclientes', 'id_serie', 'folio', 'id_formapago', 'id_metodopago', 'numero_cuenta', 'id_tipomoneda', 'id_usocfdi', 'id_tipocomprobante', 'condicion_pago', 'tipo_cambio', 'observaciones', 'usa_ine', 'usa_cataporte', 'importe', 'descuento', 'iva', 'ieps', 'otros', 'subtotal', 'iva_r','isr_r', 'total', 'fecha_creacion', 'usuario_creacion', 'activo'
     ];
 }

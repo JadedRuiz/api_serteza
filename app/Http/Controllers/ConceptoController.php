@@ -48,17 +48,25 @@ class ConceptoController extends Controller
    }
    public function facObtenerConceptosEmpresa($id_empresa)
    {
-       $conceptos = Concepto::select("id_concepto_empresa","descripcion","descuento","iva","ieps","otros_imp")
+       $conceptos = Concepto::select("id_concepto_empresa","descripcion","descuento","iva","ieps","otros_imp","iva_r","isr_r")
        ->where("id_empresa",$id_empresa)
        ->get();
        if(count($conceptos)>0){
+        foreach($conceptos as $concepto){
+            $concepto->descuento == null ? $concepto->descuento = 0.00 : $concepto->descuento;
+            $concepto->iva == null ? $concepto->iva = 0.00 : $concepto->iva;
+            $concepto->ieps == null ? $concepto->ieps = 0.00 : $concepto->ieps;
+            $concepto->otros_imp == null ? $concepto->otros_imp = 0.00 : $concepto->otros_imp;
+            $concepto->iva_r == null ? $concepto->iva_r = 0.00 : $concepto->iva_r;
+            $concepto->isr_r == null ? $concepto->isr_r = 0.00 : $concepto->isr_r;
+        }
            return $this->crearRespuesta(1,$conceptos,200);
        }
        return $this->crearRespuesta(2,"No se han encontrado registros con esta empresa",200);
    }
    public function facObtenerConceptosPorId($id_concepto)
    {
-    $conceptos = Concepto::select('id_concepto_empresa', 'satC.id_ClaveProdServ', 'satU.id_UnidadMedida', 'fac_catconceptos.descripcion', 'descuento', 'iva', 'tipo_iva', 'ieps', 'tipo_ieps', 'otros_imp', 'tipo_otros','satC.Descripcion as servicio',"satU.Descripcion as unidad","nombre_otros", 'id_objetoimp', 'satI.clave')
+    $conceptos = Concepto::select('id_concepto_empresa', 'satC.id_ClaveProdServ', 'satU.id_UnidadMedida', 'fac_catconceptos.descripcion', 'descuento', 'iva', 'iva_r', 'ieps', 'otros_imp', 'isr_r','satC.Descripcion as servicio',"satU.Descripcion as unidad","nombre_otros", 'satI.id_objetoimp', 'satI.clave')
     ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fac_catconceptos.id_ClaveProdServ")
     ->join("sat_UnidadMedida as satU","satU.id_UnidadMedida","=","fac_catconceptos.id_UnidadMedida")
     ->join("sat_objetoimp as satI", "satI.id_objetoimp", "=", "fac_catconceptos.id_objetoimp")
@@ -94,12 +102,11 @@ class ConceptoController extends Controller
             $concepto->id_UnidadMedida = $res["id_unidad"];
             $concepto->descripcion = strtoupper($res["descripcion"]);
             $concepto->descuento = floatval($res["descuento"]."");
-            $concepto->iva = floatval($res["iva"]."");
-            $concepto->tipo_iva = $res["tipo_iva"];
+            $concepto->iva = floatval($res["iva_t"]."");
+            $concepto->iva_r = $res["iva_r"];
             $concepto->ieps = floatval($res["ieps"]."");
-            $concepto->tipo_ieps = $res["tipo_ieps"];
             $concepto->otros_imp = floatval($res["otros"]."");
-            $concepto->tipo_otros = $res["tipo_otros"];
+            $concepto->isr_r = $res["isr_r"];
             $concepto->nombre_otros = $res["nombre_otros"];
             $concepto->fecha_creacion = $fecha;
             $concepto->usuario_creacion = $res["usuario"];
@@ -132,12 +139,11 @@ class ConceptoController extends Controller
             $concepto->id_UnidadMedida = $res["id_unidad"];
             $concepto->descripcion = strtoupper($res["descripcion"]);
             $concepto->descuento = floatval($res["descuento"]."");
-            $concepto->iva = floatval($res["iva"]."");
-            $concepto->tipo_iva = $res["tipo_iva"];
+            $concepto->iva = floatval($res["iva_t"]."");
+            $concepto->iva_r = $res["iva_r"];
             $concepto->ieps = floatval($res["ieps"]."");
-            $concepto->tipo_ieps = $res["tipo_ieps"];
             $concepto->otros_imp = floatval($res["otros"]."");
-            $concepto->tipo_otros = $res["tipo_otros"];
+            $concepto->isr_r = floatval($res["isr_r"]."");
             $concepto->nombre_otros = $res["nombre_otros"];
             $concepto->fecha_creacion = $fecha;
             $concepto->usuario_creacion = $res["usuario"];
@@ -151,7 +157,7 @@ class ConceptoController extends Controller
    {
        $palabra = "%".$res["busqueda"]."%";
        $conceptos = DB::table("fac_catconceptos as fcc")
-       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.tipo_iva', 'fcc.ieps', 'fcc.tipo_ieps', 'fcc.otros_imp', 'fcc.tipo_otros', 'fcc.id_objetoimp', 'satI.clave')
+       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.iva_r', 'fcc.ieps', 'fcc.otros_imp', 'fcc.isr_r', 'fcc.id_objetoimp', 'satI.clave')
        ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
        ->join("sat_objetoimp as satI", "satI.id_objetoimp","=", "fcc.id_objetoimp")
        ->where("fcc.id_empresa",$res["id_empresa"])
@@ -161,6 +167,14 @@ class ConceptoController extends Controller
        })
        ->get();
        if(count($conceptos)>0){
+        foreach($conceptos as $concepto){
+            $concepto->descuento == null ? $concepto->descuento = 0.00 : $concepto->descuento;
+            $concepto->iva == null ? $concepto->iva = 0.00 : $concepto->iva;
+            $concepto->ieps == null ? $concepto->ieps = 0.00 : $concepto->ieps;
+            $concepto->otros_imp == null ? $concepto->otros_imp = 0.00 : $concepto->otros_imp;
+            $concepto->iva_r == null ? $concepto->iva_r = 0.00 : $concepto->iva_r;
+            $concepto->isr_r == null ? $concepto->isr_r = 0.00 : $concepto->isr_r;
+        }
         return $this->crearRespuesta(1,$conceptos,200);
        }
         return $this->crearRespuesta(2,"Este concepto no existe o no le pertenece a esta empresa",200);
@@ -169,7 +183,7 @@ class ConceptoController extends Controller
    public function buscarConceptosPorNombre($id_empresa,$concepto)
    {
        $conceptos = DB::table("fac_catconceptos as fcc")
-       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.tipo_iva', 'fcc.ieps', 'fcc.tipo_ieps', 'fcc.otros_imp', 'fcc.tipo_otros', 'fcc.id_objetoimp', 'satI.clave')
+       ->select("fcc.id_concepto_empresa", 'fcc.descripcion', 'fcc.descuento', 'fcc.iva', 'fcc.iva_r', 'fcc.ieps', 'fcc.otros_imp', 'fcc.isr_r', 'fcc.id_objetoimp', 'satI.clave')
        ->join("sat_ClaveProdServ as satC","satC.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
        ->join("sat_objetoimp as satI", "satI.id_objetoimp", "=", "fac_catconceptos.id_objetoimp")
        ->where("fcc.id_empresa",$id_empresa)
@@ -177,6 +191,14 @@ class ConceptoController extends Controller
        ->get();
 
        if(count($conceptos)>0){
+        foreach($conceptos as $concepto){
+            $concepto->descuento == null ? $concepto->descuento = 0.00 : $concepto->descuento;
+            $concepto->iva == null ? $concepto->iva = 0.00 : $concepto->iva;
+            $concepto->ieps == null ? $concepto->ieps = 0.00 : $concepto->ieps;
+            $concepto->otros_imp == null ? $concepto->otros_imp = 0.00 : $concepto->otros_imp;
+            $concepto->iva_r == null ? $concepto->iva_r = 0.00 : $concepto->iva_r;
+            $concepto->isr_r == null ? $concepto->isr_r = 0.00 : $concepto->isr_r;
+        }
         return $this->crearRespuesta(1,$conceptos,200);
        }
         return $this->crearRespuesta(2,"Este concepto no existe o no le pertenece a esta empresa",200);

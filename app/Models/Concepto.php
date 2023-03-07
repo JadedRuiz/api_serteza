@@ -16,7 +16,7 @@ class Concepto extends Model {
     protected $primaryKey = "id_concepto_empresa";
     protected $table = 'fac_catconceptos';
     protected $fillable = [
-        'id_concepto_empresa', 'id_empresa', 'id_ClaveProdServ', 'id_UnidadMedida', 'descripcion', 'descuento', 'iva', 'tipo_iva', 'ieps', 'tipo_ieps', 'otros_imp', 'tipo_otros', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'activo','id_objetoimp'
+        'id_concepto_empresa', 'id_empresa', 'id_ClaveProdServ', 'id_UnidadMedida', 'descripcion', 'descuento', 'iva', 'iva_r', 'ieps', 'otros_imp', 'isr_r', 'fecha_creacion', 'fecha_modificacion', 'usuario_creacion', 'usuario_modificacion', 'activo','id_objetoimp'
     ];
 
     /**

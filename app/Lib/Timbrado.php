@@ -18,21 +18,14 @@ class Timbrado {
 
        //Crear la conexión SOAP
        try{
-            if(($datos["id_empresa"] == 106) || ($datos["id_empresa"] == 107) || ($datos["id_empresa"] == 108)){
-                $url = env("URL_TIMBRE40");
+		   //Se definen las empresas que timbraran en 4.0
+		   if(in_array($datos["id_empresa"],[106,107,108,105,56,81])){
+			   $url = env("URL_TIMBRE40");
                 $mVersion = "4.0";
-            }else{
-                $url = env("URL_PROVEEDOR");
+		   }else{
+			   $url = env("URL_PROVEEDOR");
                 $mVersion = "3.3";
-            }
-           
-		   if(($datos["id_empresa"] == 105)) {
-		       $url = env("URL_TIMBRE40");
-                $mVersion = "4.0";
-            }else{
-                $url = env("URL_PROVEEDOR");
-                $mVersion = "3.3";
-            }
+		   }
            
            $client = new nusoap_client($url, 'soap');
            $client->soap_defencoding = "UTF-8";
@@ -46,7 +39,6 @@ class Timbrado {
        $sello = new Sello();
 
        //error_log(print_r($datos."****** VERSION *****".$mVersion, true), 3, "sellar_log.log");
-
        $resultado = $sello->sellar($datos,$mVersion);
        //return ["ok" => false, "message" => $resultado["data"]];
 
@@ -114,6 +106,7 @@ class Timbrado {
             
             return ["ok" => true, "data" => $xmlsello];
        }
+		return ["ok" => false, "message" => $resultado["message"]];
     }
 }
 ?>
