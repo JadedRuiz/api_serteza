@@ -77,7 +77,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('facObtenerClientes/{id_cliente}','ClienteController@facObtenerClientes');
         $router->get('facObtenerClientesPorId/{id_cliente}','ClienteController@facObtenerClientesPorId');
         $router->post('facAltaCliente','ClienteController@facAltaCliente');
-        $router->get('facObtenerClientesPorRfc/{id_cliente}/{rfc}','ClienteController@facObtenerClientesPorRfc');
+        $router->get('facObtenerClientesPorRfc/{id_empresa}/{rfc}','ClienteController@facObtenerClientesPorRfc');
     });
     $router->group(['prefix' => 'candidato'], function () use ($router) {
         $router->get('obtenerDatos',"CandidatoController@obtenerDatosDashBoard");
