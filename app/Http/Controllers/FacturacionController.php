@@ -314,11 +314,6 @@ class FacturacionController extends Controller
                     "mensaje" => "Le hemos enviado sus recibos de nomina del periodo ".$xml->periodo."-".$xml->ejercicio,
                     "adjuntos" => [
                         [
-                            "extension" => "pdf",
-                            "nombre" => "RECIBO_NOMINA",
-                            "data" => $respuesta["pdf"]
-                        ],
-                        [
                             "extension" => "xml",
                             "nombre" => "FORMATO_XML",
                             "data" => base64_encode($xml->xml)
@@ -741,6 +736,51 @@ class FacturacionController extends Controller
                     $xml_b64 = "";
                     if($xml){
                         $xml_b64 = base64_encode($xml->xml);
+                    }
+                    $correo_empresa = DB::table("fac_catclientes")->select("rfc","razon_social","email")->where("id_catclientes",$res["id_cliente"])->first();
+                    $empresa_emisora = DB::table("gen_cat_empresa as gce")
+                    ->select("gcf.nombre as logo")
+                    ->leftJoin("gen_cat_fotografia as gcf","gce.id_fotografia","=","gcf.id_fotografia")
+                    ->where("id_empresa",$res["id_empresa"])
+                    ->first();
+                    if($correo_empresa){
+                        if($empresa_emisora->logo != ""){
+                            $path = storage_path('empresa')."/".$empresa_emisora->logo;
+                            $extension_logo = pathinfo($path, PATHINFO_EXTENSION);
+                            $logo_empresa = base64_encode(file_get_contents($path));
+                        }else{
+                            $path = storage_path('empresa')."/empresa_default.png";
+                            $extension_logo = "png";
+                            $logo_empresa = base64_encode(file_get_contents($path));
+                        }
+                        $this->enviarCorreo([
+                            "rfc" => getenv("RFC_CORREO"),
+                            "titulo" => $correo_empresa->razon_social,
+                            "tipo" => 1,
+                            "dirigidos" => [
+                                [
+                                    "correo" => 'enriqueruiz19995@gmail.com',
+                                    "nombre" => $correo_empresa->rfc
+                                ],
+                            ],
+                            "asunto" => "FACTURA TIMBRADA ".$correo_empresa->rfc,
+                            "mensaje" => "Estimado cliente ".$correo_empresa->rfc.". Le informamos que hemos emitido una factura por el valor de $"
+                            .$res["total"].", de igual forma le adjuntamos el formato PDF y XML generados.",
+                            "adjuntos" => [
+                                [
+                                    "extension" => "pdf",
+                                    "nombre" => "FormatoPDF",
+                                    "data" => $result_report["data"]
+                                ],
+                                [
+                                    "extension" => "xml",
+                                    "nombre" => "FormatoXML",
+                                    "data" => $xml_b64
+                                ]
+                            ],
+                            "logo" => $logo_empresa,
+                            "extension_logo" => $extension_logo
+                        ]);
                     }
                     return $this->crearRespuesta(1,[
                         "docB64" => $result_report["data"],

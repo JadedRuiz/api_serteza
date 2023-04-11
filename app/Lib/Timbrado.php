@@ -19,17 +19,10 @@ class Timbrado {
        //Crear la conexión SOAP
        try{
 		   //Se definen las empresas que timbraran en 4.0
-		   if(in_array($datos["id_empresa"],[106,107,108,105,56,81])){
-			   $url = env("URL_TIMBRE40");
-                $mVersion = "4.0";
-		   }else{
-			   $url = env("URL_PROVEEDOR");
-                $mVersion = "3.3";
-		   }
-           
-           $client = new nusoap_client($url, 'soap');
-           $client->soap_defencoding = "UTF-8";
-           $client->decode_utf8 = false;
+            $url = env("URL_TIMBRE40");
+            $client = new nusoap_client($url, 'soap');
+            $client->soap_defencoding = "UTF-8";
+            $client->decode_utf8 = false;
        }catch(Throwable $e){
            return ["ok" => false, "message" => "Error de conexion al proveedor : ".$client->getError()];
        }
@@ -37,11 +30,7 @@ class Timbrado {
 
        //Sellar
        $sello = new Sello();
-
-       //error_log(print_r($datos."****** VERSION *****".$mVersion, true), 3, "sellar_log.log");
-       $resultado = $sello->sellar($datos,$mVersion);
-       //return ["ok" => false, "message" => $resultado["data"]];
-
+       $resultado = $sello->sellar($datos);
        if($resultado["ok"]){
             try{
                 $myDom = new DOMDocument();
@@ -84,11 +73,9 @@ class Timbrado {
 
             $doc = new DOMDocument();
             $doc->loadXML($xml);
-            if ($mVersion == "3.3"){
-                $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Complemento')->item(0);
-            }else{
-                $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Complemento')->item(0);
-            }
+            
+            $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Complemento')->item(0);
+            
             
             $nodo = $doc->createElement("tfd:TimbreFiscalDigital");
             $nuevo_nodo = $c->appendChild($nodo);
