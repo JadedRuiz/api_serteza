@@ -43,15 +43,16 @@ class ClienteController extends Controller
         return $this->crearRespuesta(2,"No se ha encontrado el cliente",200);
     }
 
-    public function facObtenerClientesPorRfc($id_cliente,$rfc)
+    public function facObtenerClientesPorRfc($id_empresa,$rfc)
     {
         $cliente = DB::table('fac_catclientes as fcc')
-        ->select("fcc.id_catclientes","fcc.id_cliente", "fcc.rfc","fcc.razon_social","fcc.curp","fcc.email","fcc.telefono","gcd.id_direccion","gcd.calle", "gcd.numero_interior", "gcd.numero_exterior", "gcd.cruzamiento_uno", "gcd.cruzamiento_dos", "gcd.codigo_postal", "gcd.colonia", "gcd.localidad", "gcd.municipio", "gcd.estado", "gcd.descripcion",
+        ->select("fcc.id_catclientes","fcc.id_cliente", "fcc.rfc","fcc.razon_social","fcc.email","gcd.codigo_postal", 
                  "gce.estado","gcd.estado as id_estado", "fcc.id_regimenfiscal", DB::raw("concat(srf.clave,'-',srf.regimenfiscal) as regimenfiscal"))
         ->join("gen_cat_direccion as gcd","gcd.id_direccion","=","fcc.id_direccion")
         ->join("gen_cat_estados as gce","gce.id_estado","=","gcd.estado")
         ->join("sat_regimenesfiscales as srf","fcc.id_regimenfiscal", "=","srf.id_regimenfiscal")
-        ->where("fcc.id_cliente",$id_cliente)
+        ->join("liga_empresa_cliente AS lce", "fcc.id_cliente", "=", "lce.id_cliente")
+        ->where("lce.id_empresa",$id_empresa)
         ->where("fcc.rfc",$rfc)
         ->first();
         if($cliente){
