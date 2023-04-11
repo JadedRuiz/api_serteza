@@ -700,14 +700,19 @@ class FacturacionController extends Controller
     public function facObtenerFacturas(Request $res)
     {
         $id_empresa = $res["id_empresa"];
-        $id_serie = $res["id_serie"];
+        $id_cliente = $res["id_cliente"];
 
         try{
             $facturas = DB::table("fac_factura as ff")
-            ->select("ff.id_factura","ff.folio","fc.serie",DB::raw("date_format(ff.fecha_creacion, '%d-%m-%Y') as fecha"),"ff.total","ff.observaciones")
+            ->select("ff.id_factura","ff.folio","fc.serie","fcc.razon_social as cliente",DB::raw("date_format(ff.fecha_creacion, '%d-%m-%Y') as fecha"),"ff.total","ff.observaciones")
+            ->leftJoin("fac_catclientes as fcc","fcc.id_catclientes","=","ff.id_catclientes")
             ->leftJoin("fac_catseries as fc","fc.id_serie","=","ff.id_serie")
             ->where("ff.id_empresa",$id_empresa)
-            ->where("fc.id_serie",$id_serie)
+            ->where(function($query) use ($id_cliente){
+                if($id_cliente != "0"){
+                    $query->where("ff.id_catclientes",$id_cliente);
+                }
+            })
             ->orderBy("ff.fecha_creacion","DESC")
             ->get();
             if(count($facturas)>0){
@@ -759,7 +764,7 @@ class FacturacionController extends Controller
                             "tipo" => 1,
                             "dirigidos" => [
                                 [
-                                    "correo" => 'enriqueruiz19995@gmail.com',
+                                    "correo" => $correo_empresa->email,
                                     "nombre" => $correo_empresa->rfc
                                 ],
                             ],
@@ -781,6 +786,7 @@ class FacturacionController extends Controller
                             "logo" => $logo_empresa,
                             "extension_logo" => $extension_logo
                         ]);
+                        return $this->crearRespuesta(1,"1", 200);
                     }
                     return $this->crearRespuesta(1,[
                         "docB64" => $result_report["data"],

@@ -161,14 +161,13 @@ class Sello {
         foreach($datos["conceptos"] as $concepto){
             array_push($conceptos_array,$concepto["id_concepto"]);
             $concepto_info = DB::table('fac_catconceptos as fcc')
-            ->select("scp.ClaveProdServ","sum.ClaveUnidad","sum.Descripcion as unidad","soi.clave as objetoimp")
+            ->select("scp.ClaveProdServ","sum.ClaveUnidad","sum.Descripcion as unidad","soi.clave as objetoimp","fcc.clave_producto")
             ->join("sat_UnidadMedida as sum","sum.id_UnidadMedida","=","fcc.id_UnidadMedida")
             ->join("sat_ClaveProdServ as scp","scp.id_ClaveProdServ","=","fcc.id_ClaveProdServ")
             ->join("sat_objetoimp as soi", "soi.id_objetoimp","=", "fcc.id_objetoimp")
             ->where("fcc.id_concepto_empresa",$concepto["id_concepto"])
             ->first();
-            $codigo = "PROD";
-            $xml = $xml . '<cfdi:Concepto Importe="' . number_format(round($concepto["importe"],2),2,'.','') . '" NoIdentificacion="' . $codigo . '" ValorUnitario="' .  number_format(round($concepto["precio"],2),2,'.','') . '" Descripcion="' . $concepto["descripcion"] . '" Unidad="' . $concepto_info->unidad . '" Cantidad="' . $concepto["cantidad"] . '" Descuento="'.$concepto["descuento"].'" ClaveProdServ="' .$concepto_info->ClaveProdServ. '" ClaveUnidad="'.$concepto_info->ClaveUnidad. '" ObjetoImp="'.$concepto_info->objetoimp.'">';
+            $xml = $xml . '<cfdi:Concepto Importe="' . number_format(round($concepto["importe"],2),2,'.','') . '" NoIdentificacion="' . $concepto_info->clave_producto . '" ValorUnitario="' .  number_format(round($concepto["precio"],2),2,'.','') . '" Descripcion="' . $concepto["descripcion"] . '" Unidad="' . $concepto_info->unidad . '" Cantidad="' . $concepto["cantidad"] . '" Descuento="'.$concepto["descuento"].'" ClaveProdServ="' .$concepto_info->ClaveProdServ. '" ClaveUnidad="'.$concepto_info->ClaveUnidad. '" ObjetoImp="'.$concepto_info->objetoimp.'">';
             $band_impuestos = false;
             $impuestos = $xml."<cfdi:Impuestos>";
             if(floatval($concepto["iva"]) > 0 || floatval($concepto["ieps"]) > 0){

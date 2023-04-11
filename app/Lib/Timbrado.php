@@ -54,9 +54,11 @@ class Timbrado {
             $xmlobtenerTimbrado = $res_client['obtenerTimbradoResult'];
             $xmlTimbre = $xmlobtenerTimbrado['timbre'];
             if(isset($xmlTimbre['errores']) && $xmlTimbre['!esValido'] != "True"){
-                $Err0r = $xmlTimbre['errores'];
-                $men_error = $Err0r['Error'];
-                return ["ok" => false, "message" => $res_client];
+                $arreglo_erorres = [];
+                foreach($xmlTimbre['errores']["Error"] as $error){
+                    array_push($arreglo_erorres,[$error["!codigo"] . ": ".$error["!mensaje"]]);
+                }
+                return ["ok" => false, "message" => $arreglo_erorres];
             }
             
             $xmlTimbreFiscalDigital = $xmlTimbre['TimbreFiscalDigital'];
