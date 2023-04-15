@@ -82,6 +82,9 @@ class ConceptoController extends Controller
         if($res["id_servicio"] == 0){
             return $this->crearRespuesta(2,"El serivicio o producto es un campo obligatorio",200);
         }
+        if($res["clave_producto"] == ""){
+            return $this->crearRespuesta(2,"La clave del producto es un campo obligatorio",200);
+        }
         if($res["descripcion"] == ""){
             return $this->crearRespuesta(2,"La descripcion es un campo obligatorio",200);
         }
@@ -90,16 +93,17 @@ class ConceptoController extends Controller
         }
         $validar = DB::table('fac_catconceptos')
         ->where("id_empresa",$res["id_empresa"])
-        ->where("id_ClaveProdServ",$res["id_servicio"])
+        ->where("clave_producto",$res["clave_producto"])
         ->first();
         if($validar){
-            return $this->crearRespuesta(2,"Este servicio o producto ya se encuentra registrado en esta empresa",200);
+            return $this->crearRespuesta(2,"Este clave de prodcuto ya se encuentra registrado en esta empresa",200);
         }
         try{
             $fecha = $this->getHoraFechaActual();
             $concepto->id_empresa = $res["id_empresa"];
             $concepto->id_ClaveProdServ = $res["id_servicio"];
             $concepto->id_UnidadMedida = $res["id_unidad"];
+            $concepto->clave_producto = strtoupper($res["clave_producto"]);
             $concepto->descripcion = strtoupper($res["descripcion"]);
             $concepto->descuento = floatval($res["descuento"]."");
             $concepto->iva = floatval($res["iva_t"]."");

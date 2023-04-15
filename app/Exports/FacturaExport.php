@@ -709,7 +709,7 @@ class FacturaExport {
                     $pdf->Ln();
                     $pdf->SetTextColor(0,0,0);
                     $pdf->SetFont('Arial','B',9);
-                    $pdf->Cell(20,10,"Clave SAT",1,0,"L",true);
+                    $pdf->Cell(20,10,"Clave",1,0,"L",true);
                     $pdf->Cell(15,10,utf8_decode("Código"),1,0,"L",true);
                     $pdf->Cell(15,10,"Cantidad",1,0,"R",true);
                     $pdf->Cell(20,10,"Unidad SAT",1,0,"L",true);
@@ -728,9 +728,9 @@ class FacturaExport {
                         $vectorX=$pdf->GetX();
                         $pdf->SetFont('Arial','',9);
                         $pdf->Cell(20,$tamaño_celda,$dato["ClaveProdServ"],1,0,"L");
-                        $pdf->Cell(15,$tamaño_celda,$dato["ClaveUnidad"],1,0,"L");
+                        $pdf->Cell(15,$tamaño_celda,$dato["NoIdentificacion"],1,0,"L");
                         $pdf->Cell(15,$tamaño_celda,$dato['Cantidad'],1,0,"C");
-                        $pdf->Cell(20,$tamaño_celda,$dato["Unidad"],1,0,false);
+                        $pdf->Cell(20,$tamaño_celda,$dato["ClaveUnidad"],1,0,false);
                         $pdf->MultiCell(75,4,utf8_decode($dato["Descripcion"]),1,"L",false);
                         $pdf->SetY($vectorY);
                         $pdf->SetX(155);
@@ -1126,7 +1126,7 @@ class FacturaExport {
         $i=0;
         foreach($datos["conceptos"] as $dato){
             $concepto = DB::table('fac_catconceptos as fc')
-            ->select("ClaveProdServ","sum.ClaveUnidad","folio")
+            ->select("ClaveProdServ","sum.ClaveUnidad","clave_producto")
             ->join("sat_ClaveProdServ as scp","fc.id_ClaveProdServ","=","scp.id_ClaveProdServ")
             ->join("sat_UnidadMedida as sum","fc.id_UnidadMedida","=","sum.id_UnidadMedida")
             ->where("id_concepto_empresa",$dato["id_concepto"])
@@ -1136,9 +1136,9 @@ class FacturaExport {
             $vectorX=$pdf->GetX();
             $pdf->SetFont('Arial','',9);
             $pdf->Cell(20,$tamaño_celda,$concepto->ClaveProdServ,1,0,"L");
-            $pdf->Cell(15,$tamaño_celda,$concepto->ClaveUnidad,1,0,"L");
+            $pdf->Cell(15,$tamaño_celda,$concepto->clave_producto,1,0,"L");
             $pdf->Cell(15,$tamaño_celda,$dato['cantidad'],1,0,"C");
-            $pdf->Cell(20,$tamaño_celda,'',1,0,false);
+            $pdf->Cell(20,$tamaño_celda,$concepto->ClaveUnidad,1,0,false);
             $pdf->MultiCell(75,4,utf8_decode($dato["descripcion"]),1,"L",false);
             $pdf->SetY($vectorY);
             $pdf->SetX(155);
