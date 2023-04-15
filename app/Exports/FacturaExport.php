@@ -429,8 +429,9 @@ class FacturaExport {
     public function generarFactura($datos)
     {
         $xml = DB::table('fac_factura as ff')
-        ->select("ff.id_catclientes","xml","observaciones","gcf.nombre","gce.empresa","iva","ieps","otros","calle","cruzamiento_uno","numero_exterior","numero_interior","colonia","localidad","gcee.estado","ff.descuento","ff.iva_r","ff.isr_r","ff.total","ff.importe","ff.subtotal","srf.clave","srf.regimenfiscal","codigo_postal")
+        ->select("ff.id_catclientes","xml","observaciones","gcf.nombre","gce.empresa","iva","ieps","otros","calle","cruzamiento_uno","numero_exterior","numero_interior","colonia","localidad","gcee.estado","ff.descuento","ff.iva_r","ff.isr_r","ff.total","ff.importe","ff.subtotal","srf.clave","srf.regimenfiscal","codigo_postal", "gcc.cliente as nombre_grupo")
         ->join("gen_cat_empresa as gce","gce.id_empresa","=","ff.id_empresa")
+        ->join("gen_cat_cliente as gcc", "lec.id_cliente","=","gcc.id_cliente")
         ->leftJoin("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->leftJoin("gen_cat_estados as gcee","gcee.id_estado","=","gcd.estado")
         ->leftJoin("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gce.id_fotografia")
@@ -493,10 +494,10 @@ class FacturaExport {
                 $num_exterior = "";
                 $calle="";
                 if($cliente->calle != ""){
-                    $num_interior = "C ".$cliente->calle;
+                    $calle = "C ".$cliente->calle;
                 }
                 if($cliente->numero_exterior != ""){
-                    $num_interior = " No. Ext ".$cliente->numero_exterior;
+                    $num_exterior = " No. Ext ".$cliente->numero_exterior;
                 }
                 if($cliente->numero_interior != ""){
                     $num_interior = ", No. Int ".$cliente->numero_interior;
@@ -589,122 +590,143 @@ class FacturaExport {
                 }
                 file_put_contents($temp_image, $qr_image);
                 #region [DATOS DE LA FACTURA]
-                    $pdf = new PDFEdit('P','mm','A4');
-                    $pdf->AddPage();
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->SetX(130);
-                    $pdf->SetDrawColor(221,221,221);
-                    $pdf->SetFillColor(221, 221, 221);
-                    $pdf->Cell(75,5,utf8_decode("CFDI Versión ").$version_compro,1,0,"L",true);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','B',9);
-                    $pdf->Cell(75,5,"Folio fiscal",1,0,"L",true);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->Cell(75,5,$uuid,1,0,"L",false);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','B',9);
-                    $pdf->Cell(75,5,utf8_decode("Número de serie del CSD"),1,0,"L",true);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->Cell(75,5,"$numcer",1,0,"L",false);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','B',9);
-                    $pdf->Cell(75,5,utf8_decode("Código postal, Fecha expedición y certificación "),1,0,"L",true);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->Cell(75,5,"CP: ".$xml->codigo_postal,"LRT",0,"L",false);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->Cell(75,5,date('d/m/Y H:m:i',strtotime($fecha_hora)) . " - " . date('d/m/Y H:m:i',strtotime($fechatimbre)),"LRB",0,"L",false);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','B',9);
-                    $pdf->Cell(75,5,utf8_decode("Serie, folio y uso CDFI"),1,0,"L",true);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->Cell(75,5,$serie." - ".$folio,'LRT',0,"L",false);
-                    $pdf->Ln();
-                    $pdf->SetX(130);
-                    $pdf->SetFont('Helvetica','',9);
-                    $pdf->Cell(75,5,$uso_cfdi->clave_cfdi ." - ".$uso_cfdi->descripcion,'LRB',0,"L",false);
-                    $pdf->SetY(47);
-                    $pdf->SetX(10);
-                    $pdf->Cell(120,0.5,"",0,0,"L",true);
-                #endregion
-                #region [NOMBRE/FOTO EMPRESA EMISORA]
-                    //qr
-                    // $pdf->Image($temp_image,170,15,30,30,'PNG','');
-                    // unlink($temp_image);
-                    $pdf->Image($logo_empresa,10,10,35,35,$extension,'');
-                    $pdf->SetFont('Helvetica','B',16);
+                $pdf = new PDFEdit('P','mm','A4');
+                $pdf->AddPage();
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->SetX(130);
+                $pdf->SetDrawColor(221,221,221);
+                $pdf->SetFillColor(221, 221, 221);
+                $pdf->Cell(75,5,utf8_decode("CFDI Versión ").$version_compro,1,0,"L",true);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','B',9);
+                $pdf->Cell(75,5,"Folio fiscal",1,0,"L",true);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->Cell(75,5,$uuid,1,0,"L",false);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','B',9);
+                $pdf->Cell(75,5,utf8_decode("Número de serie del CSD"),1,0,"L",true);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->Cell(75,5,"$numcer",1,0,"L",false);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','B',9);
+                $pdf->Cell(75,5,utf8_decode("Código postal, Fecha expedición y certificación "),1,0,"L",true);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->Cell(75,5,"CP: ".$xml->codigo_postal,"LRT",0,"L",false);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->Cell(75,5,date('d/m/Y H:m:i',strtotime($fecha_hora)) . " - " . date('d/m/Y H:m:i',strtotime($fechatimbre)),"LRB",0,"L",false);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','B',9);
+                $pdf->Cell(75,5,utf8_decode("Serie, folio y uso CDFI"),1,0,"L",true);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->Cell(75,5,$serie." - ".$folio,'LRT',0,"L",false);
+                $pdf->Ln();
+                $pdf->SetX(130);
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->Cell(75,5,$uso_cfdi->clave_cfdi ." - ".$uso_cfdi->descripcion,'LRB',0,"L",false);
+                $pdf->SetY(47);
+                $pdf->SetX(10);
+                $pdf->Cell(120,0.5,"",0,0,"L",true);
+            #endregion
+            #region [NOMBRE/FOTO EMPRESA EMISORA]
+                //qr
+                // $pdf->Image($temp_image,170,15,30,30,'PNG','');
+                // unlink($temp_image);
+                
+                $pdf->Image($logo_empresa,10,10,35,35,$extension,'');
+                // ESTO SE AGREGO
+                    $pdf->SetFont('Helvetica','B',12);
                     $pdf->SetY(20);
                     $pdf->SetX(50);
                     $pdf->SetTextColor(245,55,91);
-                    $pdf->Cell(50,5,$nombre_empresa,0,0,"L");
+                    $pdf->Cell(50,5,$nombre_grupo,0,0,"L");
                     $pdf->Ln();
-                    $pdf->SetX(50);
-                    $pdf->SetTextColor(0,0,0);
-                    $pdf->SetFont('Helvetica','',12);
-                    $pdf->Cell(55,5,utf8_decode($rfc_emisor),0,0,"L");
+                // ***************
+                $pdf->SetFont('Helvetica','B',10);
+                //$pdf->SetY(20);
+                $pdf->SetX(50);
+                $pdf->SetTextColor(245,55,91);
+                $pdf->Cell(55,5,$nombre_empresa,0,0,"L");
+                $pdf->Ln();
+                $pdf->SetX(50);
+                $pdf->SetTextColor(0,0,0);
+                $pdf->SetFont('Helvetica','',10);
+                $pdf->Cell(55,5,utf8_decode($rfc_emisor),0,0,"L");
+                $pdf->Ln();
+                $pdf->SetX(50);
+                $pdf->SetFont('Helvetica','B',6);
+                $pdf->Cell(5,5,utf8_decode($tipo_regimen),0,0,"L");
+                $pdf->SetFont('Helvetica','',6);
+                $pdf->SetTextColor(92,91,86);
+                if(strlen($xml->regimenfiscal) > 47){
+                    $pdf->Cell(5,5,utf8_decode(" - ".substr($xml->regimenfiscal,0,47)),0,0,"L");
                     $pdf->Ln();
-                    $pdf->SetX(50);
-                    $pdf->SetFont('Helvetica','B',9);
-                    $pdf->Cell(5,5,utf8_decode($tipo_regimen),0,0,"L");
-                    $pdf->SetFont('Helvetica','',9);
+                    //$pdf->SetY(10);
+                    $pdf->SetX(55);
+                    $pdf->SetFont('Helvetica','',6);
                     $pdf->SetTextColor(92,91,86);
+                    $pdf->Cell(5,0,utf8_decode(" - ".substr($xml->regimenfiscal,48,strlen($xml->regimenfiscal))),0,0,"L");
+                }else{
                     $pdf->Cell(5,5,utf8_decode(" - ".$xml->regimenfiscal),0,0,"L");
-                #endregion
-                #region [NOMBRE EMPRESA RECEPTORA]
-                    $pdf->SetY(45);
-                    $pdf->Ln();
-                    $pdf->SetFont('Helvetica','B',11);
-                    $pdf->SetTextColor(245,60,86);
+                }
+                
+            #endregion
+            #region [NOMBRE EMPRESA RECEPTORA]
+                $pdf->SetY(50);
+                $pdf->Ln();
+                $pdf->SetFont('Helvetica','B',11);
+                $pdf->SetTextColor(245,60,86);
+                $pdf->SetX(10);
+                $pdf->Cell(40,5,$nombre_receptor,0,0,"L");
+                $pdf->Ln(); 
+                $pdf->SetX(10);
+                $pdf->SetTextColor(0,0,0);
+                $pdf->SetFont('Helvetica','',10);
+                $pdf->Cell(40,5,$rfc_receptor,0,0,"L");
+                $pdf->Ln(); 
+                if($direccion_receptor_line_1 != ""){
                     $pdf->SetX(10);
-                    $pdf->Cell(40,5,$nombre_receptor,0,0,"L");
-                    $pdf->Ln(); 
-                    $pdf->SetX(10);
-                    $pdf->SetTextColor(0,0,0);
-                    $pdf->SetFont('Helvetica','',10);
-                    $pdf->Cell(40,5,$rfc_receptor,0,0,"L");
-                    $pdf->Ln(); 
-                    if($direccion_receptor_line_1 != ""){
-                        $pdf->SetX(10);
-                        $pdf->SetFont('Helvetica','',9);
-                        $pdf->SetTextColor(0,0,0);
-                        $pdf->Cell(100,5,utf8_decode($direccion_receptor_line_1),0,0,"L");
-                        $pdf->Ln(); 
-                    }
-                    if($direccion_receptor_line_2 != ""){
-                        $pdf->SetX(10);
-                        $pdf->SetFont('Helvetica','',9);
-                        $pdf->SetTextColor(0,0,0);
-                        $pdf->Cell(100,5,utf8_decode($direccion_receptor_line_2),0,0,"L");
-                        $pdf->Ln(); 
-                    }
-                    if($direccion_receptor_line_3 != ""){
-                        $pdf->SetX(10);
-                        $pdf->SetFont('Helvetica','',9);
-                        $pdf->SetTextColor(0,0,0);
-                        $pdf->Cell(100,5,utf8_decode($direccion_receptor_line_3),0,0,"L");
-                        $pdf->Ln(); 
-                    }
-                    $pdf->SetX(10);
-                    $pdf->SetFont('Helvetica','B',9);
-                    $pdf->Cell(6,5,$cliente->clave,0,0,"L");
                     $pdf->SetFont('Helvetica','',9);
-                    $pdf->SetTextColor(92,91,86);
-                    $pdf->Cell(20,5," - ".$cliente->regimenfiscal,0,0,"L");
-                    $pdf->Ln();
-                #endregion
+                    $pdf->SetTextColor(0,0,0);
+                    $pdf->Cell(100,5,utf8_decode($direccion_receptor_line_1),0,0,"L");
+                    $pdf->Ln(); 
+                }
+                if($direccion_receptor_line_2 != ""){
+                    $pdf->SetX(10);
+                    $pdf->SetFont('Helvetica','',9);
+                    $pdf->SetTextColor(0,0,0);
+                    $pdf->Cell(100,5,utf8_decode($direccion_receptor_line_2),0,0,"L");
+                    $pdf->Ln(); 
+                }
+                if($direccion_receptor_line_3 != ""){
+                    $pdf->SetX(10);
+                    $pdf->SetFont('Helvetica','',9);
+                    $pdf->SetTextColor(0,0,0);
+                    $pdf->Cell(100,5,utf8_decode($direccion_receptor_line_3),0,0,"L");
+                    $pdf->Ln(); 
+                }
+                $pdf->SetX(10);
+                $pdf->SetFont('Helvetica','B',9);
+                $pdf->Cell(6,5,$cliente->clave,0,0,"L");
+                $pdf->SetFont('Helvetica','',9);
+                $pdf->SetTextColor(92,91,86);
+                $pdf->Cell(20,5," - ".utf8_decode($cliente->regimenfiscal),0,0,"L");
+                $pdf->Ln();
+            #endregion
+
                 #region [CONCEPTOS DE LA FACTURA]
                     $pdf->Ln();
                     $pdf->SetTextColor(0,0,0);
