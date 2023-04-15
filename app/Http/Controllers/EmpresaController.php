@@ -341,7 +341,7 @@ class EmpresaController extends Controller
                 ->get();
                 if(count($validar) == 0){
                     $id_liga = $this->getSigId("liga_empresa_cliente");
-                    DB::insert('insert into liga_empresa_cliente (id_empresa_cliente, id_cliente, id_empresa, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?,?)', [$id_liga,$id_cliente,$id_empresa,$this->getHoraFechaActual(),$usuario_creacion,1]);
+                    DB::insert('insert into liga_empresa_cliente (id_cliente, id_empresa, fecha_creacion, usuario_creacion, activo) values (?,?,?,?,?)', [$id_cliente,$id_empresa,$this->getHoraFechaActual(),$usuario_creacion,1]);
                 }else{
                     if($validar[0]->activo == 0){
                         DB::update('update liga_empresa_cliente set activo = 1 where id_empresa_cliente = ?', [$validar[0]->id_empresa_cliente]);
@@ -360,6 +360,20 @@ class EmpresaController extends Controller
         ->select("lec.id_empresa",DB::raw("CONCAT('(',lec.id_empresa,')',' ',ce.empresa) as empresa"),"ce.empresa as nombre","ce.razon_social","representante_legal as repre", "ce.rfc")
         ->join("gen_cat_empresa as ce","ce.id_empresa","=","lec.id_empresa")
         ->where("lec.id_cliente",$id_cliente)
+        ->get();
+        if(count($empresas)>0){
+            return $this->crearRespuesta(1,$empresas,200);
+        }else{
+            return $this->crearRespuesta(2,"No se tiene congifurados empresas a este cliente",200);
+        }
+    }
+
+    public function obtenerEmpresaPorRFC($rfc)     
+    {
+        $empresas = DB::table('gen_cat_empresa as ce')
+        ->select("ce.id_empresa",DB::raw("CONCAT('(',ce.id_empresa,')',' ',ce.empresa) as empresa"),"ce.empresa as nombre","ce.razon_social","representante_legal as repre", "ce.rfc", "cf.nombre as fotografia")
+        ->join("gen_cat_fotografia as cf","ce.id_fotografia","=","cf.id_fotogracia")
+        ->where("ce.rfc",$rfc)
         ->get();
         if(count($empresas)>0){
             return $this->crearRespuesta(1,$empresas,200);

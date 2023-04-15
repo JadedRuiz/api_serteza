@@ -18,6 +18,7 @@ use XSLTProcessor;
 
 class FacturacionController extends Controller
 {
+    
     public function obtenerFacturas(Request $res)
     {
         $id_cliente = $res["id_cliente"];
@@ -1364,5 +1365,24 @@ class FacturacionController extends Controller
         } catch(Throweable $e){
             return [ "ok" => false, "message" => "Ha ocurrido un error : " . $e->getMessage() ];
         }
+    }
+
+    public function cancelarTimbradoNomina($foliofiscal)
+    {
+        try{
+            $controller = new Controller();
+        //Validaciones
+        $id_cancelado = $controller->getEstatus("cancelar");
+        
+        DB::update('update fact_cattimbrado 
+            set activo = ?
+            where uuid = ?', 
+            [$id_cancelado, $foliofiscal]);
+
+            return $this->crearRespuesta(1,"El timbre ha sido cancelado",200);
+        } catch (\Throwable $th) {
+            return $this->crearRespuesta(2,"Ha ocurrido un error : " . $th->getMessage(),300);
+        }
+
     }
 }

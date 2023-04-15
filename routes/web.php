@@ -62,6 +62,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("elimiminarLiga","EmpresaController@elimiminarLiga");
         $router->post("ligarClienteAEmpresa","EmpresaController@ligarClienteAEmpresa");
         $router->get("obtenerEmpresasPorIdCliente/{id_cliente}","EmpresaController@obtenerEmpresasPorIdCliente");
+        $router->get("obtenerEmpresaPorRFC/{rfc}","EmpresaController@obtenerEmpresaPorIdCliente");
     });
     $router->group(['prefix' => 'cliente'], function () use ($router) {         
         $router->post('obtenerClientes','ClienteController@obtenerClientes');
@@ -249,6 +250,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         //Timbrado
         $router->post("timbrado","FacturacionController@timbrado");
         $router->post("getPDFPreview","FacturacionController@generaFacturaPreview");
+        $router->get("cancelarTimbradoNomina/{foliofiscal}","FacturacionController@cancelarTimbradoNomina");
         //Descarga Masiva
         $router->post("descargaMasivaSAT","FacturacionController@descargaMasivaSAT");
         $router->post("crear-solicitud-sat","FacturacionController@crearSolicitudSat");
