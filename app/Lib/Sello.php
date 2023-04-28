@@ -140,7 +140,7 @@ class Sello {
         $exportacion = "01";
         $xml = $xml . '<cfdi:Comprobante '.$implocal.' xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd'.$schema_location.'" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" LugarExpedicion="' . $lugarexpedicion . '" MetodoPago="' . $metodopago . '" CondicionesDePago="' . $datos["condiciones"] . '" TipoDeComprobante="' . $tipocomprobante .'" Exportacion="'.$exportacion . '" Total="' .  number_format(round(str_replace(',','',$datos["total"]),2),2,'.','') . '" Descuento="' .  number_format(round(str_replace(',','',$datos["descuento_t"]),2),2,'.','') . '" SubTotal="' .  number_format(round(str_replace(',','',$datos["importe"]),2),2,'.','') . '" Certificado="" NoCertificado="'.$numcer.'" FormaPago="' . $formapago . '" Sello=""  Fecha="' . $fecha . '" Moneda="' . $moneda . '" Folio="' . $datos["folio"] . '" Serie="' . $serie;
         $xml = $xml .'" Version="4.0">';
-        $domicilio_receptor = $datos_receptor->codigo_postal;
+        $domicilio_receptor = substr("00000".$datos_receptor->codigo_postal,-5);
         if($datos_receptor->rfc == "XAXX010101000"){
             $xml = $xml .'<cfdi:InformacionGlobal Periodicidad="01" Meses="'.$periodicidad.'" Año="' . $ejercicio .'" />';
             $usoCFDI = "S01";
@@ -176,12 +176,21 @@ class Sello {
                 if(floatval($concepto["iva"]) > 0){
                     $porcentaje = number_format(round((floatval($concepto["iva_porcent"])/100),2),6,'.','');
                     $impuestos .= '<cfdi:Traslado Impuesto="002" TasaOCuota="'.$porcentaje.'" Importe="' . number_format(round($concepto["iva"],2),2,'.','') . '" TipoFactor="Tasa" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
+                }else{
+                    $porcentaje = number_format(round(0,2),6,'.','');
+                    $impuestos .= '<cfdi:Traslado Impuesto="002" TipoFactor="Exento" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
                 }
                 if(floatval($concepto["ieps"]) > 0){
                     $porcentaje = number_format(round((floatval($concepto["ieps_porcent"])/100),2),6,'.','');
                     $impuestos .= '<cfdi:Traslado Impuesto="003" TasaOCuota="'.$porcentaje.'" Importe="' . number_format(round($concepto["ieps"],2),2,'.','') . '" TipoFactor="Tasa" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
                 }
                 $impuestos .= '</cfdi:Traslados>';
+            }{
+                $band_impuestos = true;
+                $porcentaje = number_format(round(0,2),6,'.','');
+				$impuestos .= '<cfdi:Traslados>';
+                $impuestos .= '<cfdi:Traslado Impuesto="002" TipoFactor="Exento" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
+				$impuestos .= '</cfdi:Traslados>';
             }
             if(floatval($concepto["iva_r"]) > 0 || floatval($concepto["isr_r"]) > 0){
                 $band_impuestos = true;
@@ -227,11 +236,21 @@ class Sello {
             $base = 'Base="'.number_format(round(str_replace(',','',$datos["importe"]),2),2,'.','').'"';
             if(floatval($datos["iva_t"]) > 0){
                 $string_impuestos .= '<cfdi:Traslado '.$base.' Impuesto="002" TasaOCuota="0.160000" Importe="' . number_format(round(str_replace(',','',$datos["iva_t"]),2),2,'.','') . '" TipoFactor="Tasa" />';
+            }else{
+                $string_impuestos .= '<cfdi:Traslado '.$base.' Impuesto="002" TipoFactor="Exento" />';
             }
             if(floatval($datos["ieps_t"]) >0){
                 $string_impuestos .= '<cfdi:Traslado "'.$base.'" Impuesto="003" TasaOCuota="0.160000" Importe="' . number_format(round(str_replace(',','',$datos["iva_t"]),2),2,'.','') . '" TipoFactor="Tasa" />';
             }
             $string_impuestos .= '</cfdi:Traslados>';
+        }else{
+            $base = 'Base="'.number_format(round(str_replace(',','',$datos["importe"]),2),2,'.','').'"';
+			$string_impuestos .= '<cfdi:Impuestos>';
+            $string_impuestos .= '<cfdi:Traslados>';
+            $string_impuestos .= '<cfdi:Traslado '.$base.' Impuesto="002" TipoFactor="Exento" />';
+            $string_impuestos .= '</cfdi:Traslados>';
+			$string_impuestos .= '</cfdi:Impuestos>';
+			$xml = $xml." ".$string_impuestos;
         }
         
         $band_impuestos ? $xml = $xml.'<cfdi:Impuestos TotalImpuestosRetenidos="'. number_format(round(str_replace(',','',$total_impretenido),2),2,'.','').'" TotalImpuestosTrasladados="'.number_format(round(str_replace(',','',$totalimptrasladado),2),2,'.','').'">'.$string_impuestos.'</cfdi:Impuestos>' 

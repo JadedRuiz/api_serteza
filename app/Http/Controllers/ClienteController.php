@@ -92,12 +92,15 @@ class ClienteController extends Controller
         }
         try{
             $validar_rfc = DB::table("fac_catclientes")
-            ->select("id_catclientes")
+            ->select("id_catclientes","id_direccion")
+            ->where("id_cliente", $res["id"])
             ->where("rfc",strtoupper($res["rfc"]))
             ->first();
 
+            
+
             if($validar_rfc){
-                $direccion = Direccion::find($res["direccion"]["id_direccion"]);
+                $direccion = Direccion::find($validar_rfc->id_direccion);
             }else{
                 $direccion = new Direccion;
             }

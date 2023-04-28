@@ -18,11 +18,17 @@ class Timbrado {
 
        //Crear la conexión SOAP
        try{
-		   //Se definen las empresas que timbraran en 4.0
-            $url = env("URL_TIMBRE40");
-            $client = new nusoap_client($url, 'soap');
-            $client->soap_defencoding = "UTF-8";
-            $client->decode_utf8 = false;
+            if(($datos["id_empresa"] == 105) || ($datos["id_empresa"] == 106) || ($datos["id_empresa"] == 107) || ($datos["id_empresa"] == 108) || ($datos["id_empresa"] == 56)){
+                $url = env("URL_TIMBRE40");
+                $mVersion = "4.0";
+            }else{
+                $url = env("URL_PROVEEDOR");
+                $mVersion = "3.3";
+            }
+           
+           $client = new nusoap_client($url, 'soap');
+           $client->soap_defencoding = "UTF-8";
+           $client->decode_utf8 = false;
        }catch(Throwable $e){
            return ["ok" => false, "message" => "Error de conexion al proveedor : ".$client->getError()];
        }
@@ -30,7 +36,12 @@ class Timbrado {
 
        //Sellar
        $sello = new Sello();
-       $resultado = $sello->sellar($datos);
+
+       //error_log(print_r($datos."****** VERSION *****".$mVersion, true), 3, "sellar_log.log");
+
+       $resultado = $sello->sellar($datos,$mVersion);
+        // return ["ok" => false, "message" => $resultado["data"]];
+
        if($resultado["ok"]){
             try{
                 $myDom = new DOMDocument();
@@ -51,14 +62,24 @@ class Timbrado {
             }
             // return ["ok" => false, "message" => json_encode($res_client)];
             //Se consume el método
+            //*************************** */
+            //Se consume el método
             $xmlobtenerTimbrado = $res_client['obtenerTimbradoResult'];
             $xmlTimbre = $xmlobtenerTimbrado['timbre'];
             if(isset($xmlTimbre['errores']) && $xmlTimbre['!esValido'] != "True"){
-                $arreglo_erorres = [];
-                foreach($xmlTimbre['errores']["Error"] as $error){
-                    array_push($arreglo_erorres,[$error["!codigo"] . ": ".$error["!mensaje"]]);
-                }
-                return ["ok" => false, "message" => $arreglo_erorres];
+                $Err0r = $xmlTimbre['errores'];
+                $men_error = $Err0r['Error'];
+                return ["ok" => false, "message" => $res_client];
+            }
+
+            /**************************** */
+            $xmlobtenerTimbrado = $res_client['obtenerTimbradoResult'];
+            
+            $xmlTimbre = $xmlobtenerTimbrado['timbre'];
+            if(isset($xmlTimbre['errores']) && $xmlTimbre['!esValido'] != "True"){
+                $Err0r = $xmlTimbre['errores'];
+                $men_error = $Err0r['Error'];
+                return ["ok" => false, "message" => $res_client];
             }
             
             $xmlTimbreFiscalDigital = $xmlTimbre['TimbreFiscalDigital'];
@@ -75,9 +96,11 @@ class Timbrado {
 
             $doc = new DOMDocument();
             $doc->loadXML($xml);
-            
-            $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Complemento')->item(0);
-            
+            if ($mVersion == "3.3"){
+                $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/3', 'Complemento')->item(0);
+            }else{
+                $c = $doc->getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Complemento')->item(0);
+            }
             
             $nodo = $doc->createElement("tfd:TimbreFiscalDigital");
             $nuevo_nodo = $c->appendChild($nodo);
@@ -95,7 +118,6 @@ class Timbrado {
             
             return ["ok" => true, "data" => $xmlsello];
        }
-		return ["ok" => false, "message" => $resultado["message"]];
     }
 }
 ?>

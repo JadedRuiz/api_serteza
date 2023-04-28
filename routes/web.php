@@ -292,4 +292,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post("EstadoCuenta","conMovBancoController@EstadoCuenta");
 
     });
+
+    $router->group(['prefix' => 'ticket'], function () use ($router) {
+        $router->post("validarTicket","TicketController@validarTicket");
+        $router->post("altaFaguardarTicketctura","TicketController@guardarTicket");
+        $router->post("facturarTicket","TicketController@facturarTicket");
+    });
+
 });

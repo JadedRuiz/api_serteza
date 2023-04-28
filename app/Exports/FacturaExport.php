@@ -431,14 +431,17 @@ class FacturaExport {
         $xml = DB::table('fac_factura as ff')
         ->select("ff.id_catclientes","xml","observaciones","gcf.nombre","gce.empresa","iva","ieps","otros","calle","cruzamiento_uno","numero_exterior","numero_interior","colonia","localidad","gcee.estado","ff.descuento","ff.iva_r","ff.isr_r","ff.total","ff.importe","ff.subtotal","srf.clave","srf.regimenfiscal","codigo_postal", "gcc.cliente as nombre_grupo")
         ->join("gen_cat_empresa as gce","gce.id_empresa","=","ff.id_empresa")
+        ->join("liga_empresa_cliente as lec", "lec.id_empresa","=","gce.id_empresa")
         ->join("gen_cat_cliente as gcc", "lec.id_cliente","=","gcc.id_cliente")
         ->leftJoin("gen_cat_direccion as gcd","gcd.id_direccion","=","gce.id_direccion")
         ->leftJoin("gen_cat_estados as gcee","gcee.id_estado","=","gcd.estado")
         ->leftJoin("gen_cat_fotografia as gcf","gcf.id_fotografia","=","gce.id_fotografia")
         ->leftJoin("sat_regimenesfiscales as srf","srf.clave","=","gce.regimen_fiscal")
-        ->where("id_factura",$datos)
+        ->where("ff.id_factura",$datos)
         ->first();
         try{
+            
+
             if($xml){
                 $cliente = DB::table("fac_catclientes as fcc")
                 ->select("calle","cruzamiento_uno","cruzamiento_dos","numero_exterior","numero_interior","colonia","localidad","gcee.estado","codigo_postal","srf.clave","srf.regimenfiscal","municipio")
@@ -479,6 +482,7 @@ class FacturaExport {
                 $otros=$xml->otros;
                 $iva_r=$xml->iva_r;
                 $isr_r=$xml->isr_r;
+                $nombre_grupo = $xml->nombre_grupo;
                 $cont=40;
                 //Datos emisor
                 $rfc_emisor="";
