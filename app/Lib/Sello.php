@@ -185,12 +185,14 @@ class Sello {
                     $impuestos .= '<cfdi:Traslado Impuesto="003" TasaOCuota="'.$porcentaje.'" Importe="' . number_format(round($concepto["ieps"],2),2,'.','') . '" TipoFactor="Tasa" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
                 }
                 $impuestos .= '</cfdi:Traslados>';
-            }{
-                $band_impuestos = true;
-                $porcentaje = number_format(round(0,2),6,'.','');
-				$impuestos .= '<cfdi:Traslados>';
-                $impuestos .= '<cfdi:Traslado Impuesto="002" TipoFactor="Exento" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
-				$impuestos .= '</cfdi:Traslados>';
+            }else{
+				$band_impuestos = true;
+				if(floatval($concepto["iva_r"]) == 0 && floatval($concepto["isr_r"]) == 0){
+					$porcentaje = number_format(round(0,2),6,'.','');
+					$impuestos .= '<cfdi:Traslados>';
+					$impuestos .= '<cfdi:Traslado Impuesto="002" TipoFactor="Exento" Base="'. number_format(round($concepto["importe"],2),2,'.','').'"></cfdi:Traslado>';
+					$impuestos .= '</cfdi:Traslados>';
+				}
             }
             if(floatval($concepto["iva_r"]) > 0 || floatval($concepto["isr_r"]) > 0){
                 $band_impuestos = true;
@@ -217,6 +219,7 @@ class Sello {
         $totalimptrasladado="";
         if(floatval($datos["iva_r_t"]) >0 || floatval($datos["isr_r_t"]) >0){
             $band_impuestos = true;
+			
             $string_impuestos .= '<cfdi:Retenciones>';
             $total_impretenido = floatval(str_replace(',','',$datos["iva_r_t"]))+floatval(str_replace(',','',$datos["isr_r_t"]));
             if(floatval($datos["isr_r_t"]) >0){
@@ -226,8 +229,10 @@ class Sello {
                 $string_impuestos .= '<cfdi:Retencion Impuesto="002" Importe="'.number_format(round($datos["iva_r_t"],2),2,'.','').'" />';
             }
             
-            $string_impuestos .= '</cfdi:Retenciones>';          
+            $string_impuestos .= '</cfdi:Retenciones>';
+			
         }
+		
         if(floatval($datos["iva_t"]) > 0 || floatval($datos["ieps_t"]) >0){
             $band_impuestos = true;
             $totalimptrasladado = floatval(str_replace(',','',$datos["iva_t"]))+floatval(str_replace(',','',$datos["ieps_t"]));
@@ -236,25 +241,42 @@ class Sello {
             $base = 'Base="'.number_format(round(str_replace(',','',$datos["importe"]),2),2,'.','').'"';
             if(floatval($datos["iva_t"]) > 0){
                 $string_impuestos .= '<cfdi:Traslado '.$base.' Impuesto="002" TasaOCuota="0.160000" Importe="' . number_format(round(str_replace(',','',$datos["iva_t"]),2),2,'.','') . '" TipoFactor="Tasa" />';
-            }else{
+            }{
                 $string_impuestos .= '<cfdi:Traslado '.$base.' Impuesto="002" TipoFactor="Exento" />';
             }
             if(floatval($datos["ieps_t"]) >0){
                 $string_impuestos .= '<cfdi:Traslado "'.$base.'" Impuesto="003" TasaOCuota="0.160000" Importe="' . number_format(round(str_replace(',','',$datos["iva_t"]),2),2,'.','') . '" TipoFactor="Tasa" />';
             }
             $string_impuestos .= '</cfdi:Traslados>';
+			$string_impuestosE = "";
         }else{
-            $base = 'Base="'.number_format(round(str_replace(',','',$datos["importe"]),2),2,'.','').'"';
-			$string_impuestos .= '<cfdi:Impuestos>';
-            $string_impuestos .= '<cfdi:Traslados>';
-            $string_impuestos .= '<cfdi:Traslado '.$base.' Impuesto="002" TipoFactor="Exento" />';
-            $string_impuestos .= '</cfdi:Traslados>';
-			$string_impuestos .= '</cfdi:Impuestos>';
-			$xml = $xml." ".$string_impuestos;
+			$base = 'Base="'.number_format(round(str_replace(',','',$datos["importe"]),2),2,'.','').'"';
+			//$string_impuestosE = '<cfdi:Impuestos>';
+            $string_impuestosE = '<cfdi:Traslados>';
+            $string_impuestosE .= '<cfdi:Traslado '.$base.' Impuesto="002" TipoFactor="Exento" />';
+            $string_impuestosE .= '</cfdi:Traslados>';
+			//$string_impuestosE .= '</cfdi:Impuestos>';
+			//$xml = $xml." ".$string_impuestosE;
         }
         
-        $band_impuestos ? $xml = $xml.'<cfdi:Impuestos TotalImpuestosRetenidos="'. number_format(round(str_replace(',','',$total_impretenido),2),2,'.','').'" TotalImpuestosTrasladados="'.number_format(round(str_replace(',','',$totalimptrasladado),2),2,'.','').'">'.$string_impuestos.'</cfdi:Impuestos>' 
-        : $xml = $xml.'';
+		if ($band_impuestos==true){
+			$xml = $xml.'<cfdi:Impuestos ';
+			if ($total_impretenido != 0){
+				$xml = $xml.'TotalImpuestosRetenidos="'. number_format(round(str_replace(',','',$total_impretenido),2),2,'.','').'"';
+			}
+			if ($totalimptrasladado != 0){
+				$xml = $xml.'TotalImpuestosTrasladados="'. number_format(round(str_replace(',','',$totalimptrasladado),2),2,'.','').'"';
+			}
+			$xml = $xml.'>';
+			if ($total_impretenido == 0){
+				$xml = $xml.$string_impuestosE;
+			}
+			$xml = $xml.$string_impuestos.'</cfdi:Impuestos>';
+        
+		}else{
+			$xml = $xml.' <cfdi:Impuestos>'.$string_impuestosE.' </cfdi:Impuestos>';
+		}
+         
         $xml = $xml . '<cfdi:Complemento>';
         //Otros impuestos
         if($datos["otros_t"] != "0" && intval($datos["otros_t"]) > 0){
@@ -286,7 +308,7 @@ class Sello {
         $xml = $xml.'</cfdi:Complemento>';
         $xml = $xml . '</cfdi:Comprobante>';
 
-	     error_log(print_r($xml, true), 3, "xml_log.log");
+	    //error_log(print_r($xml, true), 3, "xml_log.log");
 
         //$this->write_to_console($xml);
         return $xml;

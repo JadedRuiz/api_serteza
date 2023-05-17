@@ -123,10 +123,10 @@ class ClienteController extends Controller
             $id_direccion = $direccion->id_direccion;
 
             if($validar_rfc){
-                DB::update('update fac_catclientes set rfc = ?, razon_social = ?, curp = ?, email = ?, telefono = ?, id_regimenfiscal = ? where id_catclientes = ?', [strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$res["id_regimenfiscal"],$validar_rfc->id_catclientes]);
+                DB::update('update fac_catclientes set rfc = ?, razon_social = ?, curp = ?, email = ?, telefono = ?, id_regimenfiscal = ? where id_catclientes = ?', [strtoupper(trim($res["rfc"], " \t\n\r\0\x0B")),strtoupper(trim($res["razon_social"], " \t\n\r\0\x0B")),strtoupper($res["curp"]),trim($res["mail"], " \t\n\r\0\x0B"),$res["telefono"],$res["id_regimenfiscal"],$validar_rfc->id_catclientes]);
                 return $this->crearRespuesta(1,"Se ha modificado el cliente",200);
             }else{
-                DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo,id_regimenfiscal) values (?,?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper($res["rfc"]),strtoupper($res["razon_social"]),strtoupper($res["curp"]),$res["mail"],$res["telefono"],$fecha,$usuario_creacion,1,$res["id_regimenfiscal"]]);
+                DB::insert('insert into fac_catclientes (id_cliente, id_direccion, rfc, razon_social, curp, email, telefono, fecha_creacion, usuario_creacion, activo,id_regimenfiscal) values (?,?,?,?,?,?,?,?,?,?,?)', [$res["id"],$id_direccion,strtoupper(trim($res["rfc"], " \t\n\r\0\x0B")),strtoupper(trim($res["razon_social"], " \t\n\r\0\x0B")),strtoupper(trim($res["curp"], " \t\n\r\0\x0B")),trim($res["mail"], " \t\n\r\0\x0B"),$res["telefono"],$fecha,$usuario_creacion,1,$res["id_regimenfiscal"]]);
                 return $this->crearRespuesta(1,"Se ha creado el cliente",200);
             }
 
